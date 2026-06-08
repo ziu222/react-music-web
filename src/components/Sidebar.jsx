@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { C, BORDER } from "../constants/theme";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -184,7 +184,7 @@ function PanelRow({ pl, open, index, isActive, likedCount, onClick }) {
   );
 }
 
-function CompactRow({ pl, isActive, likedCount, onClick }) {
+function CompactRow({ pl, isActive, onClick }) {
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -271,6 +271,29 @@ export default function Sidebar({
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [libHov,         setLibHov]         = useState(false);
 
+  const createBtnRef = useRef(null);
+  const sortBtnRef   = useRef(null);
+  const [createMenuPos, setCreateMenuPos] = useState({ top: 0, right: 0 });
+  const [sortMenuPos,   setSortMenuPos]   = useState({ top: 0, right: 0 });
+
+  const openCreateMenu = () => {
+    if (createBtnRef.current) {
+      const r = createBtnRef.current.getBoundingClientRect();
+      setCreateMenuPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    }
+    setShowCreateMenu(s => !s);
+    setShowSortMenu(false);
+  };
+
+  const openSortMenu = () => {
+    if (sortBtnRef.current) {
+      const r = sortBtnRef.current.getBoundingClientRect();
+      setSortMenuPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    }
+    setShowSortMenu(s => !s);
+    setShowCreateMenu(false);
+  };
+
   const dur = isOpen ? "280ms" : "220ms";
 
   /* ── filtered + sorted playlists ─────────────────────────────── */
@@ -286,6 +309,14 @@ export default function Sidebar({
     }
     return result;
   }, [userPlaylists, libraryFilter, librarySearch, librarySort]);
+
+  const railPlaylists = useMemo(() => {
+    const result = userPlaylists ?? [];
+    if (librarySort === "name" || librarySort === "creator") {
+      return [...result].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return result;
+  }, [userPlaylists, librarySort]);
 
   const currentSortLabel = SORT_OPTIONS.find(s => s.key === librarySort)?.label ?? "Recents";
 
@@ -364,7 +395,7 @@ export default function Sidebar({
         </div>
 
         {/* Playlist thumbnails */}
-        {filteredPlaylists.map(pl => (
+        {railPlaylists.map(pl => (
           <RailItem
             key={pl.id}
             bg={pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg}
@@ -411,7 +442,8 @@ export default function Sidebar({
           {/* Create dropdown */}
           <div style={{ position: "relative", flexShrink: 0 }}>
             <div
-              onClick={() => { setShowCreateMenu(s => !s); setShowSortMenu(false); }}
+              ref={createBtnRef}
+              onClick={openCreateMenu}
               style={{
                 display: "flex", alignItems: "center", gap: 4,
                 background: showCreateMenu ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.07)",
@@ -433,8 +465,8 @@ export default function Sidebar({
                   onClick={() => setShowCreateMenu(false)}
                 />
                 <div style={{
-                  position: "absolute", top: "calc(100% + 6px)", right: 0,
-                  background: "#282828", borderRadius: 8, zIndex: 99,
+                  position: "fixed", top: createMenuPos.top, right: createMenuPos.right,
+                  background: "#282828", borderRadius: 8, zIndex: 999,
                   padding: 8, width: 244,
                   boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
                 }}>
@@ -526,7 +558,8 @@ export default function Sidebar({
           {/* Sort dropdown */}
           <div style={{ position: "relative" }}>
             <div
-              onClick={() => { setShowSortMenu(s => !s); setShowCreateMenu(false); }}
+              ref={sortBtnRef}
+              onClick={openSortMenu}
               style={{
                 display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
                 fontSize: 11, color: "rgba(255,255,255,0.55)",
@@ -546,8 +579,8 @@ export default function Sidebar({
                   onClick={() => setShowSortMenu(false)}
                 />
                 <div style={{
-                  position: "absolute", top: "calc(100% + 6px)", right: 0,
-                  background: "#282828", borderRadius: 8, zIndex: 99,
+                  position: "fixed", top: sortMenuPos.top, right: sortMenuPos.right,
+                  background: "#282828", borderRadius: 8, zIndex: 999,
                   padding: 8, width: 200,
                   boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
                 }}>
@@ -662,7 +695,6 @@ export default function Sidebar({
               <CompactRow
                 key={pl.id} pl={pl}
                 isActive={selectedPlaylistId === pl.id}
-                likedCount={likedIds.size}
                 onClick={() => selectAndNav(pl.id)}
               />
             ))
