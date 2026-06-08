@@ -1,7 +1,9 @@
+import { useState } from "react";
 import EqBars from "./EqBars";
-import { C, R, BG } from "../constants/theme";
+import { C, R, BG, BORDER } from "../constants/theme";
 
 export default function Player({ s, playing, prog, onToggle, likedIds, onLike }) {
+  const [hovProgress, setHovProgress] = useState(false);
   if (!s) return null;
 
   const liked = likedIds.has(s.id);
@@ -9,52 +11,79 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
   const mins = Math.floor(prog / 60);
   const secs = String(prog % 60).padStart(2, "0");
 
+  const ctrl = (label, size, active) => ({
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: size,
+    color: active ? C[400] : "rgba(255,255,255,0.55)",
+    lineHeight: 1,
+    padding: "4px 6px",
+    transition: "color 0.12s, transform 0.1s",
+    flexShrink: 0,
+  });
+
   return (
     <div
       style={{
-        background: BG.el,
-        borderTop: "0.5px solid rgba(255,255,255,0.06)",
-        padding: "9px 18px",
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
+        height: 90,
         flexShrink: 0,
+        background: BG.el,
+        borderTop: `0.5px solid ${BORDER}`,
+        display: "grid",
+        gridTemplateColumns: "1fr 2fr 1fr",
+        alignItems: "center",
+        padding: "0 18px",
+        gap: 12,
+        boxShadow: "0 -4px 24px rgba(0,0,0,0.35)",
       }}
     >
-      {/* Now playing */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9, width: 170, flexShrink: 0 }}>
+      {/* Left: now playing */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 5,
+            width: 56,
+            height: 56,
+            borderRadius: 6,
             background: s.bg,
+            flexShrink: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            flexShrink: 0,
+            boxShadow: "rgba(0,0,0,0.4) 0px 6px 16px",
           }}
         >
           {playing ? (
-            <EqBars size={14} />
+            <EqBars size={16} />
           ) : (
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>♪</span>
+            <span style={{ fontSize: 18, color: "rgba(255,255,255,0.7)" }}>♪</span>
           )}
         </div>
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: playing ? C[400] : "#ede5dd",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              marginBottom: 2,
+            }}
+          >
+            {s.title}
+          </div>
           <div
             style={{
               fontSize: 11,
-              fontWeight: 500,
-              color: playing ? C[400] : "#ede5dd",
+              color: "rgba(255,255,255,0.5)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
           >
-            {s.title}
+            {s.artist}
           </div>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>{s.artist}</div>
         </div>
         <button
           onClick={() => onLike(s.id)}
@@ -62,91 +91,144 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
             background: "none",
             border: "none",
             cursor: "pointer",
-            fontSize: 14,
+            fontSize: 16,
             color: liked ? R[400] : "rgba(255,255,255,0.2)",
             flexShrink: 0,
-            transition: "color 0.15s",
+            transition: "color 0.15s, transform 0.1s",
             lineHeight: 1,
+            padding: "4px",
           }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
         >
           {liked ? "♥" : "♡"}
         </button>
       </div>
 
-      {/* Controls + progress */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: C[500], lineHeight: 1 }}>⇄</button>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 17, color: "rgba(255,255,255,0.65)", lineHeight: 1 }}>⏮</button>
+      {/* Center: controls + progress */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <button style={ctrl("shuffle", 13, false)}>⇄</button>
+          <button
+            style={ctrl("prev", 18, false)}
+            onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}
+          >
+            ⏮
+          </button>
           <div
             onClick={onToggle}
             style={{
-              width: 30,
-              height: 30,
+              width: 40,
+              height: 40,
               borderRadius: "50%",
               background: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              fontSize: 12,
-              color: BG.base,
+              fontSize: 14,
+              color: "#141010",
               flexShrink: 0,
+              margin: "0 6px",
+              transition: "transform 0.12s, box-shadow 0.12s",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = "scale(1.06)";
+              e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.5)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.4)";
             }}
           >
             {playing ? "⏸" : "▶"}
           </div>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 17, color: "rgba(255,255,255,0.65)", lineHeight: 1 }}>⏭</button>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>↻</button>
+          <button
+            style={ctrl("next", 18, false)}
+            onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}
+          >
+            ⏭
+          </button>
+          <button style={ctrl("repeat", 13, false)}>↻</button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", maxWidth: 280 }}>
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", minWidth: 24, textAlign: "right" }}>
+        {/* Progress bar */}
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", maxWidth: 360 }}
+          onMouseEnter={() => setHovProgress(true)}
+          onMouseLeave={() => setHovProgress(false)}
+        >
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", minWidth: 30, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
             {mins}:{secs}
           </span>
           <div
             style={{
               flex: 1,
-              height: 3,
-              background: "rgba(255,255,255,0.08)",
-              borderRadius: 2,
+              height: hovProgress ? 5 : 4,
+              background: "rgba(255,255,255,0.1)",
+              borderRadius: 3,
               position: "relative",
+              cursor: "pointer",
+              transition: "height 0.1s",
             }}
           >
             <div
               style={{
                 width: `${pct}%`,
                 height: "100%",
-                background: C[500],
-                borderRadius: 2,
-                transition: "width 1s linear",
+                background: hovProgress ? C[400] : C[500],
+                borderRadius: 3,
+                transition: "width 1s linear, background 0.15s",
               }}
             />
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: `${pct}%`,
-                transform: "translate(-50%, -50%)",
-                width: 9,
-                height: 9,
-                background: "#fff",
-                borderRadius: "50%",
-                transition: "left 1s linear",
-              }}
-            />
+            {hovProgress && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: `${pct}%`,
+                  transform: "translate(-50%, -50%)",
+                  width: 13,
+                  height: 13,
+                  background: "#fff",
+                  borderRadius: "50%",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+                  transition: "left 1s linear",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
           </div>
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", minWidth: 24 }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", minWidth: 30, fontVariantNumeric: "tabular-nums" }}>
             {s.duration}
           </span>
         </div>
       </div>
 
-      {/* Volume */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, width: 120, justifyContent: "flex-end", flexShrink: 0 }}>
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>vol</span>
-        <div style={{ width: 50, height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}>
-          <div style={{ width: "70%", height: "100%", background: "rgba(255,255,255,0.45)", borderRadius: 2 }} />
+      {/* Right: volume */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>♪</span>
+        <div
+          style={{
+            width: 80,
+            height: 4,
+            background: "rgba(255,255,255,0.1)",
+            borderRadius: 3,
+            cursor: "pointer",
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              width: "70%",
+              height: "100%",
+              background: "rgba(255,255,255,0.6)",
+              borderRadius: 3,
+            }}
+          />
         </div>
       </div>
     </div>

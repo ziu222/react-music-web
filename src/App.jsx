@@ -5,6 +5,8 @@ import Splash from "./components/Splash";
 import Loader from "./components/Loader";
 import Player from "./components/Player";
 import PageHome from "./pages/PageHome";
+import PageSearch from "./pages/PageSearch";
+import PageLibrary from "./pages/PageLibrary";
 import { C, G, R, BG, TEXT, BORDER } from "./constants/theme";
 
 export default function App() {
@@ -96,7 +98,7 @@ export default function App() {
 
         {/* Home button */}
         <div
-          onClick={() => nav("home")}
+          onClick={() => { nav("home"); setSearch(""); }}
           style={{
             width: 40,
             height: 40,
@@ -132,21 +134,22 @@ export default function App() {
           </span>
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); if (page !== "search") setPage("search"); }}
             placeholder="Bạn muốn phát nội dung gì?"
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.08)",
-              border: "1.5px solid transparent",
-              borderRadius: 24,
-              padding: "9px 16px 9px 38px",
+              background: "#1f1f1f",
+              border: "none",
+              borderRadius: 500,
+              padding: "9px 16px 9px 40px",
               color: TEXT.primary,
               fontSize: 13,
               outline: "none",
-              transition: "border-color 0.2s",
+              boxShadow: "rgb(18,18,18) 0px 1px 0px, rgb(80,80,80) 0px 0px 0px 1px inset",
+              transition: "box-shadow 0.15s",
             }}
-            onFocus={e => { e.target.style.borderColor = `${C[500]}80`; }}
-            onBlur={e => { e.target.style.borderColor = "transparent"; }}
+            onFocus={e => { e.target.style.boxShadow = `rgb(18,18,18) 0px 1px 0px, ${C[500]} 0px 0px 0px 1.5px inset`; }}
+            onBlur={e => { e.target.style.boxShadow = "rgb(18,18,18) 0px 1px 0px, rgb(80,80,80) 0px 0px 0px 1px inset"; }}
           />
         </div>
 
@@ -225,7 +228,17 @@ export default function App() {
               flexShrink: 0,
             }}
           >
-            <span style={{ fontSize: 14, fontWeight: 500, color: TEXT.primary }}>Thư viện</span>
+            <span
+              onClick={() => nav("library")}
+              style={{
+                fontSize: 14,
+                fontWeight: 500,
+                color: page === "library" ? C[400] : TEXT.primary,
+                cursor: "pointer",
+              }}
+            >
+              Thư viện
+            </span>
             <div
               style={{
                 display: "flex",
@@ -324,6 +337,7 @@ export default function App() {
             {playlists.map((pl, i) => (
               <div
                 key={pl.id}
+                onClick={() => nav("library")}
                 style={{
                   padding: "8px 10px",
                   display: "flex",
@@ -404,6 +418,25 @@ export default function App() {
             <>
               {page === "home" && (
                 <PageHome
+                  list={list}
+                  cur={cur}
+                  onPlay={play}
+                  likedIds={likedIds}
+                  onLike={toggleLike}
+                />
+              )}
+              {page === "search" && (
+                <PageSearch
+                  list={list}
+                  query={search}
+                  cur={cur}
+                  onPlay={play}
+                  likedIds={likedIds}
+                  onLike={toggleLike}
+                />
+              )}
+              {page === "library" && (
+                <PageLibrary
                   list={list}
                   cur={cur}
                   onPlay={play}
