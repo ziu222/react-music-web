@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faList, faTableCells, faTableCellsLarge, faPlay } from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER } from "../constants/theme";
@@ -301,6 +301,17 @@ export default function Sidebar({
   const [createMenuPos, setCreateMenuPos] = useState({ top: 0, right: 0 });
   const [sortMenuPos,   setSortMenuPos]   = useState({ top: 0, right: 0 });
 
+  const filterTabRefs = useRef([]);
+  const [filterPill, setFilterPill] = useState({ left: 0, width: 0, ready: false });
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const idx = FILTER_TABS.findIndex(t => t.key === libraryFilter);
+    const el  = filterTabRefs.current[idx];
+    if (el) setFilterPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true });
+  }, [libraryFilter, isOpen]);
+
+  const viewModeIdx = VIEW_MODES.findIndex(m => m.key === libraryViewMode);
+
   const openCreateMenu = () => {
     if (createBtnRef.current) {
       const r = createBtnRef.current.getBoundingClientRect();
@@ -494,6 +505,8 @@ export default function Sidebar({
                   background: "#282828", borderRadius: 8, zIndex: 999,
                   padding: 8, width: 244,
                   boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
+                  transformOrigin: "top right",
+                  animation: "menuIn 160ms cubic-bezier(0.2,0,0,1) both",
                 }}>
                   {CREATE_OPTIONS.map(opt => (
                     <div
@@ -546,16 +559,32 @@ export default function Sidebar({
           position: "relative", zIndex: 100,
           ...slideIn(isOpen, 20),
         }}>
-          {FILTER_TABS.map(t => (
+          {/* Sliding active pill */}
+          {filterPill.ready && (
+            <div style={{
+              position: "absolute",
+              top: 0, bottom: 8,
+              left: filterPill.left,
+              width: filterPill.width,
+              background: "rgba(255,255,255,0.14)",
+              borderRadius: 9999,
+              transition: "left 180ms cubic-bezier(0.4,0,0.2,1), width 180ms cubic-bezier(0.4,0,0.2,1)",
+              pointerEvents: "none",
+            }} />
+          )}
+          {FILTER_TABS.map((t, i) => (
             <button
               key={t.key}
+              ref={el => { filterTabRefs.current[i] = el; }}
               onClick={() => { onSetLibraryFilter(t.key); setShowCreateMenu(false); setShowSortMenu(false); }}
               style={{
-                background: libraryFilter === t.key ? "rgba(255,255,255,0.15)" : "transparent",
+                background: "transparent",
                 border: "none", borderRadius: 9999, padding: "4px 12px",
-                fontSize: 12, fontWeight: libraryFilter === t.key ? 600 : 400,
+                fontSize: 12, fontWeight: 500,
                 color: libraryFilter === t.key ? "#fff" : "rgba(255,255,255,0.6)",
                 cursor: "pointer", whiteSpace: "nowrap",
+                position: "relative", zIndex: 1,
+                transition: "color 160ms ease",
               }}
             >
               {t.label}
@@ -609,6 +638,8 @@ export default function Sidebar({
                   background: "#282828", borderRadius: 8, zIndex: 999,
                   padding: 8, width: 200,
                   boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
+                  transformOrigin: "top right",
+                  animation: "menuIn 160ms cubic-bezier(0.2,0,0,1) both",
                 }}>
                   {/* Sort options */}
                   <div style={{ padding: "4px 12px 8px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 0.8 }}>
