@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import songs from "./data/songs";
-import playlists from "./data/playlists";
 import Splash from "./components/Splash";
 import Loader from "./components/Loader";
 import Player from "./components/Player";
+import Sidebar from "./components/Sidebar";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -19,6 +19,7 @@ export default function App() {
   const [likedIds, setLikedIds] = useState(new Set());
   const [list] = useState(songs);
   const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const done = useCallback(() => setScreen("app"), []);
 
@@ -206,209 +207,12 @@ export default function App() {
 
       {/* ── Body ── */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Library sidebar */}
-        <div
-          style={{
-            width: 300,
-            background: BG.card,
-            display: "flex",
-            flexDirection: "column",
-            flexShrink: 0,
-            borderRight: `0.5px solid ${BORDER}`,
-            overflow: "hidden",
-          }}
-        >
-          {/* Sidebar header */}
-          <div
-            style={{
-              padding: "16px 16px 12px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexShrink: 0,
-            }}
-          >
-            <span
-              onClick={() => nav("library")}
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: page === "library" ? C[400] : TEXT.primary,
-                cursor: "pointer",
-              }}
-            >
-              Thư viện
-            </span>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                background: "rgba(255,255,255,0.06)",
-                borderRadius: 9999,
-                padding: "5px 12px",
-                cursor: "pointer",
-                fontSize: 12,
-                color: "rgba(255,255,255,0.7)",
-                transition: "background 0.15s",
-              }}
-            >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Tạo
-            </div>
-          </div>
-
-          {/* Scrollable sidebar content */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "0 8px 16px" }}>
-            {/* Promo card 1 */}
-            <div
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                borderRadius: 10,
-                padding: 16,
-                marginBottom: 10,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 5 }}>
-                Tạo danh sách phát đầu tiên của bạn
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 14, lineHeight: 1.5 }}>
-                Rất dễ! Chúng tôi sẽ giúp bạn
-              </div>
-              <button
-                style={{
-                  background: "#fff",
-                  border: "none",
-                  borderRadius: 9999,
-                  padding: "7px 16px",
-                  fontSize: 12,
-                  color: "#141010",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                }}
-              >
-                Tạo danh sách phát
-              </button>
-            </div>
-
-            {/* Promo card 2 */}
-            <div
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                borderRadius: 10,
-                padding: 16,
-                marginBottom: 14,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 5 }}>
-                Hãy cùng tìm và theo dõi nghệ sĩ yêu thích
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 14, lineHeight: 1.5 }}>
-                Luôn cập nhật bài mới từ nghệ sĩ bạn thích
-              </div>
-              <button
-                style={{
-                  background: "#fff",
-                  border: "none",
-                  borderRadius: 9999,
-                  padding: "7px 16px",
-                  fontSize: 12,
-                  color: "#141010",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                }}
-              >
-                Khám phá nghệ sĩ
-              </button>
-            </div>
-
-            {/* Playlists */}
-            <div
-              style={{
-                fontSize: 10,
-                textTransform: "uppercase",
-                letterSpacing: 1.2,
-                color: "rgba(255,255,255,0.25)",
-                padding: "4px 8px 8px",
-                fontWeight: 500,
-              }}
-            >
-              Danh sách phát
-            </div>
-            {playlists.map((pl, i) => (
-              <div
-                key={pl.id}
-                onClick={() => nav("library")}
-                style={{
-                  padding: "8px 10px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 6,
-                    background: pl.bg,
-                    flexShrink: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 14,
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                >
-                  {i === 0 ? "♥" : "♪"}
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{pl.name}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
-                    {i === 0 ? `${likedIds.size} bài hát` : "Danh sách phát"}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              padding: "12px 16px",
-              borderTop: `0.5px solid ${BORDER}`,
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", marginBottom: 10 }}>
-              {["Pháp lý", "Quyền riêng tư", "Cookie", "Hỗ trợ"].map(l => (
-                <span key={l} style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", cursor: "pointer" }}>
-                  {l}
-                </span>
-              ))}
-            </div>
-            <button
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(255,255,255,0.3)",
-                borderRadius: 9999,
-                padding: "5px 12px",
-                fontSize: 11,
-                color: TEXT.primary,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <span>⊕</span> Tiếng Việt
-            </button>
-          </div>
-        </div>
+        <Sidebar
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(p => !p)}
+          likedIds={likedIds}
+          onNav={nav}
+        />
 
         {/* Main content */}
         <div style={{ flex: 1, overflowY: "auto", background: BG.base }}>
