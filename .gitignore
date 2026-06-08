@@ -35,3 +35,8 @@ dist-ssr
 
 # OS
 Thumbs.db
+
+# Local dev tooling — not for source control
+.agents/
+design-system/
+skills-lock.json
