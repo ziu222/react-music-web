@@ -165,7 +165,7 @@ function CompactRow({ pl, isActive, onClick }) {
 }
 
 /* 2. List — 48px cover + title + subtitle */
-function ListRow({ pl, index, isActive, likedCount, onClick }) {
+function ListRow({ pl, isActive, onClick }) {
   const [hov, setHov] = useState(false);
   const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
@@ -225,7 +225,7 @@ function GridItem({ pl, isActive, onClick }) {
 }
 
 /* 4. Card — 2-col, image + title + subtitle + green play on hover */
-function CardItem({ pl, isActive, likedCount, onClick }) {
+function CardItem({ pl, isActive, onClick }) {
   const [hov, setHov] = useState(false);
   const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
