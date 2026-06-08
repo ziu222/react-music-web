@@ -2,6 +2,7 @@ import { useRef } from "react";
 import Card from "../components/Card";
 import TrackRow from "../components/TrackRow";
 import { C, R, GRADIENTS } from "../constants/theme";
+import { artistImages, getPrimaryArtist } from "../data/media";
 
 const ARTIST_COLORS = [
   "linear-gradient(135deg,#ea580c,#f97316)",
@@ -48,12 +49,15 @@ function SectionHeader({ title }) {
 export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
   const artists = [
     ...new Map(
-      list.map(s => [s.artist.split(" ft.")[0].trim(), s])
+      [...list]
+        .sort((a, b) => b.plays - a.plays)
+        .map(s => [getPrimaryArtist(s.artist), s])
     ).values(),
-  ].slice(0, 8).map((s, i) => ({
-    name: s.artist.split(" ft.")[0].trim(),
+  ].slice(0, 12).map((s, i) => ({
+    name: getPrimaryArtist(s.artist),
     initial: s.artist[0],
     bg: ARTIST_COLORS[i % ARTIST_COLORS.length],
+    image: artistImages[getPrimaryArtist(s.artist)],
   }));
 
   return (
@@ -91,9 +95,18 @@ export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
                   fontSize: 40,
                   fontWeight: 500,
                   color: "rgba(255,255,255,0.9)",
+                  overflow: "hidden",
                 }}
               >
-                {a.initial}
+                {a.image ? (
+                  <img
+                    src={a.image}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                ) : (
+                  a.initial
+                )}
               </div>
               <div
                 style={{

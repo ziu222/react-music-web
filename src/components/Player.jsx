@@ -1,12 +1,14 @@
 import { useState } from "react";
 import EqBars from "./EqBars";
 import { C, R, BG, BORDER } from "../constants/theme";
+import { getSongImage } from "../data/media";
 
 export default function Player({ s, playing, prog, onToggle, likedIds, onLike }) {
   const [hovProgress, setHovProgress] = useState(false);
   if (!s) return null;
 
   const liked = likedIds.has(s.id);
+  const cover = getSongImage(s);
   const pct = s.durationSecs > 0 ? (prog / s.durationSecs) * 100 : 0;
   const mins = Math.floor(prog / 60);
   const secs = String(prog % 60).padStart(2, "0");
@@ -50,13 +52,35 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            overflow: "hidden",
+            position: "relative",
             boxShadow: "rgba(0,0,0,0.4) 0px 6px 16px",
           }}
         >
+          {cover ? (
+            <img
+              src={cover}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          ) : null}
           {playing ? (
-            <EqBars size={16} />
-          ) : (
+            <div
+              style={{
+                position: cover ? "absolute" : "static",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: cover ? "rgba(0,0,0,0.32)" : "transparent",
+              }}
+            >
+              <EqBars size={16} />
+            </div>
+          ) : !cover ? (
             <span style={{ fontSize: 18, color: "rgba(255,255,255,0.7)" }}>♪</span>
+          ) : (
+            null
           )}
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>

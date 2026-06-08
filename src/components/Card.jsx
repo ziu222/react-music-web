@@ -1,10 +1,12 @@
 import { useState } from "react";
 import EqBars from "./EqBars";
 import { C } from "../constants/theme";
+import { getSongImage } from "../data/media";
 
 export default function Card({ song, cur, onPlay, width }) {
   const [hov, setHov] = useState(false);
   const playing = cur?.id === song.id;
+  const cover = getSongImage(song);
 
   return (
     <div
@@ -39,6 +41,18 @@ export default function Card({ song, cur, onPlay, width }) {
           boxShadow: "rgba(0,0,0,0.4) 0px 8px 24px",
         }}
       >
+        {cover && (
+          <img
+            src={cover}
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        )}
         <div
           style={{
             position: "absolute",
@@ -62,7 +76,7 @@ export default function Card({ song, cur, onPlay, width }) {
           {playing ? "⏸" : "▶"}
         </div>
         {!hov && playing && <EqBars size={20} />}
-        {!hov && !playing && (
+        {!cover && !hov && !playing && (
           <span style={{ fontSize: 22, color: "rgba(255,255,255,0.4)", userSelect: "none" }}>♪</span>
         )}
       </div>

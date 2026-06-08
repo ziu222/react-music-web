@@ -1,11 +1,13 @@
 import { useState } from "react";
 import EqBars from "./EqBars";
 import { C, R } from "../constants/theme";
+import { getSongImage } from "../data/media";
 
 export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike }) {
   const [hov, setHov] = useState(false);
   const playing = cur?.id === song.id;
   const liked = likedIds.has(song.id);
+  const cover = getSongImage(song);
 
   return (
     <div
@@ -52,10 +54,19 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike })
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
+          overflow: "hidden",
           boxShadow: "rgba(0,0,0,0.3) 0px 4px 10px",
         }}
       >
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", userSelect: "none" }}>♪</span>
+        {cover ? (
+          <img
+            src={cover}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", userSelect: "none" }}>♪</span>
+        )}
       </div>
 
       {/* Title + artist */}
