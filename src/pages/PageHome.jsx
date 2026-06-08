@@ -1,92 +1,133 @@
+import { useRef } from "react";
 import Card from "../components/Card";
 import TrackRow from "../components/TrackRow";
-import { C, GRADIENTS } from "../constants/theme";
+import { C, R, GRADIENTS } from "../constants/theme";
+
+const ARTIST_COLORS = [
+  "linear-gradient(135deg,#ea580c,#f97316)",
+  "linear-gradient(135deg,#d97706,#fbbf24)",
+  "linear-gradient(135deg,#e11d48,#fb7185)",
+  "linear-gradient(135deg,#0369a1,#38bdf8)",
+  "linear-gradient(135deg,#7c3aed,#a78bfa)",
+  "linear-gradient(135deg,#166534,#4ade80)",
+  "linear-gradient(135deg,#be185d,#fb7185)",
+  "linear-gradient(135deg,#0f766e,#34d399)",
+];
+
+function HScroll({ children }) {
+  const ref = useRef(null);
+  return (
+    <div
+      ref={ref}
+      style={{
+        display: "flex",
+        gap: 14,
+        overflowX: "auto",
+        paddingBottom: 6,
+        scrollbarWidth: "none",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionHeader({ title }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <span style={{ fontSize: 20, fontWeight: 500 }}>{title}</span>
+      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", cursor: "pointer", letterSpacing: 0.3 }}>
+        Hiện tất cả
+      </span>
+    </div>
+  );
+}
 
 export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
-  const totalSecs = list.reduce((acc, s) => acc + s.durationSecs, 0);
-  const hrs = Math.floor(totalSecs / 3600);
-  const mins = Math.floor((totalSecs % 3600) / 60);
+  const artists = [
+    ...new Map(
+      list.map(s => [s.artist.split(" ft.")[0].trim(), s])
+    ).values(),
+  ].slice(0, 8).map((s, i) => ({
+    name: s.artist.split(" ft.")[0].trim(),
+    initial: s.artist[0],
+    bg: ARTIST_COLORS[i % ARTIST_COLORS.length],
+  }));
 
   return (
-    <div style={{ animation: "slideUp 0.3s ease" }}>
-      {/* Hero banner */}
-      <div
-        style={{
-          background: GRADIENTS.hero,
-          borderRadius: 12,
-          padding: 22,
-          marginBottom: 22,
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            right: 18,
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: 80,
-            height: 80,
-            borderRadius: 10,
-            background: "rgba(0,0,0,0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            fontSize: 30,
-            color: "#fff",
-          }}
-        >
-          ▶
-        </div>
-        <div
-          style={{
-            fontSize: 9,
-            textTransform: "uppercase",
-            letterSpacing: 1,
-            color: "rgba(255,255,255,0.55)",
-            marginBottom: 5,
-          }}
-        >
-          Featured playlist
-        </div>
-        <div style={{ fontSize: 19, fontWeight: 500, marginBottom: 3 }}>Nhạc Việt Đỉnh Cao</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
-          {list.length} songs · {hrs}hr {mins}min
-        </div>
-      </div>
+    <div style={{ animation: "slideUp 0.3s ease", padding: "24px 24px 40px" }}>
 
-      {/* Trending now */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 14, fontWeight: 500 }}>Trending now</span>
-        <span style={{ fontSize: 11, color: C[500], cursor: "pointer" }}>See all</span>
-      </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 9,
-          marginBottom: 22,
-        }}
-      >
-        {list.slice(0, 4).map(s => (
-          <Card key={s.id} song={s} cur={cur} onPlay={onPlay} />
-        ))}
-      </div>
+      {/* Trending */}
+      <section style={{ marginBottom: 36 }}>
+        <SectionHeader title="Những bài hát thịnh hành" />
+        <HScroll>
+          {list.map(s => (
+            <Card key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+          ))}
+        </HScroll>
+      </section>
+
+      {/* Popular Artists */}
+      <section style={{ marginBottom: 36 }}>
+        <SectionHeader title="Nghệ sĩ phổ biến" />
+        <HScroll>
+          {artists.map((a, i) => (
+            <div
+              key={i}
+              style={{ flexShrink: 0, width: 150, cursor: "pointer", textAlign: "center" }}
+            >
+              <div
+                style={{
+                  width: 150,
+                  height: 150,
+                  borderRadius: "50%",
+                  background: a.bg,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                  fontSize: 40,
+                  fontWeight: 500,
+                  color: "rgba(255,255,255,0.9)",
+                }}
+              >
+                {a.initial}
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#ede5dd",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {a.name}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+                Nghệ sĩ
+              </div>
+            </div>
+          ))}
+        </HScroll>
+      </section>
 
       {/* Recently played */}
-      <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 8 }}>Recently played</div>
-      {list.map((s, i) => (
-        <TrackRow
-          key={s.id}
-          song={s}
-          index={i}
-          cur={cur}
-          onPlay={onPlay}
-          likedIds={likedIds}
-          onLike={onLike}
-        />
-      ))}
+      <section>
+        <SectionHeader title="Nghe gần đây" />
+        {list.map((s, i) => (
+          <TrackRow
+            key={s.id}
+            song={s}
+            index={i}
+            cur={cur}
+            onPlay={onPlay}
+            likedIds={likedIds}
+            onLike={onLike}
+          />
+        ))}
+      </section>
     </div>
   );
 }
