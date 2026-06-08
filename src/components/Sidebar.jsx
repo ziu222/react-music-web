@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faList, faTableCells, faTableCellsLarge } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faList, faTableCells, faTableCellsLarge, faPlay } from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER } from "../constants/theme";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -114,86 +114,120 @@ function RailItem({ bg, icon, tooltip, onClick, isActive }) {
 }
 
 /* ── Playlist list views ──────────────────────────────────────── */
-function PanelRow({ pl, open, index, isActive, likedCount, onClick }) {
-  const [hov, setHov] = useState(false);
-  const enterDelay = 80 + index * 40;
-  const exitDelay  = index * 10;
+
+/* shared cover tile */
+function PlCover({ pl, size = 48, radius = 6 }) {
   return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "7px 8px", borderRadius: 6, cursor: "pointer",
-        background: isActive ? "rgba(255,255,255,0.1)" : hov ? "rgba(255,255,255,0.08)" : "transparent",
-        opacity: open ? 1 : 0,
-        transform: open ? "translateX(0)" : "translateX(-8px)",
-        transition: open
-          ? `background 0.15s, opacity 120ms ease ${enterDelay}ms, transform 120ms ease ${enterDelay}ms`
-          : `background 0.15s, opacity 80ms ease ${exitDelay}ms, transform 80ms ease ${exitDelay}ms`,
-      }}
-    >
-      <div style={{
-        width: 40, height: 40, borderRadius: 5, flexShrink: 0,
-        background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 16, color: "rgba(255,255,255,0.85)",
-        boxShadow: "rgba(0,0,0,0.35) 0px 4px 12px",
-      }}>
-        {pl.type === "liked" ? "♥" : "♪"}
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{
-          fontSize: 13, fontWeight: 500,
-          color: isActive ? C[400] : "#ede5dd",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-        }}>
-          {pl.type === "liked" ? "Bài hát đã thích" : pl.name}
-        </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>
-          {pl.type === "liked" ? `${likedCount} bài hát` : "Danh sách phát"}
-        </div>
-      </div>
+    <div style={{
+      width: size, height: size, borderRadius: radius, flexShrink: 0,
+      background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.38, color: "rgba(255,255,255,0.85)",
+      boxShadow: "rgba(0,0,0,0.35) 0px 4px 12px",
+    }}>
+      {pl.type === "liked" ? "♥" : "♪"}
     </div>
   );
 }
 
+/* 1. Compact — text only, no thumbnail */
 function CompactRow({ pl, isActive, onClick }) {
   const [hov, setHov] = useState(false);
+  const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
     <div
       onClick={onClick}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "5px 8px", borderRadius: 4, cursor: "pointer",
-        background: isActive ? "rgba(255,255,255,0.1)" : hov ? "rgba(255,255,255,0.08)" : "transparent",
+        display: "flex", alignItems: "center", gap: 5,
+        padding: "6px 8px", borderRadius: 4, cursor: "pointer",
+        background: isActive ? "rgba(255,255,255,0.1)" : hov ? "rgba(255,255,255,0.07)" : "transparent",
         transition: "background 0.15s",
       }}
     >
-      <div style={{
-        width: 32, height: 32, borderRadius: 4, flexShrink: 0,
-        background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 12, color: "rgba(255,255,255,0.85)",
-      }}>
-        {pl.type === "liked" ? "♥" : "♪"}
-      </div>
-      <div style={{
-        fontSize: 12, fontWeight: 500,
+      {pl.type === "liked" && (
+        <span style={{ color: "#1ed760", fontSize: 9, flexShrink: 0, lineHeight: 1 }}>♦</span>
+      )}
+      <span style={{
+        fontSize: 13, fontWeight: 500,
         color: isActive ? C[400] : "#ede5dd",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        flex: 1,
       }}>
-        {pl.type === "liked" ? "Bài hát đã thích" : pl.name}
+        {name}
+      </span>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", flexShrink: 0 }}>
+        · Playlist
+      </span>
+    </div>
+  );
+}
+
+/* 2. List — 48px cover + title + subtitle */
+function ListRow({ pl, index, isActive, likedCount, onClick }) {
+  const [hov, setHov] = useState(false);
+  const name = pl.type === "liked" ? "Liked Songs" : pl.name;
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "6px 8px", borderRadius: 6, cursor: "pointer",
+        background: isActive ? "rgba(255,255,255,0.1)" : hov ? "rgba(255,255,255,0.07)" : "transparent",
+        transition: "background 0.15s",
+      }}
+    >
+      <PlCover pl={pl} size={48} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          fontSize: 14, fontWeight: 600,
+          color: isActive ? C[400] : "#ede5dd",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          marginBottom: 3,
+        }}>
+          {name}
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", gap: 4 }}>
+          {pl.type === "liked" && <span style={{ color: "#1ed760", fontSize: 9 }}>♦</span>}
+          Playlist · Nghĩa
+        </div>
       </div>
     </div>
   );
 }
 
-function GridCard({ pl, isActive, likedCount, onClick }) {
+/* 3. Grid item — square image only, 3-col */
+function GridItem({ pl, isActive, onClick }) {
   const [hov, setHov] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        borderRadius: 6, overflow: "hidden",
+        aspectRatio: "1", cursor: "pointer",
+        background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 20, color: "rgba(255,255,255,0.85)",
+        outline: isActive ? `2px solid ${C[400]}` : "none",
+        outlineOffset: -2,
+        opacity: hov ? 0.85 : 1,
+        transition: "opacity 0.15s, outline 0.15s",
+      }}
+    >
+      {pl.type === "liked" ? "♥" : "♪"}
+    </div>
+  );
+}
+
+/* 4. Card — 2-col, image + title + subtitle + green play on hover */
+function CardItem({ pl, isActive, likedCount, onClick }) {
+  const [hov, setHov] = useState(false);
+  const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
     <div
       onClick={onClick}
@@ -201,29 +235,45 @@ function GridCard({ pl, isActive, likedCount, onClick }) {
       onMouseLeave={() => setHov(false)}
       style={{
         borderRadius: 8, padding: 8, cursor: "pointer",
-        background: isActive ? "rgba(255,255,255,0.1)" : hov ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
+        background: hov || isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
         transition: "background 0.15s",
       }}
     >
-      <div style={{
-        width: "100%", aspectRatio: "1", borderRadius: 6, marginBottom: 8,
-        background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 28, color: "rgba(255,255,255,0.85)",
-        boxShadow: "rgba(0,0,0,0.4) 0px 8px 20px",
-      }}>
-        {pl.type === "liked" ? "♥" : "♪"}
+      <div style={{ position: "relative", marginBottom: 10 }}>
+        <div style={{
+          width: "100%", aspectRatio: "1", borderRadius: 6,
+          background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 28, color: "rgba(255,255,255,0.85)",
+          boxShadow: "rgba(0,0,0,0.4) 0px 8px 20px",
+        }}>
+          {pl.type === "liked" ? "♥" : "♪"}
+        </div>
+        <div style={{
+          position: "absolute", right: 6, bottom: 6,
+          width: 34, height: 34, borderRadius: "50%",
+          background: "#1ed760",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "rgba(0,0,0,0.5) 0px 8px 16px",
+          opacity: hov || isActive ? 1 : 0,
+          transform: hov || isActive ? "translateY(0) scale(1)" : "translateY(6px) scale(0.9)",
+          transition: "opacity 0.2s, transform 0.2s",
+          pointerEvents: "none",
+        }}>
+          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 11, color: "#000", marginLeft: 2 }} />
+        </div>
       </div>
       <div style={{
-        fontSize: 12, fontWeight: 500,
+        fontSize: 13, fontWeight: 600,
         color: isActive ? C[400] : "#ede5dd",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        marginBottom: 2,
+        marginBottom: 3,
       }}>
-        {pl.type === "liked" ? "Bài hát đã thích" : pl.name}
+        {name}
       </div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-        {pl.type === "liked" ? `${likedCount} bài hát` : "Playlist"}
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", gap: 4 }}>
+        {pl.type === "liked" && <span style={{ color: "#1ed760", fontSize: 9 }}>♦</span>}
+        Playlist · Nghĩa
       </div>
     </div>
   );
@@ -644,7 +694,7 @@ export default function Sidebar({
         {/* Scrollable playlist list */}
         <div style={{
           flex: 1, overflowY: "auto", overflowX: "hidden",
-          padding: libraryViewMode === "grid" || libraryViewMode === "card" ? "0 8px" : "0 4px",
+          padding: libraryViewMode === "card" ? "0 8px" : libraryViewMode === "grid" ? "0 6px" : "0 4px",
           scrollbarWidth: "thin",
           scrollbarColor: "rgba(255,255,255,0.1) transparent",
         }}>
@@ -655,10 +705,20 @@ export default function Sidebar({
             }}>
               {emptyText}
             </div>
-          ) : libraryViewMode === "grid" || libraryViewMode === "card" ? (
+          ) : libraryViewMode === "grid" ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, paddingBottom: 4 }}>
+              {filteredPlaylists.map(pl => (
+                <GridItem
+                  key={pl.id} pl={pl}
+                  isActive={selectedPlaylistId === pl.id}
+                  onClick={() => selectAndNav(pl.id)}
+                />
+              ))}
+            </div>
+          ) : libraryViewMode === "card" ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, paddingBottom: 4 }}>
               {filteredPlaylists.map(pl => (
-                <GridCard
+                <CardItem
                   key={pl.id} pl={pl}
                   isActive={selectedPlaylistId === pl.id}
                   likedCount={likedIds.size}
@@ -676,9 +736,9 @@ export default function Sidebar({
             ))
           ) : (
             filteredPlaylists.map((pl, i) => (
-              <PanelRow
+              <ListRow
                 key={pl.id} pl={pl}
-                open={isOpen} index={i}
+                index={i}
                 isActive={selectedPlaylistId === pl.id}
                 likedCount={likedIds.size}
                 onClick={() => selectAndNav(pl.id)}
