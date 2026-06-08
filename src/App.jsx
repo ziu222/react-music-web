@@ -20,6 +20,7 @@ export default function App() {
   const [list] = useState(songs);
   const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [recentIds, setRecentIds] = useState([]);
 
   const done = useCallback(() => setScreen("app"), []);
 
@@ -29,7 +30,12 @@ export default function App() {
     setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
   };
 
-  const play = (s) => { setCur(s); setPlaying(true); setProg(0); };
+  const play = (s) => {
+    setCur(s);
+    setPlaying(true);
+    setProg(0);
+    setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
+  };
 
   const toggleLike = (id) => {
     setLikedIds(prev => {
@@ -227,6 +233,7 @@ export default function App() {
                   onPlay={play}
                   likedIds={likedIds}
                   onLike={toggleLike}
+                  recentIds={recentIds}
                 />
               )}
               {page === "search" && (
