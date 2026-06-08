@@ -1,12 +1,12 @@
-import { useState } from "react";
-import playlists from "../data/playlists";
+import { useState, useMemo } from "react";
 import { C, BORDER } from "../constants/theme";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 const RAIL_W = 64;
 const PANEL_W = 300;
+const FILTER_TABS = ["Danh sách phát", "Album", "Nghệ sĩ"];
 
-/* ── tiny helpers ─────────────────────────────────────────────────── */
+/* ── animation helpers ────────────────────────────────────────── */
 function railVis(open) {
   return {
     opacity: open ? 0 : 1,
@@ -34,8 +34,8 @@ function slideIn(open, delay = 0) {
   };
 }
 
-/* ── Rail icon button ─────────────────────────────────────────────── */
-function RailItem({ bg, icon, tooltip, onClick }) {
+/* ── Rail icon button ─────────────────────────────────────────── */
+function RailItem({ bg, icon, tooltip, onClick, isActive }) {
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -60,6 +60,8 @@ function RailItem({ bg, icon, tooltip, onClick }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 15,
         color: "rgba(255,255,255,0.9)",
+        boxShadow: isActive ? `0 0 0 2px ${C[400]}` : undefined,
+        transition: "box-shadow 0.15s",
       }}>
         {icon}
       </div>
@@ -71,8 +73,7 @@ function RailItem({ bg, icon, tooltip, onClick }) {
           transform: "translateY(-50%)",
           background: "#282828",
           color: "#fff",
-          fontSize: 11,
-          fontWeight: 600,
+          fontSize: 11, fontWeight: 600,
           padding: "5px 10px",
           borderRadius: 4,
           whiteSpace: "nowrap",
@@ -88,8 +89,8 @@ function RailItem({ bg, icon, tooltip, onClick }) {
   );
 }
 
-/* ── Panel playlist row ───────────────────────────────────────────── */
-function PanelRow({ icon, iconBg, name, meta, open, index, onClick }) {
+/* ── Panel playlist row ───────────────────────────────────────── */
+function PanelRow({ icon, iconBg, name, meta, open, index, onClick, isActive }) {
   const [hov, setHov] = useState(false);
   const enterDelay = 80 + index * 40;
   const exitDelay  = index * 10;
@@ -104,12 +105,16 @@ function PanelRow({ icon, iconBg, name, meta, open, index, onClick }) {
         padding: "7px 8px",
         borderRadius: 6,
         cursor: "pointer",
-        background: hov ? "rgba(255,255,255,0.08)" : "transparent",
+        background: isActive
+          ? "rgba(255,255,255,0.1)"
+          : hov
+          ? "rgba(255,255,255,0.08)"
+          : "transparent",
         opacity: open ? 1 : 0,
         transform: open ? "translateX(0)" : "translateX(-8px)",
         transition: open
           ? `background 0.15s, opacity 120ms ease ${enterDelay}ms, transform 120ms ease ${enterDelay}ms`
-          : `background 0.15s, opacity 80ms ease ${exitDelay}ms,  transform 80ms ease ${exitDelay}ms`,
+          : `background 0.15s, opacity 80ms ease ${exitDelay}ms, transform 80ms ease ${exitDelay}ms`,
       }}
     >
       <div style={{
@@ -118,14 +123,16 @@ function PanelRow({ icon, iconBg, name, meta, open, index, onClick }) {
         background: iconBg,
         flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 16, color: "rgba(255,255,255,0.85)",
+        fontSize: 16,
+        color: "rgba(255,255,255,0.85)",
         boxShadow: "rgba(0,0,0,0.35) 0px 4px 12px",
       }}>
         {icon}
       </div>
       <div style={{ minWidth: 0 }}>
         <div style={{
-          fontSize: 13, fontWeight: 500, color: "#ede5dd",
+          fontSize: 13, fontWeight: 500,
+          color: isActive ? C[400] : "#ede5dd",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
           {name}
@@ -138,10 +145,39 @@ function PanelRow({ icon, iconBg, name, meta, open, index, onClick }) {
   );
 }
 
-/* ── Main Sidebar ─────────────────────────────────────────────────── */
-export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
+/* ── Main Sidebar ─────────────────────────────────────────────── */
+export default function Sidebar({
+  isOpen, onToggle,
+  likedIds, onNav,
+  userPlaylists,
+  selectedPlaylistId, onSelectPlaylist,
+  libraryFilter, onSetLibraryFilter,
+  librarySearch, onSetLibrarySearch,
+  librarySort, onSetLibrarySort,
+  onCreatePlaylist,
+}) {
   const [libHov, setLibHov] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const dur = isOpen ? "280ms" : "220ms";
+
+  /* filtered + sorted playlist list */
+  const filteredPlaylists = useMemo(() => {
+    if (libraryFilter === "Album" || libraryFilter === "Nghệ sĩ") return [];
+    let result = userPlaylists ?? [];
+    if (librarySearch.trim()) {
+      const q = librarySearch.toLowerCase();
+      result = result.filter(pl => pl.name.toLowerCase().includes(q));
+    }
+    if (librarySort === "name") {
+      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return result;
+  }, [userPlaylists, libraryFilter, librarySearch, librarySort]);
+
+  const selectAndNav = (id) => {
+    onSelectPlaylist(id);
+    onNav("library");
+  };
 
   return (
     <div
@@ -156,7 +192,7 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
         background: "#121212",
       }}
     >
-      {/* ══ RAIL (collapsed icon view) ══════════════════════════════ */}
+      {/* ══ RAIL ════════════════════════════════════════════════ */}
       <div style={{
         position: "absolute",
         top: 0, left: 0, bottom: 0,
@@ -191,27 +227,23 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
           {libHov && (
             <div style={{
               position: "absolute",
-              left: "calc(100% + 10px)",
-              top: "50%",
+              left: "calc(100% + 10px)", top: "50%",
               transform: "translateY(-50%)",
-              background: "#282828",
-              color: "#fff",
+              background: "#282828", color: "#fff",
               fontSize: 11, fontWeight: 600,
-              padding: "5px 10px",
-              borderRadius: 4,
+              padding: "5px 10px", borderRadius: 4,
               whiteSpace: "nowrap",
               boxShadow: "rgba(0,0,0,0.5) 0px 8px 24px",
-              zIndex: 300,
-              pointerEvents: "none",
-              letterSpacing: 0.1,
+              zIndex: 300, pointerEvents: "none", letterSpacing: 0.1,
             }}>
               Open Your Library
             </div>
           )}
         </div>
 
-        {/* Add button */}
+        {/* Create playlist */}
         <div
+          onClick={onCreatePlaylist}
           style={{
             width: 48, height: 40,
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -220,6 +252,7 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
             color: "rgba(255,255,255,0.5)",
             borderRadius: 8,
             transition: "background 0.15s, color 0.15s",
+            position: "relative",
           }}
           onMouseEnter={e => {
             e.currentTarget.style.background = "rgba(255,255,255,0.08)";
@@ -233,27 +266,20 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
           +
         </div>
 
-        {/* Liked Songs */}
-        <RailItem
-          bg="linear-gradient(135deg,#4c1d95,#7c3aed)"
-          icon="♥"
-          tooltip="Bài hát đã thích"
-          onClick={() => onNav("library")}
-        />
-
-        {/* Playlist thumbnails */}
-        {playlists.filter(p => p.type !== "liked").map(pl => (
+        {/* Playlist items */}
+        {filteredPlaylists.map(pl => (
           <RailItem
             key={pl.id}
-            bg={pl.bg}
-            icon="♪"
-            tooltip={pl.name}
-            onClick={() => onNav("library")}
+            bg={pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg}
+            icon={pl.type === "liked" ? "♥" : "♪"}
+            tooltip={pl.type === "liked" ? "Bài hát đã thích" : pl.name}
+            isActive={selectedPlaylistId === pl.id}
+            onClick={() => selectAndNav(pl.id)}
           />
         ))}
       </div>
 
-      {/* ══ PANEL (expanded view) ═══════════════════════════════════ */}
+      {/* ══ PANEL ═══════════════════════════════════════════════ */}
       <div style={{
         position: "absolute",
         top: 0, left: 0, bottom: 0,
@@ -263,19 +289,17 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
         zIndex: 1,
         ...panelVis(isOpen),
       }}>
-        {/* Header row */}
+        {/* Header */}
         <div style={{
           display: "flex", alignItems: "center",
           padding: "12px 8px 8px 10px",
           gap: 6, flexShrink: 0,
           ...slideIn(isOpen, 0),
         }}>
-          {/* Library toggle (mirrors rail icon — keeps it in place) */}
           <div
             onClick={onToggle}
             style={{
-              width: 44, height: 44,
-              borderRadius: 8,
+              width: 44, height: 44, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer",
               fontSize: 17, color: "#fff",
@@ -293,6 +317,7 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
           </span>
 
           <div
+            onClick={onCreatePlaylist}
             style={{
               display: "flex", alignItems: "center", gap: 4,
               background: "rgba(255,255,255,0.07)",
@@ -317,53 +342,90 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
           flexShrink: 0,
           ...slideIn(isOpen, 20),
         }}>
-          {["Danh sách phát", "Album", "Nghệ sĩ"].map((t, i) => (
-            <button key={t} style={{
-              background: i === 0 ? "rgba(255,255,255,0.15)" : "transparent",
-              border: "none",
-              borderRadius: 9999,
-              padding: "4px 12px",
-              fontSize: 12,
-              fontWeight: i === 0 ? 600 : 400,
-              color: i === 0 ? "#fff" : "rgba(255,255,255,0.6)",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}>
+          {FILTER_TABS.map(t => (
+            <button
+              key={t}
+              onClick={() => onSetLibraryFilter(t)}
+              style={{
+                background: libraryFilter === t ? "rgba(255,255,255,0.15)" : "transparent",
+                border: "none",
+                borderRadius: 9999,
+                padding: "4px 12px",
+                fontSize: 12,
+                fontWeight: libraryFilter === t ? 600 : 400,
+                color: libraryFilter === t ? "#fff" : "rgba(255,255,255,0.6)",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
               {t}
             </button>
           ))}
         </div>
 
-        {/* Search / recent sort row */}
+        {/* Search / sort row */}
         <div style={{
           display: "flex", alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 14px 8px",
+          padding: "0 14px 6px",
           flexShrink: 0,
           ...slideIn(isOpen, 40),
         }}>
-          <span style={{
-            fontSize: 16,
-            color: "rgba(255,255,255,0.4)",
-            cursor: "pointer",
-            transition: "color 0.15s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-          onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
+          <span
+            onClick={() => setShowSearch(s => !s)}
+            style={{
+              fontSize: 16,
+              color: showSearch || librarySearch ? "#fff" : "rgba(255,255,255,0.4)",
+              cursor: "pointer",
+              transition: "color 0.15s",
+            }}
           >
             ⌕
           </span>
-          <span style={{
-            fontSize: 11, color: "rgba(255,255,255,0.45)",
-            display: "flex", alignItems: "center", gap: 4,
-            cursor: "pointer",
-            transition: "color 0.15s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-          onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.45)"}
+          <span
+            onClick={() => onSetLibrarySort(librarySort === "recent" ? "name" : "recent")}
+            style={{
+              fontSize: 11, color: "rgba(255,255,255,0.45)",
+              display: "flex", alignItems: "center", gap: 4,
+              cursor: "pointer",
+              transition: "color 0.15s",
+              userSelect: "none",
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = "#fff"}
+            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.45)"}
           >
-            Gần đây <span style={{ fontSize: 9 }}>▼</span>
+            {librarySort === "recent" ? "Gần đây" : "Tên"}{" "}
+            <span style={{ fontSize: 9 }}>▼</span>
           </span>
+        </div>
+
+        {/* Search input (toggle) */}
+        <div style={{
+          overflow: "hidden",
+          maxHeight: showSearch ? 44 : 0,
+          opacity: showSearch ? 1 : 0,
+          transition: "max-height 0.2s ease, opacity 0.15s ease",
+          padding: showSearch ? "0 14px 8px" : "0 14px 0",
+          flexShrink: 0,
+          pointerEvents: isOpen ? "auto" : "none",
+        }}>
+          <input
+            value={librarySearch}
+            onChange={e => onSetLibrarySearch(e.target.value)}
+            placeholder="Tìm trong thư viện..."
+            autoFocus={showSearch}
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.1)",
+              border: "none",
+              borderRadius: 4,
+              padding: "6px 10px",
+              color: "#fff",
+              fontSize: 12,
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
         </div>
 
         {/* Scrollable playlist list */}
@@ -375,59 +437,76 @@ export default function Sidebar({ isOpen, onToggle, likedIds, onNav }) {
           scrollbarWidth: "thin",
           scrollbarColor: "rgba(255,255,255,0.1) transparent",
         }}>
-          {/* Liked Songs */}
-          <PanelRow
-            icon="♥"
-            iconBg="linear-gradient(135deg,#4c1d95,#7c3aed)"
-            name="Bài hát đã thích"
-            meta={`${likedIds.size} bài hát`}
-            open={isOpen}
-            index={0}
-            onClick={() => onNav("library")}
-          />
-
-          {/* Other playlists */}
-          {playlists.filter(p => p.type !== "liked").map((pl, i) => (
-            <PanelRow
-              key={pl.id}
-              icon="♪"
-              iconBg={pl.bg}
-              name={pl.name}
-              meta="Danh sách phát"
-              open={isOpen}
-              index={i + 1}
-              onClick={() => onNav("library")}
-            />
-          ))}
-
-          {/* Promo card */}
-          <div style={{
-            background: "rgba(255,255,255,0.06)",
-            borderRadius: 8,
-            padding: 16,
-            margin: "10px 4px 4px",
-            opacity: isOpen ? 1 : 0,
-            transform: isOpen ? "translateY(0) scale(1)" : "translateY(8px) scale(0.98)",
-            transition: isOpen
-              ? "opacity 200ms ease 280ms, transform 200ms ease 280ms"
-              : "opacity 60ms ease 0ms, transform 60ms ease 0ms",
-            pointerEvents: isOpen ? "auto" : "none",
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 5 }}>
-              Tạo danh sách phát đầu tiên
-            </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 12, lineHeight: 1.5 }}>
-              Rất dễ! Chúng tôi sẽ giúp bạn
-            </div>
-            <button style={{
-              background: "#fff", border: "none",
-              borderRadius: 9999, padding: "7px 16px",
-              fontSize: 12, color: "#141010", fontWeight: 600,
-              cursor: "pointer",
+          {filteredPlaylists.length === 0 ? (
+            <div style={{
+              padding: "20px 12px",
+              fontSize: 12,
+              color: "rgba(255,255,255,0.3)",
+              textAlign: "center",
+              opacity: isOpen ? 1 : 0,
+              transition: "opacity 0.15s",
             }}>
-              Tạo danh sách phát
-            </button>
-          </div>
+              {libraryFilter === "Album"
+                ? "Chưa có album nào"
+                : libraryFilter === "Nghệ sĩ"
+                ? "Chưa theo dõi nghệ sĩ nào"
+                : librarySearch
+                ? "Không tìm thấy kết quả"
+                : "Thư viện trống"}
+            </div>
+          ) : (
+            filteredPlaylists.map((pl, i) => (
+              <PanelRow
+                key={pl.id}
+                icon={pl.type === "liked" ? "♥" : "♪"}
+                iconBg={pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg}
+                name={pl.type === "liked" ? "Bài hát đã thích" : pl.name}
+                meta={
+                  pl.type === "liked"
+                    ? `${likedIds.size} bài hát`
+                    : "Danh sách phát"
+                }
+                open={isOpen}
+                index={i}
+                isActive={selectedPlaylistId === pl.id}
+                onClick={() => selectAndNav(pl.id)}
+              />
+            ))
+          )}
+
+          {/* Promo card — shown only on "Danh sách phát" when no search */}
+          {libraryFilter === "Danh sách phát" && !librarySearch && (
+            <div style={{
+              background: "rgba(255,255,255,0.06)",
+              borderRadius: 8,
+              padding: 16,
+              margin: "10px 4px 4px",
+              opacity: isOpen ? 1 : 0,
+              transform: isOpen ? "translateY(0) scale(1)" : "translateY(8px) scale(0.98)",
+              transition: isOpen
+                ? "opacity 200ms ease 280ms, transform 200ms ease 280ms"
+                : "opacity 60ms ease 0ms, transform 60ms ease 0ms",
+              pointerEvents: isOpen ? "auto" : "none",
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 5 }}>
+                Tạo danh sách phát đầu tiên
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 12, lineHeight: 1.5 }}>
+                Rất dễ! Chúng tôi sẽ giúp bạn
+              </div>
+              <button
+                onClick={onCreatePlaylist}
+                style={{
+                  background: "#fff", border: "none",
+                  borderRadius: 9999, padding: "7px 16px",
+                  fontSize: 12, color: "#141010", fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Tạo danh sách phát
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
