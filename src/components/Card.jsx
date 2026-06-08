@@ -14,48 +14,39 @@ export default function Card({ song, cur, onPlay }) {
       style={{
         background: hov ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.035)",
         borderRadius: 10,
-        padding: 10,
+        padding: 9,
+        textAlign: "center",
         cursor: "pointer",
         transition: "all 0.2s",
         transform: hov ? "translateY(-2px)" : "none",
       }}
     >
+      {/* Art */}
       <div
         style={{
           width: "100%",
           aspectRatio: "1 / 1",
           background: song.bg,
-          borderRadius: 8,
-          marginBottom: 8,
+          borderRadius: 7,
+          marginBottom: 7,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
         {hov ? (
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: "50%",
-              background: C[500],
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 14,
-              color: "#fff",
-            }}
-          >
-            ▶
-          </div>
+          <span style={{ fontSize: 22, color: "#fff" }}>▶</span>
         ) : playing ? (
           <EqBars size={20} />
-        ) : null}
+        ) : (
+          <span style={{ fontSize: 20, color: "rgba(255,255,255,0.6)" }}>♪</span>
+        )}
       </div>
 
+      {/* Title */}
       <div
         style={{
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 500,
           color: "#ede5dd",
           whiteSpace: "nowrap",
@@ -65,9 +56,11 @@ export default function Card({ song, cur, onPlay }) {
       >
         {song.title}
       </div>
+
+      {/* Artist */}
       <div
         style={{
-          fontSize: 10,
+          fontSize: 9,
           color: "rgba(255,255,255,0.4)",
           whiteSpace: "nowrap",
           overflow: "hidden",

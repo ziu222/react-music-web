@@ -3,9 +3,9 @@ import TrackRow from "../components/TrackRow";
 import { C, GRADIENTS } from "../constants/theme";
 
 export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
-  const totalMins = list.reduce((acc, s) => acc + s.durationSecs, 0);
-  const hrs = Math.floor(totalMins / 3600);
-  const mins = Math.floor((totalMins % 3600) / 60);
+  const totalSecs = list.reduce((acc, s) => acc + s.durationSecs, 0);
+  const hrs = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
 
   return (
     <div style={{ animation: "slideUp 0.3s ease" }}>
@@ -13,70 +13,60 @@ export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
       <div
         style={{
           background: GRADIENTS.hero,
-          borderRadius: 14,
-          padding: "24px 28px",
-          marginBottom: 28,
+          borderRadius: 12,
+          padding: 22,
+          marginBottom: 22,
           position: "relative",
-          overflow: "hidden",
         }}
       >
         <div
           style={{
             position: "absolute",
-            right: 24,
+            right: 18,
             top: "50%",
             transform: "translateY(-50%)",
-            width: 72,
-            height: 72,
-            borderRadius: 12,
+            width: 80,
+            height: 80,
+            borderRadius: 10,
             background: "rgba(0,0,0,0.2)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            fontSize: 26,
+            fontSize: 30,
             color: "#fff",
-            transition: "background 0.2s",
           }}
         >
           ▶
         </div>
         <div
           style={{
-            fontSize: 10,
+            fontSize: 9,
             textTransform: "uppercase",
-            letterSpacing: 1.2,
+            letterSpacing: 1,
             color: "rgba(255,255,255,0.55)",
-            marginBottom: 6,
-            fontWeight: 500,
+            marginBottom: 5,
           }}
         >
-          Featured Playlist
+          Featured playlist
         </div>
-        <div style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>Nhạc Việt Đỉnh Cao</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+        <div style={{ fontSize: 19, fontWeight: 500, marginBottom: 3 }}>Nhạc Việt Đỉnh Cao</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
           {list.length} songs · {hrs}hr {mins}min
         </div>
       </div>
 
       {/* Trending now */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <span style={{ fontSize: 15, fontWeight: 500 }}>Trending now</span>
-        <span style={{ fontSize: 12, color: C[500], cursor: "pointer" }}>See all</span>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: 14, fontWeight: 500 }}>Trending now</span>
+        <span style={{ fontSize: 11, color: C[500], cursor: "pointer" }}>See all</span>
       </div>
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 10,
-          marginBottom: 28,
+          gap: 9,
+          marginBottom: 22,
         }}
       >
         {list.slice(0, 4).map(s => (
@@ -85,7 +75,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
       </div>
 
       {/* Recently played */}
-      <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 10 }}>Recently played</div>
+      <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 8 }}>Recently played</div>
       {list.map((s, i) => (
         <TrackRow
           key={s.id}

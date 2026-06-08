@@ -14,20 +14,20 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
       style={{
         background: BG.el,
         borderTop: "0.5px solid rgba(255,255,255,0.06)",
-        padding: "10px 24px",
+        padding: "9px 18px",
         display: "flex",
         alignItems: "center",
-        gap: 16,
+        gap: 14,
         flexShrink: 0,
       }}
     >
       {/* Now playing */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, width: 220, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, width: 170, flexShrink: 0 }}>
         <div
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 6,
+            width: 38,
+            height: 38,
+            borderRadius: 5,
             background: s.bg,
             display: "flex",
             alignItems: "center",
@@ -35,12 +35,16 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
             flexShrink: 0,
           }}
         >
-          {playing && <EqBars size={14} />}
+          {playing ? (
+            <EqBars size={14} />
+          ) : (
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>♪</span>
+          )}
         </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ minWidth: 0 }}>
           <div
             style={{
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: 500,
               color: playing ? C[400] : "#ede5dd",
               whiteSpace: "nowrap",
@@ -50,7 +54,7 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
           >
             {s.title}
           </div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{s.artist}</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>{s.artist}</div>
         </div>
         <button
           onClick={() => onLike(s.id)}
@@ -58,7 +62,7 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
             background: "none",
             border: "none",
             cursor: "pointer",
-            fontSize: 15,
+            fontSize: 14,
             color: liked ? R[400] : "rgba(255,255,255,0.2)",
             flexShrink: 0,
             transition: "color 0.15s",
@@ -70,46 +74,43 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
       </div>
 
       {/* Controls + progress */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: C[500], lineHeight: 1 }}>⇄</button>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "rgba(255,255,255,0.6)", lineHeight: 1 }}>⏮</button>
-          <button
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: C[500], lineHeight: 1 }}>⇄</button>
+          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 17, color: "rgba(255,255,255,0.65)", lineHeight: 1 }}>⏮</button>
+          <div
             onClick={onToggle}
             style={{
-              width: 36,
-              height: 36,
+              width: 30,
+              height: 30,
               borderRadius: "50%",
               background: "#fff",
-              border: "none",
-              cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 14,
+              cursor: "pointer",
+              fontSize: 12,
               color: BG.base,
-              transition: "transform 0.15s",
               flexShrink: 0,
             }}
           >
             {playing ? "⏸" : "▶"}
-          </button>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "rgba(255,255,255,0.6)", lineHeight: 1 }}>⏭</button>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>↻</button>
+          </div>
+          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 17, color: "rgba(255,255,255,0.65)", lineHeight: 1 }}>⏭</button>
+          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "rgba(255,255,255,0.35)", lineHeight: 1 }}>↻</button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 340 }}>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", minWidth: 30, textAlign: "right" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", maxWidth: 280 }}>
+          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", minWidth: 24, textAlign: "right" }}>
             {mins}:{secs}
           </span>
           <div
             style={{
               flex: 1,
               height: 3,
-              background: "rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.08)",
               borderRadius: 2,
               position: "relative",
-              cursor: "pointer",
             }}
           >
             <div
@@ -127,24 +128,24 @@ export default function Player({ s, playing, prog, onToggle, likedIds, onLike })
                 top: "50%",
                 left: `${pct}%`,
                 transform: "translate(-50%, -50%)",
-                width: 10,
-                height: 10,
+                width: 9,
+                height: 9,
                 background: "#fff",
                 borderRadius: "50%",
                 transition: "left 1s linear",
               }}
             />
           </div>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", minWidth: 30 }}>
+          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", minWidth: 24 }}>
             {s.duration}
           </span>
         </div>
       </div>
 
       {/* Volume */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, width: 130, justifyContent: "flex-end", flexShrink: 0 }}>
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>vol</span>
-        <div style={{ width: 64, height: 3, background: "rgba(255,255,255,0.1)", borderRadius: 2, cursor: "pointer" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, width: 120, justifyContent: "flex-end", flexShrink: 0 }}>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>vol</span>
+        <div style={{ width: 50, height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}>
           <div style={{ width: "70%", height: "100%", background: "rgba(255,255,255,0.45)", borderRadius: 2 }} />
         </div>
       </div>
