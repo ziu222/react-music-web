@@ -8,7 +8,7 @@ import Sidebar from "./components/Sidebar";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
-import { C, G, R, BG, TEXT, BORDER } from "./constants/theme";
+import { C, G, BG, TEXT, BORDER } from "./constants/theme";
 
 export default function App() {
   const [screen, setScreen] = useState("splash");
@@ -30,10 +30,11 @@ export default function App() {
   const [libraryFilter, setLibraryFilter] = useState("Danh sách phát");
   const [librarySearch, setLibrarySearch] = useState("");
   const [librarySort, setLibrarySort] = useState("recent");
+  const [libraryViewMode, setLibraryViewMode] = useState("list");
 
   useEffect(() => {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
-    catch {}
+    catch (err) { void err; }
   }, [userPlaylists]);
 
   const done = useCallback(() => setScreen("app"), []);
@@ -254,6 +255,8 @@ export default function App() {
           onSetLibrarySearch={setLibrarySearch}
           librarySort={librarySort}
           onSetLibrarySort={setLibrarySort}
+          libraryViewMode={libraryViewMode}
+          onSetLibraryViewMode={setLibraryViewMode}
           onCreatePlaylist={createPlaylist}
         />
 
