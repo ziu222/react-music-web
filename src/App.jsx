@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import songs from "./data/songs";
+import playlistsSeed from "./data/playlists";
 import Splash from "./components/Splash";
 import Loader from "./components/Loader";
 import Player from "./components/Player";
@@ -7,7 +8,7 @@ import Sidebar from "./components/Sidebar";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
-import { C, G, R, BG, TEXT, BORDER } from "./constants/theme";
+import { C, G, BG, TEXT, BORDER } from "./constants/theme";
 
 export default function App() {
   const [screen, setScreen] = useState("splash");
@@ -20,6 +21,21 @@ export default function App() {
   const [list] = useState(songs);
   const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [recentIds, setRecentIds] = useState([]);
+  const [userPlaylists, setUserPlaylists] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("melodies_playlists") || "null") || playlistsSeed; }
+    catch { return playlistsSeed; }
+  });
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState(1);
+  const [libraryFilter, setLibraryFilter] = useState("Danh sách phát");
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [librarySort, setLibrarySort] = useState("recent");
+  const [libraryViewMode, setLibraryViewMode] = useState("list");
+
+  useEffect(() => {
+    try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
+    catch (err) { void err; }
+  }, [userPlaylists]);
 
   const done = useCallback(() => setScreen("app"), []);
 
@@ -29,7 +45,25 @@ export default function App() {
     setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
   };
 
-  const play = (s) => { setCur(s); setPlaying(true); setProg(0); };
+  const play = (s) => {
+    setCur(s);
+    setPlaying(true);
+    setProg(0);
+    setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
+  };
+
+  const createPlaylist = () => {
+    const newPl = {
+      id: `local-${Date.now()}`,
+      name: "Danh sách phát mới",
+      type: "playlist",
+      bg: "linear-gradient(135deg,#334155,#64748b)",
+    };
+    setUserPlaylists(prev => [...prev, newPl]);
+    setSelectedPlaylistId(newPl.id);
+    setSidebarOpen(true);
+    setPage("library");
+  };
 
   const toggleLike = (id) => {
     setLikedIds(prev => {
@@ -212,6 +246,18 @@ export default function App() {
           onToggle={() => setSidebarOpen(p => !p)}
           likedIds={likedIds}
           onNav={nav}
+          userPlaylists={userPlaylists}
+          selectedPlaylistId={selectedPlaylistId}
+          onSelectPlaylist={setSelectedPlaylistId}
+          libraryFilter={libraryFilter}
+          onSetLibraryFilter={setLibraryFilter}
+          librarySearch={librarySearch}
+          onSetLibrarySearch={setLibrarySearch}
+          librarySort={librarySort}
+          onSetLibrarySort={setLibrarySort}
+          libraryViewMode={libraryViewMode}
+          onSetLibraryViewMode={setLibraryViewMode}
+          onCreatePlaylist={createPlaylist}
         />
 
         {/* Main content */}
@@ -227,6 +273,7 @@ export default function App() {
                   onPlay={play}
                   likedIds={likedIds}
                   onLike={toggleLike}
+                  recentIds={recentIds}
                 />
               )}
               {page === "search" && (
@@ -246,6 +293,11 @@ export default function App() {
                   onPlay={play}
                   likedIds={likedIds}
                   onLike={toggleLike}
+                  userPlaylists={userPlaylists}
+                  selectedPlaylistId={selectedPlaylistId}
+                  onSelectPlaylist={setSelectedPlaylistId}
+                  libraryFilter={libraryFilter}
+                  onSetLibraryFilter={setLibraryFilter}
                 />
               )}
             </>
