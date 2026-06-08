@@ -37,6 +37,10 @@ body {
 @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes orbit { to { transform: rotate(360deg); } }
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
 @keyframes eq1 { 0% { height: 4px; } 100% { height: 14px; } }
 @keyframes eq2 { 0% { height: 4px; } 100% { height: 20px; } }
 @keyframes eq3 { 0% { height: 4px; } 100% { height: 10px; } }
