@@ -53,6 +53,18 @@ export default function App() {
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
   };
 
+  const getPlaylistSongs = (pl) => {
+    if (!pl) return [];
+    if (pl.type === "liked") return list.filter(s => likedIds.has(s.id));
+    if (typeof pl.id === "string") return [];
+    return list.slice(0, 8);
+  };
+
+  const playPlaylist = (pl) => {
+    const firstSong = getPlaylistSongs(pl)[0];
+    if (firstSong) play(firstSong);
+  };
+
   const createPlaylist = () => {
     const newPl = {
       id: `local-${Date.now()}`,
@@ -266,6 +278,7 @@ export default function App() {
           libraryViewMode={libraryViewMode}
           onSetLibraryViewMode={setLibraryViewMode}
           onCreatePlaylist={createPlaylist}
+          onPlayPlaylist={playPlaylist}
         />
 
         {/* Main content */}
