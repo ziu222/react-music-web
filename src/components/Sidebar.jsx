@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars, faList, faTableCells, faTableCellsLarge } from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER } from "../constants/theme";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -57,41 +59,15 @@ function slideIn(open, delay = 0) {
   };
 }
 
-/* ── View mode icon (CSS drawn) ──────────────────────────────── */
-function ViewIcon({ mode, size = 13, color = "currentColor" }) {
-  const s = { background: color, borderRadius: 1 };
-  if (mode === "compact") {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 2, width: size, height: size }}>
-        {[0, 1, 2, 3].map(i => <div key={i} style={{ ...s, height: 2 }} />)}
-      </div>
-    );
-  }
-  if (mode === "list") {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 2.5, width: size, height: size }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{ display: "flex", gap: 2.5, alignItems: "center", height: 3 }}>
-            <div style={{ ...s, width: 3, height: 3, flexShrink: 0 }} />
-            <div style={{ ...s, flex: 1, height: 2 }} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (mode === "grid") {
-    return (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, width: size, height: size }}>
-        {[0, 1, 2, 3].map(i => <div key={i} style={{ ...s }} />)}
-      </div>
-    );
-  }
-  /* card */
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, width: size, height: size }}>
-      {[0, 1].map(i => <div key={i} style={{ ...s }} />)}
-    </div>
-  );
+/* ── View mode icon ───────────────────────────────────────────── */
+const VIEW_ICONS = {
+  compact: faBars,
+  list:    faList,
+  grid:    faTableCells,
+  card:    faTableCellsLarge,
+};
+function ViewIcon({ mode, size = 13 }) {
+  return <FontAwesomeIcon icon={VIEW_ICONS[mode]} style={{ fontSize: size }} />;
 }
 
 /* ── Rail icon button ─────────────────────────────────────────── */
@@ -633,7 +609,7 @@ export default function Sidebar({
                         onMouseEnter={e => { if (libraryViewMode !== m.key) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
                         onMouseLeave={e => { if (libraryViewMode !== m.key) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
                       >
-                        <ViewIcon mode={m.key} size={13} color="currentColor" />
+                        <ViewIcon mode={m.key} size={13} />
                       </div>
                     ))}
                   </div>
