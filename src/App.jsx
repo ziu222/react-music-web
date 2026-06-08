@@ -57,7 +57,7 @@ export default function App() {
         flexDirection: "column",
         background: BG.base,
         color: TEXT.primary,
-        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        fontFamily: "'Be Vietnam Pro', 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         overflow: "hidden",
       }}
     >

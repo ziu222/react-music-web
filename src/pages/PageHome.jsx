@@ -21,10 +21,12 @@ function HScroll({ children }) {
       ref={ref}
       style={{
         display: "flex",
-        gap: 14,
+        gap: 16,
         overflowX: "auto",
-        paddingBottom: 6,
+        paddingBottom: 8,
         scrollbarWidth: "none",
+        scrollSnapType: "x mandatory",
+        WebkitOverflowScrolling: "touch",
       }}
     >
       {children}
@@ -35,7 +37,7 @@ function HScroll({ children }) {
 function SectionHeader({ title }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-      <span style={{ fontSize: 20, fontWeight: 500 }}>{title}</span>
+      <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.3 }}>{title}</span>
       <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", cursor: "pointer", letterSpacing: 0.3 }}>
         Hiện tất cả
       </span>
@@ -55,10 +57,10 @@ export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
   }));
 
   return (
-    <div style={{ animation: "slideUp 0.3s ease", padding: "24px 24px 40px" }}>
+    <div style={{ animation: "slideUp 0.3s ease", padding: "32px 28px 48px" }}>
 
       {/* Trending */}
-      <section style={{ marginBottom: 36 }}>
+      <section style={{ marginBottom: 48 }}>
         <SectionHeader title="Những bài hát thịnh hành" />
         <HScroll>
           {list.map(s => (
@@ -68,13 +70,13 @@ export default function PageHome({ list, cur, onPlay, likedIds, onLike }) {
       </section>
 
       {/* Popular Artists */}
-      <section style={{ marginBottom: 36 }}>
+      <section style={{ marginBottom: 48 }}>
         <SectionHeader title="Nghệ sĩ phổ biến" />
         <HScroll>
           {artists.map((a, i) => (
             <div
               key={i}
-              style={{ flexShrink: 0, width: 150, cursor: "pointer", textAlign: "center" }}
+              style={{ flexShrink: 0, width: 150, cursor: "pointer", textAlign: "center", scrollSnapAlign: "start" }}
             >
               <div
                 style={{

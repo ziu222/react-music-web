@@ -18,8 +18,9 @@ export default function Card({ song, cur, onPlay, width }) {
         borderRadius: 10,
         padding: 12,
         cursor: "pointer",
-        transition: "all 0.2s",
-        transform: hov ? "translateY(-2px)" : "none",
+        transition: "background 200ms ease, transform 200ms ease",
+        transform: hov ? "translateY(-3px)" : "none",
+        scrollSnapAlign: "start",
       }}
     >
       {/* Art */}
