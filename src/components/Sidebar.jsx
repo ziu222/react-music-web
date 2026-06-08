@@ -50,10 +50,9 @@ function panelVis(open) {
 function slideIn(open, delay = 0) {
   return {
     opacity: open ? 1 : 0,
-    transform: open ? "translateX(0)" : "translateX(-10px)",
     transition: open
-      ? `opacity 130ms ease ${100 + delay}ms, transform 130ms ease ${100 + delay}ms`
-      : "opacity 80ms ease 0ms, transform 80ms ease 0ms",
+      ? `opacity 130ms ease ${100 + delay}ms`
+      : "opacity 80ms ease 0ms",
     pointerEvents: open ? "auto" : "none",
   };
 }
@@ -518,12 +517,13 @@ export default function Sidebar({
         {/* Filter pills */}
         <div style={{
           display: "flex", gap: 6, padding: "0 8px 8px", flexShrink: 0,
+          position: "relative", zIndex: 100,
           ...slideIn(isOpen, 20),
         }}>
           {FILTER_TABS.map(t => (
             <button
               key={t.key}
-              onClick={() => onSetLibraryFilter(t.key)}
+              onClick={() => { onSetLibraryFilter(t.key); setShowCreateMenu(false); setShowSortMenu(false); }}
               style={{
                 background: libraryFilter === t.key ? "rgba(255,255,255,0.15)" : "transparent",
                 border: "none", borderRadius: 9999, padding: "4px 12px",
