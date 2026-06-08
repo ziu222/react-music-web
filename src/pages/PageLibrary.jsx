@@ -1,7 +1,6 @@
 import { useState } from "react";
 import TrackRow from "../components/TrackRow";
 import { C, TEXT, BORDER } from "../constants/theme";
-import { getPrimaryArtist } from "../data/media";
 
 const FILTER_TABS = ["Danh sách phát", "Album", "Nghệ sĩ"];
 

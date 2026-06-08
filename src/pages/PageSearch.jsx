@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import TrackRow from "../components/TrackRow";
-import { C, G, R, BG, TEXT, BORDER } from "../constants/theme";
+import { TEXT } from "../constants/theme";
 
 const GENRES = [
   { label: "Tất cả", value: null, bg: "linear-gradient(135deg,#f97316,#fbbf24)" },
