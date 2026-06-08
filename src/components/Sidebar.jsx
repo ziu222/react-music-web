@@ -673,22 +673,35 @@ export default function Sidebar({
                   <div style={{ padding: "4px 12px 6px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 0.8 }}>
                     View as
                   </div>
-                  <div style={{ display: "flex", gap: 4, padding: "0 12px 4px" }}>
+                  {/* Segmented control */}
+                  <div style={{
+                    position: "relative", display: "flex",
+                    margin: "0 12px 4px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: 8, padding: 2,
+                  }}>
+                    {/* Sliding active indicator */}
+                    <div style={{
+                      position: "absolute", top: 2, left: 2, bottom: 2,
+                      width: "calc((100% - 4px) / 4)",
+                      background: "rgba(255,255,255,0.14)",
+                      borderRadius: 6,
+                      transform: `translateX(${viewModeIdx * 100}%)`,
+                      transition: "transform 200ms cubic-bezier(0.4,0,0.2,1)",
+                      pointerEvents: "none",
+                    }} />
                     {VIEW_MODES.map(m => (
                       <div
                         key={m.key}
-                        onClick={() => { onSetLibraryViewMode(m.key); }}
+                        onClick={() => onSetLibraryViewMode(m.key)}
                         title={m.title}
                         style={{
-                          width: 34, height: 34, borderRadius: 6,
+                          flex: 1, height: 30, borderRadius: 6,
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer",
-                          background: libraryViewMode === m.key ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)",
+                          cursor: "pointer", position: "relative", zIndex: 1,
                           color: libraryViewMode === m.key ? C[400] : "rgba(255,255,255,0.55)",
-                          transition: "background 0.12s, color 0.12s",
+                          transition: "color 180ms ease",
                         }}
-                        onMouseEnter={e => { if (libraryViewMode !== m.key) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
-                        onMouseLeave={e => { if (libraryViewMode !== m.key) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
                       >
                         <ViewIcon mode={m.key} size={13} />
                       </div>
