@@ -8,7 +8,8 @@ import Sidebar from "./components/Sidebar";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
-import { C, G, BG, TEXT, BORDER } from "./constants/theme";
+import logo from "./assets/logo.png";
+import { C, BG, TEXT, BORDER } from "./constants/theme";
 
 export default function App() {
   const [screen, setScreen] = useState("splash");
@@ -117,18 +118,25 @@ export default function App() {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            background: `linear-gradient(135deg, ${C[500]}, ${G[400]})`,
+            background: "#1f1713",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 13,
-            fontWeight: 500,
-            color: "#fff",
+            overflow: "hidden",
             flexShrink: 0,
             cursor: "pointer",
           }}
         >
-          M
+          <img
+            src={logo}
+            alt="Melodies"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
         </div>
 
         {/* Home button */}
