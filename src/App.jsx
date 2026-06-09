@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import songs from "./data/songs";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/Splash";
@@ -15,12 +15,17 @@ import logo from "./assets/logo.png";
 import { C, BG, TEXT, BORDER } from "./constants/theme";
 
 export default function App() {
+  const audioRef = useRef(new Audio());
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
   const [loading, setLoading] = useState(false);
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [prog, setProg] = useState(0);
+  const [volume, setVolume] = useState(0.7);
+  const [muted, setMuted] = useState(false);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState("off");
   const [likedIds, setLikedIds] = useState(new Set());
   const [list] = useState(songs);
   const [search, setSearch] = useState("");
@@ -81,12 +86,74 @@ export default function App() {
     setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
   };
 
-  const play = (s) => {
+  const play = useCallback((s) => {
     setCur(s);
     setPlaying(true);
     setProg(0);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
-  };
+  }, []);
+
+  const playByIndex = useCallback((index) => {
+    if (!list.length) return;
+    const normalized = (index + list.length) % list.length;
+    play(list[normalized]);
+  }, [list, play]);
+
+  const playNext = useCallback(({ allowWrap = true } = {}) => {
+    if (!list.length) return;
+
+    const currentIndex = cur ? list.findIndex(song => song.id === cur.id) : -1;
+    if (shuffle && list.length > 1) {
+      let randomIndex = Math.floor(Math.random() * list.length);
+      if (randomIndex === currentIndex) randomIndex = (randomIndex + 1) % list.length;
+      playByIndex(randomIndex);
+      return;
+    }
+
+    if (currentIndex === -1) {
+      playByIndex(0);
+      return;
+    }
+
+    if (currentIndex === list.length - 1 && !allowWrap) {
+      setPlaying(false);
+      setProg(0);
+      return;
+    }
+
+    playByIndex(currentIndex + 1);
+  }, [cur, list, playByIndex, shuffle]);
+
+  const playPrevious = useCallback(() => {
+    if (!list.length) return;
+
+    const audio = audioRef.current;
+    if ((audio.currentTime || prog) > 3) {
+      audio.currentTime = 0;
+      setProg(0);
+      return;
+    }
+
+    const currentIndex = cur ? list.findIndex(song => song.id === cur.id) : -1;
+    playByIndex(currentIndex <= 0 ? list.length - 1 : currentIndex - 1);
+  }, [cur, list, playByIndex, prog]);
+
+  const seekTo = useCallback((seconds) => {
+    if (!cur) return;
+    const clamped = Math.min(cur.durationSecs, Math.max(0, seconds));
+    audioRef.current.currentTime = clamped;
+    setProg(Math.floor(clamped));
+  }, [cur]);
+
+  const changeVolume = useCallback((value) => {
+    const clamped = Math.min(1, Math.max(0, value));
+    setVolume(clamped);
+    setMuted(clamped === 0);
+  }, []);
+
+  const cycleRepeatMode = useCallback(() => {
+    setRepeatMode(mode => mode === "off" ? "all" : mode === "all" ? "one" : "off");
+  }, []);
 
   const requireAuth = (action, gate) => {
     if (authUser) {
@@ -208,14 +275,73 @@ export default function App() {
   }, [list]);
 
   useEffect(() => {
-    if (!playing || !cur) return;
-    const t = setInterval(() => {
-      setProg(p => {
-        if (p >= cur.durationSecs) { setPlaying(false); return 0; }
-        return p + 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
+    const audio = audioRef.current;
+    audio.preload = "metadata";
+
+    const syncProgress = () => setProg(Math.floor(audio.currentTime || 0));
+    const stopPlayback = () => setPlaying(false);
+    audio.addEventListener("timeupdate", syncProgress);
+    audio.addEventListener("error", stopPlayback);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("timeupdate", syncProgress);
+      audio.removeEventListener("error", stopPlayback);
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    const finishPlayback = () => {
+      if (repeatMode === "one") {
+        audio.currentTime = 0;
+        setProg(0);
+        setPlaying(true);
+        audio.play().catch(() => setPlaying(false));
+        return;
+      }
+
+      playNext({ allowWrap: repeatMode === "all" });
+    };
+
+    audio.addEventListener("ended", finishPlayback);
+    return () => audio.removeEventListener("ended", finishPlayback);
+  }, [playNext, repeatMode]);
+
+  useEffect(() => {
+    audioRef.current.volume = muted ? 0 : volume;
+  }, [muted, volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    audio.pause();
+    setProg(0);
+
+    if (!cur?.audioUrl) {
+      audio.removeAttribute("src");
+      audio.load();
+      return;
+    }
+
+    audio.src = cur.audioUrl;
+    audio.currentTime = 0;
+    audio.load();
+  }, [cur]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!cur?.audioUrl) {
+      if (playing) setPlaying(false);
+      return;
+    }
+
+    if (!playing) {
+      audio.pause();
+      return;
+    }
+
+    audio.play().catch(() => setPlaying(false));
   }, [playing, cur]);
 
   if (screen === "splash") return <Splash onDone={done} />;
@@ -472,7 +598,18 @@ export default function App() {
         s={cur}
         playing={playing}
         prog={prog}
+        volume={volume}
+        muted={muted}
+        shuffle={shuffle}
+        repeatMode={repeatMode}
         onToggle={() => setPlaying(p => !p)}
+        onPrevious={playPrevious}
+        onNext={() => playNext()}
+        onSeek={seekTo}
+        onVolumeChange={changeVolume}
+        onMuteToggle={() => setMuted(p => !p)}
+        onShuffleToggle={() => setShuffle(p => !p)}
+        onRepeatCycle={cycleRepeatMode}
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
       />

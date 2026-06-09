@@ -71,3 +71,44 @@ body {
 @keyframes eq2 { 0% { height: 4px; } 100% { height: 20px; } }
 @keyframes eq3 { 0% { height: 4px; } 100% { height: 10px; } }
 @keyframes eq4 { 0% { height: 4px; } 100% { height: 17px; } }
+
+.player-bar button:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .player-bar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "now tools"
+      "controls controls";
+    min-height: 138px !important;
+    align-items: center !important;
+    padding: 12px 14px !important;
+  }
+
+  .player-now { grid-area: now; }
+  .player-controls { grid-area: controls; }
+  .player-side-tools { grid-area: tools; }
+  .player-side-tools button[aria-label="Lyrics"],
+  .player-side-tools button[aria-label="Queue"],
+  .player-side-tools button[aria-label="Fullscreen"] {
+    display: none !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .player-bar {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "now"
+      "controls"
+      "tools";
+    min-height: 178px !important;
+  }
+
+  .player-side-tools {
+    justify-content: center !important;
+  }
+}
