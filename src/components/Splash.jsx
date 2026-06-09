@@ -18,9 +18,9 @@ export default function Splash({ onDone }) {
   }, [onDone]);
 
   const label =
-    prog < 30 ? "Loading assets..." :
-    prog < 65 ? "Preparing library..." :
-    prog < 95 ? "Almost ready..." : "Welcome!";
+    prog < 30 ? "Đang tải tài nguyên..." :
+    prog < 65 ? "Đang chuẩn bị thư viện..." :
+    prog < 95 ? "Sắp xong..." : "Chào mừng!";
 
   return (
     <div
@@ -95,7 +95,7 @@ export default function Splash({ onDone }) {
           Melodies
         </div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
-          Your warm escape into music
+          Không gian âm nhạc của bạn
         </div>
       </div>
 

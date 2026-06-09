@@ -1,6 +1,8 @@
 const users = [
   {
     id: 1,
+    email: "btn2812@gmail.com",
+    password: "123456",
     name: "Nghia B.",
     initial: "N",
     color: "#f97316",
@@ -10,6 +12,8 @@ const users = [
   },
   {
     id: 2,
+    email: "an@melodies.local",
+    password: "123456",
     name: "An T.",
     initial: "A",
     color: "#fb7185",
@@ -19,6 +23,8 @@ const users = [
   },
   {
     id: 3,
+    email: "minh@melodies.local",
+    password: "123456",
     name: "Minh K.",
     initial: "M",
     color: "#fbbf24",
@@ -28,6 +34,8 @@ const users = [
   },
   {
     id: 4,
+    email: "linh@melodies.local",
+    password: "admin123",
     name: "Linh P.",
     initial: "L",
     color: "#34d399",
@@ -37,6 +45,8 @@ const users = [
   },
   {
     id: 5,
+    email: "huy@melodies.local",
+    password: "123456",
     name: "Huy D.",
     initial: "H",
     color: "#60a5fa",

@@ -5,18 +5,18 @@ import { C, BORDER, TEXT } from "../constants/theme";
 const notifications = [
   {
     id: 1,
-    title: "Your Daily Mix is ready",
-    body: "Fresh picks based on your recent listening.",
+    title: "Mix hằng ngày của bạn đã sẵn sàng",
+    body: "Gợi ý mới dựa trên những bài bạn vừa nghe.",
   },
   {
     id: 2,
-    title: "Playlist saved",
-    body: "Your personal playlists are now available in Library.",
+    title: "Danh sách phát đã được lưu",
+    body: "Danh sách phát cá nhân hiện đã có trong Thư viện.",
   },
   {
     id: 3,
-    title: "New music for you",
-    body: "US-UK and V-Pop recommendations were refreshed.",
+    title: "Nhạc mới dành cho bạn",
+    body: "Gợi ý US-UK và V-Pop vừa được cập nhật.",
   },
 ];
 
@@ -94,7 +94,7 @@ export default function NavbarUserActions({ user, onHome, onLogout }) {
   return (
     <div ref={ref} style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
       <IconButton
-        label="Notifications"
+        label="Thông báo"
         active={openPanel === "notifications"}
         onClick={() => setOpenPanel(openPanel === "notifications" ? null : "notifications")}
       >
@@ -156,8 +156,8 @@ export default function NavbarUserActions({ user, onHome, onLogout }) {
       {openPanel === "notifications" && (
         <FloatingPanel right={76}>
           <div style={{ padding: "8px 10px 10px" }}>
-            <div style={{ fontSize: 15, fontWeight: 900, color: TEXT.primary }}>Notifications</div>
-            <div style={{ fontSize: 11, color: TEXT.secondary, marginTop: 3 }}>Preview inbox</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: TEXT.primary }}>Thông báo</div>
+            <div style={{ fontSize: 11, color: TEXT.secondary, marginTop: 3 }}>Hộp thông báo xem trước</div>
           </div>
           {notifications.map(item => (
             <div
@@ -184,7 +184,7 @@ export default function NavbarUserActions({ user, onHome, onLogout }) {
         <FloatingPanel right={0}>
           <div style={{ padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 6 }}>
             <div style={{ fontSize: 13, color: TEXT.primary, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {user.name || "Melodies listener"}
+              {user.name || "Người nghe Melodies"}
             </div>
             <div style={{ fontSize: 11, color: TEXT.secondary, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {user.email}
@@ -192,9 +192,9 @@ export default function NavbarUserActions({ user, onHome, onLogout }) {
           </div>
 
           {[
-            { key: "profile", icon: UserRound, label: "Profile", onClick: onHome },
-            { key: "settings", icon: Settings, label: "Settings", onClick: onHome },
-            { key: "logout", icon: LogOut, label: "Sign out", onClick: onLogout },
+            { key: "profile", icon: UserRound, label: "Hồ sơ", onClick: onHome },
+            { key: "settings", icon: Settings, label: "Cài đặt", onClick: onHome },
+            { key: "logout", icon: LogOut, label: "Đăng xuất", onClick: onLogout },
           ].map(item => {
             const Icon = item.icon;
             return (

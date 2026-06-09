@@ -5,12 +5,12 @@ import PlaylistCover from "../components/PlaylistCover";
 
 const FILTER_TABS = ["Danh sách phát", "Album", "Nghệ sĩ"];
 const TRACK_SORT_OPTIONS = [
-  { key: "custom", label: "Custom order" },
-  { key: "title", label: "Title" },
-  { key: "artist", label: "Artist" },
+  { key: "custom", label: "Thứ tự tùy chỉnh" },
+  { key: "title", label: "Tiêu đề" },
+  { key: "artist", label: "Nghệ sĩ" },
   { key: "album", label: "Album" },
-  { key: "date", label: "Date added" },
-  { key: "duration", label: "Duration" },
+  { key: "date", label: "Ngày thêm" },
+  { key: "duration", label: "Thời lượng" },
 ];
 
 function dateLabel(song) {
@@ -242,7 +242,7 @@ export default function PageLibrary({
     return rows;
   }, [displaySongs, trackQuery, trackSort]);
 
-  const currentTrackSortLabel = TRACK_SORT_OPTIONS.find(opt => opt.key === trackSort)?.label ?? "Custom order";
+  const currentTrackSortLabel = TRACK_SORT_OPTIONS.find(opt => opt.key === trackSort)?.label ?? "Thứ tự tùy chỉnh";
 
   const openTrackSortMenu = () => {
     if (sortBtnRef.current) {
@@ -525,7 +525,7 @@ export default function PageLibrary({
                               textTransform: "uppercase",
                               letterSpacing: 0.8,
                             }}>
-                              Sort songs
+                              Sắp xếp bài hát
                             </div>
                             {TRACK_SORT_OPTIONS.map(opt => (
                               <div
@@ -571,9 +571,9 @@ export default function PageLibrary({
                     letterSpacing: 0.6,
                   }}>
                     <span style={{ textAlign: "center" }}>#</span>
-                    <span>Title</span>
+                    <span>Tiêu đề</span>
                     <span>Album</span>
-                    <span>Date added</span>
+                    <span>Ngày thêm</span>
                     <span style={{ textAlign: "right" }}>Time</span>
                     <span />
                   </div>

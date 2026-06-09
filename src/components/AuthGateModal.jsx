@@ -3,19 +3,19 @@ import { getSongImage } from "../data/media";
 
 const COPY = {
   play: {
-    title: "Start listening with Melodies Free",
-    body: "Create a free account to play tracks, continue playlists, and keep your listening history.",
-    primary: "Register free",
+    title: "Bắt đầu nghe với Melodies miễn phí",
+    body: "Tạo tài khoản miễn phí để phát nhạc, nghe tiếp danh sách phát và lưu lịch sử nghe của bạn.",
+    primary: "Đăng ký miễn phí",
   },
   like: {
-    title: "Save this song to your library",
-    body: "Log in to like songs and keep them available across your Melodies library.",
-    primary: "Register free",
+    title: "Lưu bài hát này vào thư viện",
+    body: "Đăng nhập để thích bài hát và giữ chúng trong thư viện Melodies của bạn.",
+    primary: "Đăng ký miễn phí",
   },
   createPlaylist: {
-    title: "Create playlists with an account",
-    body: "Log in to create, edit, and keep personal playlists in your sidebar.",
-    primary: "Register free",
+    title: "Tạo danh sách phát bằng tài khoản",
+    body: "Đăng nhập để tạo, chỉnh sửa và giữ danh sách phát cá nhân trong thanh bên.",
+    primary: "Đăng ký miễn phí",
   },
 };
 
@@ -26,7 +26,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
   const song = gate.song;
   const cover = song ? getSongImage(song) : null;
   const title = song?.title ?? gate.playlist?.name ?? "Melodies";
-  const artist = song?.artist ?? "Playlist preview";
+  const artist = song?.artist ?? "Xem trước danh sách phát";
 
   return (
     <div
@@ -153,7 +153,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
           </button>
 
           <div style={{ marginTop: 24, fontSize: 14, color: "rgba(255,255,255,0.56)", fontWeight: 700 }}>
-            Already have an account?{" "}
+            Đã có tài khoản?{" "}
             <button
               type="button"
               onClick={onLogin}
@@ -168,7 +168,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
                 textUnderlineOffset: 2,
               }}
             >
-              Log in
+              Đăng nhập
             </button>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
           zIndex: 1901,
         }}
       >
-        Close
+        Đóng
       </button>
     </div>
   );
