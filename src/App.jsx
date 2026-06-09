@@ -7,6 +7,7 @@ import Player from "./components/Player";
 import Sidebar from "./components/Sidebar";
 import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
+import NavbarUserActions from "./components/NavbarUserActions";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -62,6 +63,15 @@ export default function App() {
     setSearch("");
     setPage("home");
     pendingAction?.();
+  };
+
+  const handleLogout = () => {
+    setAuthUser(null);
+    setAuthGate(null);
+    setAuthMode(null);
+    setCur(null);
+    setPlaying(false);
+    setProg(0);
   };
 
   const nav = (p) => {
@@ -269,26 +279,11 @@ export default function App() {
           <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px" }}>
             Cài đặt
           </span>
-          {authUser && (
-            <button
-              type="button"
-              onClick={() => { nav("home"); setSearch(""); }}
-              title={authUser.email}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: "50%",
-                border: `1px solid ${BORDER}`,
-                background: C[500],
-                color: "#fff",
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: 700,
-              }}
-            >
-              {authUser.email?.[0]?.toUpperCase() ?? "M"}
-            </button>
-          )}
+          <NavbarUserActions
+            user={authUser}
+            onHome={() => { nav("home"); setSearch(""); }}
+            onLogout={handleLogout}
+          />
           <button
             type="button"
             onClick={() => openAuth("register")}
