@@ -1012,12 +1012,15 @@ export default function Sidebar({
         {/* Scrollable playlist list */}
         <div
           onScroll={() => { if (contextMenu) setContextMenu(null); }}
+          className={isOpen ? "sidebar-list-scroll is-open" : "sidebar-list-scroll"}
           style={{
-          flex: 1, overflowY: "auto", overflowX: "hidden",
-          padding: libraryViewMode === "card" ? "0 8px" : libraryViewMode === "grid" ? "0 6px" : "0 4px",
-          scrollbarWidth: "thin",
-          scrollbarColor: "rgba(255,255,255,0.1) transparent",
-        }}>
+            flex: 1,
+            overflowY: isOpen ? "auto" : "hidden",
+            overflowX: "hidden",
+            padding: libraryViewMode === "card" ? "0 8px" : libraryViewMode === "grid" ? "0 6px" : "0 4px",
+            pointerEvents: isOpen ? "auto" : "none",
+          }}
+        >
           {filteredPlaylists.length === 0 ? (
             <div style={{
               padding: "20px 12px", fontSize: 12, color: "rgba(255,255,255,0.3)",
