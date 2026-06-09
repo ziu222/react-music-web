@@ -3,7 +3,7 @@ import TrackRow from "../components/TrackRow";
 import { TEXT } from "../constants/theme";
 
 const GENRES = [
-  { label: "Tất cả", value: null, bg: "linear-gradient(135deg,#f97316,#fbbf24)" },
+  { label: "Tất cả", value: "__all__", bg: "linear-gradient(135deg,#f97316,#fbbf24)" },
   { label: "V-Pop", value: "V-Pop", bg: "linear-gradient(135deg,#e11d48,#fb7185)" },
   { label: "Pop", value: "Pop", bg: "linear-gradient(135deg,#2563eb,#60a5fa)" },
   { label: "Ballad", value: "Ballad", bg: "linear-gradient(135deg,#7c3aed,#a78bfa)" },
@@ -64,7 +64,7 @@ export default function PageSearch({ list, query, cur, onPlay, likedIds, onLike 
 
   const results = useMemo(() => {
     let filtered = list;
-    if (genre) filtered = filtered.filter(s => s.genre === genre);
+    if (genre && genre !== "__all__") filtered = filtered.filter(s => s.genre === genre);
     if (query) {
       const q = query.toLowerCase();
       filtered = filtered.filter(
@@ -78,78 +78,40 @@ export default function PageSearch({ list, query, cur, onPlay, likedIds, onLike 
   }, [list, genre, query]);
 
   const isSearching = query.trim().length > 0;
+  const hasGenreFilter = genre !== null;
+
+  const resultLabel = isSearching
+    ? `Kết quả cho "${query}"`
+    : genre === "__all__"
+      ? "Tất cả bài hát"
+      : genre;
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", padding: "32px 28px 80px" }}>
-      {!isSearching ? (
-        <>
-          <h1
-            style={{
-              fontSize: 22,
-              fontWeight: 600,
-              letterSpacing: -0.3,
-              marginBottom: 20,
-            }}
-          >
-            Duyệt qua tất cả
-          </h1>
+      {/* Genre grid — luôn hiện */}
+      <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.3, marginBottom: 20 }}>
+        Duyệt qua tất cả
+      </h1>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+          gap: 10,
+          marginBottom: 40,
+        }}
+      >
+        {GENRES.map(g => (
+          <GenrePill
+            key={g.label}
+            genre={g}
+            active={genre === g.value}
+            onClick={() => setGenre(prev => (prev === g.value ? null : g.value))}
+          />
+        ))}
+      </div>
 
-          {/* Genre grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-              gap: 10,
-              marginBottom: 48,
-            }}
-          >
-            {GENRES.map(g => (
-              <GenrePill
-                key={g.label}
-                genre={g}
-                active={genre === g.value}
-                onClick={() => setGenre(prev => (prev === g.value ? null : g.value))}
-              />
-            ))}
-          </div>
-
-          {/* Results when a genre is active */}
-          {genre && (
-            <>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 14,
-                }}
-              >
-                <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.3 }}>
-                  {genre}
-                </span>
-                <span style={{ fontSize: 12, color: TEXT.secondary }}>
-                  {results.length} bài hát
-                </span>
-              </div>
-              {results.length === 0 ? (
-                <div style={{ color: TEXT.secondary, fontSize: 14 }}>Không có bài hát nào.</div>
-              ) : (
-                results.map((s, i) => (
-                  <TrackRow
-                    key={s.id}
-                    song={s}
-                    index={i}
-                    cur={cur}
-                    onPlay={onPlay}
-                    likedIds={likedIds}
-                    onLike={onLike}
-                  />
-                ))
-              )}
-            </>
-          )}
-        </>
-      ) : (
+      {/* Results: hiện khi đang search HOẶC đã chọn genre */}
+      {(isSearching || hasGenreFilter) && (
         <>
           <div
             style={{
@@ -160,17 +122,17 @@ export default function PageSearch({ list, query, cur, onPlay, likedIds, onLike 
             }}
           >
             <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.3 }}>
-              Kết quả cho &ldquo;{query}&rdquo;
+              {resultLabel}
             </span>
             <span style={{ fontSize: 12, color: TEXT.secondary }}>
-              {results.length} kết quả
+              {results.length} {isSearching ? "kết quả" : "bài hát"}
             </span>
           </div>
           {results.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
-                padding: "80px 0",
+                padding: "60px 0",
                 color: TEXT.secondary,
               }}
             >

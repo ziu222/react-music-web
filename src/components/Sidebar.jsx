@@ -38,22 +38,22 @@ const FILTER_TABS = [
 ];
 
 const SORT_OPTIONS = [
-  { key: "recent",        label: "Recents" },
-  { key: "recentlyAdded", label: "Recently added" },
-  { key: "name",          label: "Alphabetical" },
-  { key: "creator",       label: "Creator" },
+  { key: "recent",        label: "Gần đây" },
+  { key: "recentlyAdded", label: "Mới thêm gần đây" },
+  { key: "name",          label: "Theo chữ cái" },
+  { key: "creator",       label: "Người tạo" },
 ];
 
 const VIEW_MODES = [
-  { key: "compact", title: "Compact" },
-  { key: "list",    title: "List" },
-  { key: "grid",    title: "Grid" },
-  { key: "card",    title: "Cards" },
+  { key: "compact", title: "Thu gọn" },
+  { key: "list",    title: "Danh sách" },
+  { key: "grid",    title: "Lưới" },
+  { key: "card",    title: "Thẻ" },
 ];
 
 const CREATE_OPTIONS = [
-  { key: "playlist", icon: "♪", label: "Playlist",       desc: "Tạo playlist với bài hát", disabled: false },
-  { key: "mixed",    icon: "⇄", label: "Mixed Playlist",  desc: "Kết hợp bài hát mượt mà",   badge: "Beta", disabled: true },
+  { key: "playlist", icon: "♪", label: "Danh sách phát",       desc: "Tạo playlist với bài hát", disabled: false },
+  { key: "mixed",    icon: "⇄", label: "Danh sách kết hợp",  desc: "Kết hợp bài hát mượt mà",   badge: "Thử nghiệm", disabled: true },
   { key: "blend",    icon: "♫", label: "Blend",           desc: "Kết hợp gu âm nhạc bạn bè", disabled: true },
   { key: "folder",   icon: "⊞", label: "Folder",          desc: "Sắp xếp playlist của bạn",  disabled: true },
 ];
@@ -61,47 +61,47 @@ const CREATE_OPTIONS = [
 const CONTEXT_MENU_W = 298;
 const CONTEXT_SUBMENU_W = 244;
 const CONTEXT_MENU_ITEMS = [
-  { key: "queue", icon: faListUl, label: "Add to queue" },
-  { key: "profile", icon: faUserCircle, label: "Add to profile" },
+  { key: "queue", icon: faListUl, label: "Thêm vào hàng chờ" },
+  { key: "profile", icon: faUserCircle, label: "Thêm vào hồ sơ" },
   { type: "divider" },
-  { key: "edit", icon: faPen, label: "Edit details" },
-  { key: "delete", icon: faCircleMinus, label: "Delete" },
-  { key: "download", icon: faCircleDown, label: "Download", disabled: true },
+  { key: "edit", icon: faPen, label: "Chỉnh sửa chi tiết" },
+  { key: "delete", icon: faCircleMinus, label: "Xóa" },
+  { key: "download", icon: faCircleDown, label: "Tải xuống", disabled: true },
   { type: "divider" },
-  { key: "createPlaylist", icon: faMusic, label: "Create playlist" },
-  { key: "createFolder", icon: faPlus, label: "Create folder" },
+  { key: "createPlaylist", icon: faMusic, label: "Tạo danh sách phát" },
+  { key: "createFolder", icon: faPlus, label: "Tạo thư mục" },
   { type: "divider" },
-  { key: "private", icon: faLock, label: "Make private" },
-  { key: "invite", icon: faUserPlus, label: "Invite collaborators" },
-  { key: "exclude", icon: faCircleXmark, label: "Exclude from your taste profile" },
+  { key: "private", icon: faLock, label: "Đặt riêng tư" },
+  { key: "invite", icon: faUserPlus, label: "Mời cộng tác viên" },
+  { key: "exclude", icon: faCircleXmark, label: "Loại khỏi hồ sơ gu nhạc" },
   {
     key: "move",
     icon: faFolder,
-    label: "Move to folder",
+    label: "Chuyển vào thư mục",
     submenu: [
-      { key: "findFolder", icon: faMagnifyingGlass, label: "Find a folder" },
-      { key: "newFolder", icon: faPlus, label: "Create folder" },
-      { key: "removeFolder", icon: faCircleMinus, label: "Remove from folders" },
+      { key: "findFolder", icon: faMagnifyingGlass, label: "Tìm thư mục" },
+      { key: "newFolder", icon: faPlus, label: "Tạo thư mục" },
+      { key: "removeFolder", icon: faCircleMinus, label: "Xóa khỏi thư mục" },
     ],
   },
   {
     key: "addToPlaylist",
     icon: faPlus,
-    label: "Add to other playlist",
+    label: "Thêm vào danh sách phát khác",
     submenu: [
-      { key: "findPlaylist", icon: faMagnifyingGlass, label: "Find a playlist" },
-      { key: "newPlaylist", icon: faPlus, label: "New playlist" },
-      { key: "liked", icon: faHeart, label: "Liked Songs" },
+      { key: "findPlaylist", icon: faMagnifyingGlass, label: "Tìm danh sách phát" },
+      { key: "newPlaylist", icon: faPlus, label: "Danh sách phát mới" },
+      { key: "liked", icon: faHeart, label: "Bài hát đã thích" },
     ],
   },
-  { key: "pin", icon: faThumbtack, label: "Pin playlist" },
+  { key: "pin", icon: faThumbtack, label: "Ghim danh sách phát" },
   {
     key: "share",
     icon: faShareFromSquare,
-    label: "Share",
+    label: "Chia sẻ",
     submenu: [
-      { key: "copyLink", icon: faCopy, label: "Copy link to playlist" },
-      { key: "embed", icon: faCode, label: "Embed playlist" },
+      { key: "copyLink", icon: faCopy, label: "Sao chép liên kết danh sách phát" },
+      { key: "embed", icon: faCode, label: "Nhúng danh sách phát" },
     ],
   },
 ];
@@ -146,7 +146,7 @@ function PlayCircle({ visible, onClick, size = 34 }) {
   return (
     <button
       type="button"
-      aria-label="Play playlist"
+      aria-label="Phát playlist"
       onClick={onClick}
       style={{
         position: "absolute",
@@ -171,6 +171,10 @@ function PlayCircle({ visible, onClick, size = 34 }) {
       <FontAwesomeIcon icon={faPlay} style={{ fontSize: size * 0.32, color: "#000", marginLeft: 2 }} />
     </button>
   );
+}
+
+function playlistName(pl) {
+  return pl.type === "liked" ? "Bài hát đã thích" : pl.name;
 }
 
 function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
@@ -215,7 +219,7 @@ function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
         />
       );
     }
-    const label = item.key === "pin" ? (pinned ? "Unpin playlist" : "Pin playlist") : item.label;
+    const label = item.key === "pin" ? (pinned ? "Bỏ ghim danh sách phát" : "Ghim danh sách phát") : item.label;
     return (
       <div
         key={item.key}
@@ -348,7 +352,7 @@ function RailItem({ pl, coverSongs = [], tooltip, onClick, isActive }) {
 /* 1. Compact — text only, no thumbnail */
 function CompactRow({ pl, isActive, onClick, onContextMenu }) {
   const [hov, setHov] = useState(false);
-  const name = pl.type === "liked" ? "Liked Songs" : pl.name;
+  const name = playlistName(pl);
   return (
     <div
       onClick={onClick}
@@ -374,7 +378,7 @@ function CompactRow({ pl, isActive, onClick, onContextMenu }) {
         {name}
       </span>
       <span style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", flexShrink: 0 }}>
-        · Playlist
+        · Danh sách phát
       </span>
     </div>
   );
@@ -383,7 +387,7 @@ function CompactRow({ pl, isActive, onClick, onContextMenu }) {
 /* 2. List — 48px cover + title + subtitle */
 function ListRow({ pl, coverSongs = [], isActive, onClick, onContextMenu }) {
   const [hov, setHov] = useState(false);
-  const name = pl.type === "liked" ? "Liked Songs" : pl.name;
+  const name = playlistName(pl);
   return (
     <div
       onClick={onClick}
@@ -409,7 +413,7 @@ function ListRow({ pl, coverSongs = [], isActive, onClick, onContextMenu }) {
         </div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", gap: 4 }}>
           {pl.type === "liked" && <span style={{ color: "#1ed760", fontSize: 9 }}>♦</span>}
-          Playlist · Nghĩa
+          Danh sách phát · Nghĩa
         </div>
       </div>
     </div>
@@ -450,7 +454,7 @@ function GridItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMen
 /* 4. Card — 2-col, image + title + subtitle + green play on hover */
 function CardItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMenu }) {
   const [hov, setHov] = useState(false);
-  const name = pl.type === "liked" ? "Liked Songs" : pl.name;
+  const name = playlistName(pl);
   return (
     <div
       onClick={onClick}
@@ -490,7 +494,7 @@ function CardItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMen
       </div>
       <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", gap: 4 }}>
         {pl.type === "liked" && <span style={{ color: "#1ed760", fontSize: 9 }}>♦</span>}
-        Playlist · Nghĩa
+        Danh sách phát · Nghĩa
       </div>
     </div>
   );
@@ -503,6 +507,7 @@ export default function Sidebar({
   likedIds,
   list = [],
   userPlaylists,
+  isAuthed = false,
   selectedPlaylistId, onSelectPlaylist,
   libraryFilter, onSetLibraryFilter,
   librarySearch, onSetLibrarySearch,
@@ -535,6 +540,10 @@ export default function Sidebar({
   const viewModeIdx = VIEW_MODES.findIndex(m => m.key === libraryViewMode);
 
   const openCreateMenu = () => {
+    if (!isAuthed) {
+      onCreatePlaylist?.();
+      return;
+    }
     if (createBtnRef.current) {
       const r = createBtnRef.current.getBoundingClientRect();
       setCreateMenuPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
@@ -675,7 +684,7 @@ export default function Sidebar({
               boxShadow: "rgba(0,0,0,0.5) 0px 8px 24px",
               zIndex: 300, pointerEvents: "none",
             }}>
-              Open Your Library
+              Mở Thư viện
             </div>
           )}
         </div>
@@ -693,7 +702,7 @@ export default function Sidebar({
           onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
         >
-          +
+          <FontAwesomeIcon icon={isAuthed ? faPlus : faLock} style={{ fontSize: isAuthed ? 16 : 13 }} />
         </div>
 
         {/* Playlist thumbnails */}
@@ -725,7 +734,7 @@ export default function Sidebar({
           {/* Library icon + label = collapse trigger */}
           <div
             onClick={onToggle}
-            title="Collapse Your Library"
+            title="Thu gọn Thư viện"
             style={{
               display: "flex", alignItems: "center", gap: 8,
               flex: 1, cursor: "pointer", minWidth: 0,
@@ -909,7 +918,7 @@ export default function Sidebar({
                 }}>
                   {/* Sort options */}
                   <div style={{ padding: "4px 12px 8px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    Sort by
+                    Sắp xếp theo
                   </div>
                   {SORT_OPTIONS.map(opt => (
                     <div
@@ -937,7 +946,7 @@ export default function Sidebar({
 
                   {/* View as */}
                   <div style={{ padding: "4px 12px 6px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    View as
+                    Hiển thị dạng
                   </div>
                   {/* Segmented control */}
                   <div style={{

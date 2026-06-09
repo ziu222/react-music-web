@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
 import { C, TEXT } from "../constants/theme";
+import users from "../data/users";
 
 const SOCIAL_PROVIDERS = [
-  { id: "google", label: "Continue with Google", mark: "G", color: "#fff" },
-  { id: "facebook", label: "Continue with Facebook", mark: "f", color: "#1877f2" },
-  { id: "apple", label: "Continue with Apple", mark: "", color: "#fff" },
+  { id: "google", label: "Tiếp tục với Google", mark: "G", color: "#fff" },
+  { id: "facebook", label: "Tiếp tục với Facebook", mark: "f", color: "#1877f2" },
+  { id: "apple", label: "Tiếp tục với Apple", mark: "", color: "#fff" },
 ];
 
 function Field({ label, type = "text", value, onChange, error, placeholder, autoComplete }) {
@@ -185,13 +186,13 @@ function TermsModal({ onClose }) {
           borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: TEXT.primary }}>Terms of Service</div>
-            <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 3 }}>Melodies account preview</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: TEXT.primary }}>Điều khoản dịch vụ</div>
+            <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 3 }}>Xem trước tài khoản Melodies</div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close terms"
+            aria-label="Đóng điều khoản"
             style={{
               width: 32,
               height: 32,
@@ -215,20 +216,20 @@ function TermsModal({ onClose }) {
           lineHeight: 1.65,
         }}>
           <p style={{ marginBottom: 12 }}>
-            This frontend preview demonstrates how Melodies can present legal information before account creation.
-            It does not create a real account or connect to a backend service.
+            Bản xem trước frontend này minh họa cách Melodies hiển thị thông tin pháp lý trước khi tạo tài khoản.
+            Giao diện này chưa tạo tài khoản thật và chưa kết nối backend.
           </p>
           <p style={{ marginBottom: 12 }}>
-            By creating an account, users agree to use Melodies for personal listening, playlist management,
-            library browsing, and music discovery features shown in the app.
+            Khi tạo tài khoản, người dùng đồng ý sử dụng Melodies cho nghe nhạc cá nhân, quản lý playlist,
+            duyệt thư viện và khám phá nhạc trong ứng dụng.
           </p>
           <p style={{ marginBottom: 12 }}>
-            Future production logic should include real authentication, privacy controls, data deletion,
-            provider policies for Google/Facebook/Apple sign-in, and consent logging.
+            Khi đưa vào production, hệ thống cần có xác thực thật, kiểm soát quyền riêng tư, xóa dữ liệu,
+            chính sách đăng nhập Google/Facebook/Apple và ghi nhận đồng ý điều khoản.
           </p>
           <p>
-            The interface should remain clear: terms are readable, the agreement checkbox is explicit,
-            and the user can return to registration without losing form context.
+            Giao diện cần rõ ràng: điều khoản dễ đọc, checkbox đồng ý minh bạch,
+            và người dùng có thể quay lại form đăng ký mà không mất ngữ cảnh.
           </p>
         </div>
         <div style={{
@@ -252,7 +253,7 @@ function TermsModal({ onClose }) {
               fontWeight: 800,
             }}
           >
-            I understand
+            Tôi đã hiểu
           </button>
         </div>
       </div>
@@ -305,15 +306,15 @@ export default function AuthModal({ mode, onClose, onAuth }) {
 
   const validateAuth = () => {
     const nextErrors = {};
-    if (tab === "register" && !name.trim()) nextErrors.name = "Name is required";
-    if (!email.trim()) nextErrors.email = "Email is required";
-    else if (!validateEmail(email)) nextErrors.email = "Enter a valid email";
-    if (!password) nextErrors.password = "Password is required";
-    else if (password.length < 6) nextErrors.password = "Use at least 6 characters";
+    if (tab === "register" && !name.trim()) nextErrors.name = "Vui lòng nhập tên";
+    if (!email.trim()) nextErrors.email = "Vui lòng nhập email";
+    else if (!validateEmail(email)) nextErrors.email = "Email không hợp lệ";
+    if (!password) nextErrors.password = "Vui lòng nhập mật khẩu";
+    else if (password.length < 6) nextErrors.password = "Mật khẩu cần tối thiểu 6 ký tự";
     if (tab === "register") {
-      if (!confirmPw) nextErrors.confirmPw = "Confirm your password";
-      else if (confirmPw !== password) nextErrors.confirmPw = "Passwords do not match";
-      if (!acceptedTerms) nextErrors.terms = "Accept the terms to continue";
+      if (!confirmPw) nextErrors.confirmPw = "Vui lòng xác nhận mật khẩu";
+      else if (confirmPw !== password) nextErrors.confirmPw = "Mật khẩu không khớp";
+      if (!acceptedTerms) nextErrors.terms = "Vui lòng đồng ý điều khoản để tiếp tục";
     }
     return nextErrors;
   };
@@ -333,15 +334,24 @@ export default function AuthModal({ mode, onClose, onAuth }) {
         setFlow("success");
         return;
       }
-      onAuth({ email: email.trim(), name: name.trim() });
+      const matched = users.find(
+        u => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
+      );
+      if (!matched) {
+        setErrors({ password: "Email hoặc mật khẩu không đúng" });
+        return;
+      }
+      const safeUser = { ...matched };
+      delete safeUser.password;
+      onAuth(safeUser);
     }, 350);
   };
 
   const handleForgotSubmit = event => {
     event.preventDefault();
     const nextErrors = {};
-    if (!email.trim()) nextErrors.email = "Email is required";
-    else if (!validateEmail(email)) nextErrors.email = "Enter a valid email";
+    if (!email.trim()) nextErrors.email = "Vui lòng nhập email";
+    else if (!validateEmail(email)) nextErrors.email = "Email không hợp lệ";
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
       return;
@@ -376,21 +386,21 @@ export default function AuthModal({ mode, onClose, onAuth }) {
 
   const title =
     flow === "forgot"
-      ? "Reset your password"
+      ? "Đặt lại mật khẩu"
       : flow === "success"
-        ? "Account ready"
+        ? "Tài khoản đã sẵn sàng"
         : tab === "login"
-          ? "Log in to Melodies"
-          : "Create your Melodies account";
+          ? "Đăng nhập vào Melodies"
+          : "Tạo tài khoản Melodies";
 
   const subtitle =
     flow === "forgot"
-      ? "Enter your email and we will send reset instructions."
+      ? "Nhập email để nhận hướng dẫn đặt lại mật khẩu."
       : flow === "success"
-        ? "Your profile is ready for playlists, library saves, and personalized discovery."
+        ? "Hồ sơ của bạn đã sẵn sàng cho danh sách phát, thư viện và gợi ý cá nhân hóa."
         : tab === "login"
-          ? "Pick up your playlists and recently played tracks."
-          : "Start saving tracks and building your music library.";
+          ? "Tiếp tục playlist và các bài nghe gần đây của bạn."
+          : "Bắt đầu lưu bài hát và xây dựng thư viện nhạc.";
 
   return (
     <div
@@ -436,7 +446,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="Đóng"
           style={{
             position: "absolute",
             top: 14,
@@ -518,7 +528,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                 gap: 8,
                 marginBottom: 22,
               }}>
-                {["Save songs", "Build playlists", "Discover mixes"].map(label => (
+                {["Lưu bài hát", "Tạo danh sách phát", "Khám phá bản phối"].map(label => (
                   <div
                     key={label}
                     style={{
@@ -555,7 +565,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   cursor: "pointer",
                 }}
               >
-                Go to Home
+                Về trang chủ
               </button>
             </div>
           ) : flow === "forgot" ? (
@@ -580,7 +590,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   lineHeight: 1.45,
                   padding: "10px 12px",
                 }}>
-                  Reset instructions are ready for this email in the frontend preview.
+                  Hướng dẫn đặt lại mật khẩu đã sẵn sàng cho email này trong bản xem trước frontend.
                 </div>
               )}
               <button
@@ -599,7 +609,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   opacity: loading ? 0.7 : 1,
                 }}
               >
-                {loading ? "Sending..." : "Send reset link"}
+                {loading ? "Đang gửi..." : "Gửi liên kết đặt lại"}
               </button>
               <button
                 type="button"
@@ -615,7 +625,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   fontWeight: 700,
                 }}
               >
-                Back to login
+                Quay lại đăng nhập
               </button>
             </form>
           ) : (
@@ -627,7 +637,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                 padding: 3,
                 marginBottom: 18,
               }}>
-                {[["login", "Log in"], ["register", "Register"]].map(([key, label]) => (
+                {[["login", "Đăng nhập"], ["register", "Đăng ký"]].map(([key, label]) => (
                   <button
                     key={key}
                     type="button"
@@ -658,7 +668,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   transition: "max-height 220ms cubic-bezier(0.2,0,0,1), opacity 180ms ease",
                 }}>
                   <Field
-                    label="Name"
+                    label="Tên"
                     value={name}
                     onChange={value => { setName(value); clearErr("name"); }}
                     error={errors.name}
@@ -676,7 +686,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   autoComplete="email"
                 />
                 <Field
-                  label="Password"
+                  label="Mật khẩu"
                   type="password"
                   value={password}
                   onChange={value => { setPassword(value); clearErr("password"); clearErr("confirmPw"); }}
@@ -692,7 +702,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   transition: "max-height 240ms cubic-bezier(0.2,0,0,1), opacity 200ms ease",
                 }}>
                   <Field
-                    label="Confirm password"
+                    label="Xác nhận mật khẩu"
                     type="password"
                     value={confirmPw}
                     onChange={value => { setConfirmPw(value); clearErr("confirmPw"); }}
@@ -716,7 +726,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                         fontWeight: 700,
                       }}
                     >
-                      Forgot password?
+                      Quên mật khẩu?
                     </button>
                   </div>
                 ) : (
@@ -740,7 +750,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                         style={{ marginTop: 2, accentColor: C[500] }}
                       />
                       <span>
-                        I agree to the{" "}
+                        Tôi đồng ý với{" "}
                         <button
                           type="button"
                           onClick={event => { event.preventDefault(); setTermsOpen(true); }}
@@ -755,7 +765,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                             textUnderlineOffset: 2,
                           }}
                         >
-                          Terms of Service
+                          Điều khoản dịch vụ
                         </button>
                       </span>
                     </label>
@@ -786,17 +796,17 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                   onMouseEnter={e => { if (!loading) e.currentTarget.style.background = C[600]; }}
                   onMouseLeave={e => { if (!loading) e.currentTarget.style.background = C[500]; }}
                 >
-                  {loading ? "Processing..." : tab === "login" ? "Log in" : "Create account"}
+                  {loading ? "Đang xử lý..." : tab === "login" ? "Đăng nhập" : "Tạo tài khoản"}
                 </button>
               </form>
 
-              <AuthDivider label="or continue with" />
+              <AuthDivider label="hoặc tiếp tục với" />
               <SocialStack onSocial={handleSocial} />
 
               <div style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: TEXT.secondary }}>
                 {tab === "login" ? (
                   <>
-                    New to Melodies?{" "}
+                    Bạn mới dùng Melodies?{" "}
                     <button
                       type="button"
                       onClick={() => switchTab("register")}
@@ -811,12 +821,12 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                         textDecorationColor: "rgba(255,255,255,0.28)",
                       }}
                     >
-                      Create an account
+                      Tạo tài khoản
                     </button>
                   </>
                 ) : (
                   <>
-                    Already have an account?{" "}
+                    Đã có tài khoản?{" "}
                     <button
                       type="button"
                       onClick={() => switchTab("login")}
@@ -831,7 +841,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                         textDecorationColor: "rgba(255,255,255,0.28)",
                       }}
                     >
-                      Log in
+                      Đăng nhập
                     </button>
                   </>
                 )}
