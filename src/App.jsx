@@ -5,6 +5,7 @@ import Splash from "./components/Splash";
 import Loader from "./components/Loader";
 import Player from "./components/Player";
 import Sidebar from "./components/Sidebar";
+import AuthModal from "./components/AuthModal";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -21,6 +22,8 @@ export default function App() {
   const [likedIds, setLikedIds] = useState(new Set());
   const [list] = useState(songs);
   const [search, setSearch] = useState("");
+  const [authMode, setAuthMode] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [userPlaylists, setUserPlaylists] = useState(() => {
@@ -46,6 +49,15 @@ export default function App() {
   }, [userPlaylists]);
 
   const done = useCallback(() => setScreen("app"), []);
+
+  const openAuth = (mode) => setAuthMode(mode);
+
+  const handleAuth = (user) => {
+    setAuthUser(user);
+    setAuthMode(null);
+    setSearch("");
+    setPage("home");
+  };
 
   const nav = (p) => {
     if (loading || p === page) return;
@@ -233,8 +245,31 @@ export default function App() {
           <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px" }}>
             Cài đặt
           </span>
+          {authUser && (
+            <button
+              type="button"
+              onClick={() => { nav("home"); setSearch(""); }}
+              title={authUser.email}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                border: `1px solid ${BORDER}`,
+                background: C[500],
+                color: "#fff",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              {authUser.email?.[0]?.toUpperCase() ?? "M"}
+            </button>
+          )}
           <button
+            type="button"
+            onClick={() => openAuth("register")}
             style={{
+              display: authUser ? "none" : "inline-block",
               background: "transparent",
               border: `1.5px solid rgba(255,255,255,0.5)`,
               borderRadius: 9999,
@@ -251,7 +286,10 @@ export default function App() {
             Đăng ký
           </button>
           <button
+            type="button"
+            onClick={() => openAuth("login")}
             style={{
+              display: authUser ? "none" : "inline-block",
               background: "#fff",
               border: "none",
               borderRadius: 9999,
@@ -276,6 +314,7 @@ export default function App() {
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(p => !p)}
           likedIds={likedIds}
+          list={list}
           onNav={nav}
           userPlaylists={userPlaylists}
           selectedPlaylistId={selectedPlaylistId}
@@ -347,8 +386,16 @@ export default function App() {
         onLike={toggleLike}
       />
 
+      {authMode && (
+        <AuthModal
+          mode={authMode}
+          onClose={() => setAuthMode(null)}
+          onAuth={handleAuth}
+        />
+      )}
+
       {/* ── Bottom promo banner (when not logged in) ── */}
-      {!cur && (
+      {!cur && !authUser && (
         <div
           style={{
             background: `linear-gradient(90deg, ${C[700]}, #7c3aed)`,
@@ -366,6 +413,8 @@ export default function App() {
             </div>
           </div>
           <button
+            type="button"
+            onClick={() => openAuth("register")}
             style={{
               background: "#fff",
               border: "none",

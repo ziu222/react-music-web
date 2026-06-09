@@ -42,3 +42,5 @@ design-system/
 skills-lock.json
 master.md
 *.claude
+.mcp.json
+.mcp.local.json

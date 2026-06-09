@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { C, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
+import PlaylistCover from "../components/PlaylistCover";
 
 const FILTER_TABS = ["Danh sách phát", "Album", "Nghệ sĩ"];
 const TRACK_SORT_OPTIONS = [
@@ -123,7 +124,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike }) {
 }
 
 /* ── PlaylistCard ─────────────────────────────────────────────── */
-function PlaylistCard({ pl, likedCount, isActive, onClick }) {
+function PlaylistCard({ pl, likedCount, coverSongs = [], isActive, onClick }) {
   const [hov, setHov] = useState(false);
   const meta =
     pl.type === "liked"
@@ -154,20 +155,11 @@ function PlaylistCard({ pl, likedCount, isActive, onClick }) {
         transition: "background 0.15s",
       }}
     >
-      <div
-        style={{
-          width: 56, height: 56,
-          borderRadius: 8,
-          background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
-          flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20,
-          color: "rgba(255,255,255,0.85)",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-        }}
-      >
-        {pl.type === "liked" ? "♥" : "♪"}
-      </div>
+      <PlaylistCover
+        pl={pl}
+        songs={coverSongs}
+        style={{ width: 56, height: 56, borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}
+      />
       <div style={{ minWidth: 0 }}>
         <div style={{
           fontSize: 14, fontWeight: 500,
@@ -208,6 +200,15 @@ export default function PageLibrary({
   const likedSongs = list.filter(s => likedIds.has(s.id));
   const isLocalCreated = typeof activePl?.id === "string";
   const songMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
+
+  const getCoverSongs = (pl) => {
+    if (pl.type === "liked") {
+      return Array.from(likedIds).slice(0, 4).map(id => songMap.get(id)).filter(Boolean);
+    }
+    if (!pl.songIds?.length) return [];
+    return pl.songIds.slice(0, 4).map(id => songMap.get(id)).filter(Boolean);
+  };
+
   const displaySongs = useMemo(() => {
     if (!activePl) return [];
     if (activePl.type === "liked") return likedSongs;
@@ -322,6 +323,7 @@ export default function PageLibrary({
                 key={pl.id}
                 pl={pl}
                 likedCount={likedIds.size}
+                coverSongs={getCoverSongs(pl)}
                 isActive={activePl?.id === pl.id}
                 onClick={() => onSelectPlaylist?.(pl.id)}
               />
@@ -340,18 +342,16 @@ export default function PageLibrary({
               background: `linear-gradient(180deg, ${activePl.bg.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1d1616"}33 0%, transparent 100%)`,
               display: "flex", alignItems: "flex-end", gap: 24,
             }}>
-              <div style={{
-                width: 160, height: 160, borderRadius: 10,
-                background: activePl.type === "liked"
-                  ? "linear-gradient(135deg,#4c1d95,#7c3aed)"
-                  : activePl.bg,
-                flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 48, color: "rgba(255,255,255,0.85)",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
-              }}>
-                {activePl.type === "liked" ? "♥" : "♪"}
-              </div>
+              <PlaylistCover
+                pl={activePl}
+                songs={displaySongs.slice(0, 4)}
+                style={{
+                  width: 160, height: 160, borderRadius: 10,
+                  flexShrink: 0,
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+                  fontSize: 48,
+                }}
+              />
               <div>
                 <div style={{
                   fontSize: 11, textTransform: "uppercase",

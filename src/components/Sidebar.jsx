@@ -25,6 +25,7 @@ import {
   faUserPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER } from "../constants/theme";
+import PlaylistCover from "./PlaylistCover";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 const RAIL_W = 64;
@@ -301,7 +302,7 @@ function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
 }
 
 /* ── Rail icon button ─────────────────────────────────────────── */
-function RailItem({ bg, icon, tooltip, onClick, isActive }) {
+function RailItem({ pl, coverSongs = [], tooltip, onClick, isActive }) {
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -317,15 +318,14 @@ function RailItem({ bg, icon, tooltip, onClick, isActive }) {
         transition: "background 0.15s",
       }}
     >
-      <div style={{
-        width: 36, height: 36, borderRadius: 5, background: bg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 15, color: "rgba(255,255,255,0.9)",
-        boxShadow: isActive ? `0 0 0 2px ${C[400]}` : undefined,
-        transition: "box-shadow 0.15s",
-      }}>
-        {icon}
-      </div>
+      <PlaylistCover
+        pl={pl}
+        songs={coverSongs}
+        style={{
+          width: 36, height: 36, borderRadius: 5,
+          boxShadow: isActive ? `0 0 0 2px ${C[400]}` : "rgba(0,0,0,0.35) 0px 4px 12px",
+        }}
+      />
       {hov && tooltip && (
         <div style={{
           position: "absolute", left: "calc(100% + 10px)", top: "50%",
@@ -344,21 +344,6 @@ function RailItem({ bg, icon, tooltip, onClick, isActive }) {
 }
 
 /* ── Playlist list views ──────────────────────────────────────── */
-
-/* shared cover tile */
-function PlCover({ pl, size = 48, radius = 6 }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: radius, flexShrink: 0,
-      background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.38, color: "rgba(255,255,255,0.85)",
-      boxShadow: "rgba(0,0,0,0.35) 0px 4px 12px",
-    }}>
-      {pl.type === "liked" ? "♥" : "♪"}
-    </div>
-  );
-}
 
 /* 1. Compact — text only, no thumbnail */
 function CompactRow({ pl, isActive, onClick, onContextMenu }) {
@@ -396,7 +381,7 @@ function CompactRow({ pl, isActive, onClick, onContextMenu }) {
 }
 
 /* 2. List — 48px cover + title + subtitle */
-function ListRow({ pl, isActive, onClick, onContextMenu }) {
+function ListRow({ pl, coverSongs = [], isActive, onClick, onContextMenu }) {
   const [hov, setHov] = useState(false);
   const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
@@ -412,7 +397,7 @@ function ListRow({ pl, isActive, onClick, onContextMenu }) {
         transition: "background 0.15s",
       }}
     >
-      <PlCover pl={pl} size={48} />
+      <PlaylistCover pl={pl} songs={coverSongs} style={{ width: 48, height: 48, borderRadius: 6, boxShadow: "rgba(0,0,0,0.35) 0px 4px 12px" }} />
       <div style={{ minWidth: 0 }}>
         <div style={{
           fontSize: 14, fontWeight: 600,
@@ -432,7 +417,7 @@ function ListRow({ pl, isActive, onClick, onContextMenu }) {
 }
 
 /* 3. Grid item — square image only, 3-col */
-function GridItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
+function GridItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMenu }) {
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -443,16 +428,13 @@ function GridItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
       style={{
         borderRadius: 6, overflow: "hidden", position: "relative",
         aspectRatio: "1", cursor: "pointer",
-        background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 20, color: "rgba(255,255,255,0.85)",
         outline: isActive ? `2px solid ${C[400]}` : "none",
         outlineOffset: -2,
         opacity: hov ? 0.9 : 1,
-        transition: "opacity 0.15s, outline 0.15s, background 0.15s",
+        transition: "opacity 0.15s, outline 0.15s",
       }}
     >
-      {pl.type === "liked" ? "♥" : "♪"}
+      <PlaylistCover pl={pl} songs={coverSongs} style={{ width: "100%", height: "100%", borderRadius: 0 }} />
       <PlayCircle
         visible={hov}
         size={32}
@@ -466,7 +448,7 @@ function GridItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
 }
 
 /* 4. Card — 2-col, image + title + subtitle + green play on hover */
-function CardItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
+function CardItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMenu }) {
   const [hov, setHov] = useState(false);
   const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
@@ -482,15 +464,14 @@ function CardItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
       }}
     >
       <div style={{ position: "relative", marginBottom: 10 }}>
-        <div style={{
-          width: "100%", aspectRatio: "1", borderRadius: 6,
-          background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 28, color: "rgba(255,255,255,0.85)",
-          boxShadow: "rgba(0,0,0,0.4) 0px 8px 20px",
-        }}>
-          {pl.type === "liked" ? "♥" : "♪"}
-        </div>
+        <PlaylistCover
+          pl={pl}
+          songs={coverSongs}
+          style={{
+            width: "100%", aspectRatio: "1", borderRadius: 6,
+            boxShadow: "rgba(0,0,0,0.4) 0px 8px 20px",
+          }}
+        />
         <PlayCircle
           visible={hov || isActive}
           onClick={e => {
@@ -519,6 +500,8 @@ function CardItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
 export default function Sidebar({
   isOpen, onToggle,
   onNav,
+  likedIds,
+  list = [],
   userPlaylists,
   selectedPlaylistId, onSelectPlaylist,
   libraryFilter, onSetLibraryFilter,
@@ -579,6 +562,15 @@ export default function Sidebar({
   }, [contextMenu]);
 
   const dur = isOpen ? "280ms" : "220ms";
+
+  const songMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
+  const getCoverSongs = (pl) => {
+    if (pl.type === "liked") {
+      return Array.from(likedIds ?? []).slice(0, 4).map(id => songMap.get(id)).filter(Boolean);
+    }
+    if (!pl.songIds?.length) return [];
+    return pl.songIds.slice(0, 4).map(id => songMap.get(id)).filter(Boolean);
+  };
 
   /* ── filtered + sorted playlists ─────────────────────────────── */
   const filteredPlaylists = useMemo(() => {
@@ -708,8 +700,8 @@ export default function Sidebar({
         {railPlaylists.map(pl => (
           <RailItem
             key={pl.id}
-            bg={pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg}
-            icon={pl.type === "liked" ? "♥" : "♪"}
+            pl={pl}
+            coverSongs={getCoverSongs(pl)}
             tooltip={pl.type === "liked" ? "Bài hát đã thích" : pl.name}
             isActive={selectedPlaylistId === pl.id}
             onClick={() => selectAndNav(pl.id)}
@@ -1033,6 +1025,7 @@ export default function Sidebar({
               {filteredPlaylists.map(pl => (
                 <GridItem
                   key={pl.id} pl={pl}
+                  coverSongs={getCoverSongs(pl)}
                   isActive={selectedPlaylistId === pl.id}
                   onClick={() => selectAndNav(pl.id)}
                   onPlay={onPlayPlaylist}
@@ -1045,6 +1038,7 @@ export default function Sidebar({
               {filteredPlaylists.map(pl => (
                 <CardItem
                   key={pl.id} pl={pl}
+                  coverSongs={getCoverSongs(pl)}
                   isActive={selectedPlaylistId === pl.id}
                   onClick={() => selectAndNav(pl.id)}
                   onPlay={onPlayPlaylist}
@@ -1066,6 +1060,7 @@ export default function Sidebar({
               <ListRow
                 key={pl.id} pl={pl}
                 index={i}
+                coverSongs={getCoverSongs(pl)}
                 isActive={selectedPlaylistId === pl.id}
                 onClick={() => selectAndNav(pl.id)}
                 onContextMenu={e => openContextMenu(e, pl)}
