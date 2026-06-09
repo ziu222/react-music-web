@@ -1,246 +1,430 @@
-# Design System Inspired by Spotify
+# Melodies Design Brief for Stitch
 
-## 1. Visual Theme & Atmosphere
+## Product Summary
 
-Spotify's web interface is a dark, immersive music player that wraps listeners in a near-black cocoon (`#121212`, `#181818`, `#1f1f1f`) where album art and content become the primary source of color. The design philosophy is "content-first darkness" — the UI recedes into shadow so that music, podcasts, and playlists can glow. Every surface is a shade of charcoal, creating a theater-like environment where the only true color comes from the iconic Spotify Green (`#1ed760`) and the album artwork itself.
+Melodies is a Spotify-inspired dark music web app for browsing songs, playlists, albums, artists, and a personal library. The interface should feel like a real music player, not a marketing landing page. The first screen is the usable app: top navigation, collapsible library sidebar, main content, and bottom player.
 
-The typography uses SpotifyMixUI and SpotifyMixUITitle — proprietary fonts from the CircularSp family (Circular by Lineto, customized for Spotify) with an extensive fallback stack that includes Arabic, Hebrew, Cyrillic, Greek, Devanagari, and CJK fonts, reflecting Spotify's global reach. The type system is compact and functional: 700 (bold) for emphasis and navigation, 600 (semibold) for secondary emphasis, and 400 (regular) for body. Buttons use uppercase with positive letter-spacing (1.4px–2px) for a systematic, label-like quality.
+The app is frontend-only. Data comes from local JavaScript files:
 
-What distinguishes Spotify is its pill-and-circle geometry. Primary buttons use 500px–9999px radius (full pill), circular play buttons use 50% radius, and search inputs are 500px pills. Combined with heavy shadows (`rgba(0,0,0,0.5) 0px 8px 24px`) on elevated elements and a unique inset border-shadow combo (`rgb(18,18,18) 0px 1px 0px, rgb(124,124,124) 0px 0px 0px 1px inset`), the result is an interface that feels like a premium audio device — tactile, rounded, and built for touch.
+- `src/data/songs.js`: song metadata, cover source lookup, artist, album, genre, duration, plays.
+- `src/data/playlists.js`: seeded playlists with `songIds`.
+- Local playlists can be created and stored locally.
 
-**Key Characteristics:**
-- Near-black immersive dark theme (`#121212`–`#1f1f1f`) — UI disappears behind content
-- Spotify Green (`#1ed760`) as singular brand accent — never decorative, always functional
-- SpotifyMixUI/CircularSp font family with global script support
-- Pill buttons (500px–9999px) and circular controls (50%) — rounded, touch-optimized
-- Uppercase button labels with wide letter-spacing (1.4px–2px)
-- Heavy shadows on elevated elements (`rgba(0,0,0,0.5) 0px 8px 24px`)
-- Semantic colors: negative red (`#f3727f`), warning orange (`#ffa42b`), announcement blue (`#539df5`)
-- Album art as the primary color source — the UI is achromatic by design
+Design direction: dark, dense, content-first, music-product UI. Album art and playlist covers provide most of the color. The shell should stay restrained.
 
-## 2. Color Palette & Roles
+## Core Layout
 
-### Primary Brand
-- **Spotify Green** (`#1ed760`): Primary brand accent — play buttons, active states, CTAs
-- **Near Black** (`#121212`): Deepest background surface
-- **Dark Surface** (`#181818`): Cards, containers, elevated surfaces
-- **Mid Dark** (`#1f1f1f`): Button backgrounds, interactive surfaces
+### App Frame
 
-### Text
-- **White** (`#ffffff`): `--text-base`, primary text
-- **Silver** (`#b3b3b3`): Secondary text, muted labels, inactive nav
-- **Near White** (`#cbcbcb`): Slightly brighter secondary text
-- **Light** (`#fdfdfd`): Near-pure white for maximum emphasis
+- Full viewport app shell.
+- Top navbar height: about `60px`.
+- Main body: horizontal split between sidebar and page content.
+- Bottom player: persistent music control bar.
+- Background: near black, not pure black.
+- No landing hero, no marketing page, no explanatory blocks.
 
-### Semantic
-- **Negative Red** (`#f3727f`): `--text-negative`, error states
-- **Warning Orange** (`#ffa42b`): `--text-warning`, warning states
-- **Announcement Blue** (`#539df5`): `--text-announcement`, info states
+### Top Navbar
 
-### Surface & Border
-- **Dark Card** (`#252525`): Elevated card surface
-- **Mid Card** (`#272727`): Alternate card surface
-- **Border Gray** (`#4d4d4d`): Button borders on dark
-- **Light Border** (`#7c7c7c`): Outlined button borders, muted links
-- **Separator** (`#b3b3b3`): Divider lines
-- **Light Surface** (`#eeeeee`): Light-mode buttons (rare)
-- **Spotify Green Border** (`#1db954`): Green accent border variant
+Elements from left to right:
 
-### Shadows
-- **Heavy** (`rgba(0,0,0,0.5) 0px 8px 24px`): Dialogs, menus, elevated panels
-- **Medium** (`rgba(0,0,0,0.3) 0px 8px 8px`): Cards, dropdowns
-- **Inset Border** (`rgb(18,18,18) 0px 1px 0px, rgb(124,124,124) 0px 0px 0px 1px inset`): Input border-shadow combo
+1. Circular Melodies logo image.
+2. Round home button.
+3. Search input pill with search icon.
+4. Right-side links/actions such as Premium, support/settings, signup/login.
 
-## 3. Typography Rules
+Rules:
 
-### Font Families
-- **Title**: `SpotifyMixUITitle`, fallbacks: `CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, Helvetica Neue, helvetica, arial, Hiragino Sans, Hiragino Kaku Gothic ProN, Meiryo, MS Gothic`
-- **UI / Body**: `SpotifyMixUI`, same fallback stack
+- Search is a dark rounded pill.
+- Active home state uses warm orange accent.
+- Keep nav compact and utility-focused.
+- Logo should use the custom asset, not the old letter `M` placeholder.
 
-### Hierarchy
+### Left Sidebar
 
-| Role | Font | Size | Weight | Line Height | Letter Spacing | Notes |
-|------|------|------|--------|-------------|----------------|-------|
-| Section Title | SpotifyMixUITitle | 24px (1.50rem) | 700 | normal | normal | Bold title weight |
-| Feature Heading | SpotifyMixUI | 18px (1.13rem) | 600 | 1.30 (tight) | normal | Semibold section heads |
-| Body Bold | SpotifyMixUI | 16px (1.00rem) | 700 | normal | normal | Emphasized text |
-| Body | SpotifyMixUI | 16px (1.00rem) | 400 | normal | normal | Standard body |
-| Button Uppercase | SpotifyMixUI | 14px (0.88rem) | 600–700 | 1.00 (tight) | 1.4px–2px | `text-transform: uppercase` |
-| Button | SpotifyMixUI | 14px (0.88rem) | 700 | normal | 0.14px | Standard button |
-| Nav Link Bold | SpotifyMixUI | 14px (0.88rem) | 700 | normal | normal | Navigation |
-| Nav Link | SpotifyMixUI | 14px (0.88rem) | 400 | normal | normal | Inactive nav |
-| Caption Bold | SpotifyMixUI | 14px (0.88rem) | 700 | 1.50–1.54 | normal | Bold metadata |
-| Caption | SpotifyMixUI | 14px (0.88rem) | 400 | normal | normal | Metadata |
-| Small Bold | SpotifyMixUI | 12px (0.75rem) | 700 | 1.50 | normal | Tags, counts |
-| Small | SpotifyMixUI | 12px (0.75rem) | 400 | normal | normal | Fine print |
-| Badge | SpotifyMixUI | 10.5px (0.66rem) | 600 | 1.33 | normal | `text-transform: capitalize` |
-| Micro | SpotifyMixUI | 10px (0.63rem) | 400 | normal | normal | Smallest text |
+The sidebar is the main library surface.
 
-### Principles
-- **Bold/regular binary**: Most text is either 700 (bold) or 400 (regular), with 600 used sparingly. This creates a clear visual hierarchy through weight contrast rather than size variation.
-- **Uppercase buttons as system**: Button labels use uppercase + wide letter-spacing (1.4px–2px), creating a systematic "label" voice distinct from content text.
-- **Compact sizing**: The range is 10px–24px — narrower than most systems. Spotify's type is compact and functional, designed for scanning playlists, not reading articles.
-- **Global script support**: The extensive fallback stack (Arabic, Hebrew, Cyrillic, Greek, Devanagari, CJK) reflects Spotify's 180+ market reach.
+States:
 
-## 4. Component Stylings
+- Collapsed rail: narrow, icon-only shortcuts.
+- Expanded panel: full library controls and playlist list.
 
-### Buttons
+Expanded sidebar sections:
 
-**Dark Pill**
-- Background: `#1f1f1f`
-- Text: `#ffffff` or `#b3b3b3`
-- Padding: 8px 16px
-- Radius: 9999px (full pill)
-- Use: Navigation pills, secondary actions
+1. Header row: library icon/title, create button.
+2. Filter pills: Playlists, Album, Artists.
+3. Search/sort row.
+4. View mode switcher inside sort dropdown.
+5. Scrollable library list.
+6. Footer links/language button.
 
-**Dark Large Pill**
-- Background: `#181818`
-- Text: `#ffffff`
-- Padding: 0px 43px
-- Radius: 500px
-- Use: Primary app navigation buttons
+Important behavior:
 
-**Light Pill**
-- Background: `#eeeeee`
-- Text: `#181818`
-- Radius: 500px
-- Use: Light-mode CTAs (cookie consent, marketing)
+- Sidebar scroll is independent from main content.
+- The scrollbar belongs only to the playlist list area.
+- When sidebar collapses, the playlist scrollbar must disappear with the panel.
+- Header/filter/search/sort should not scroll with playlist items.
+- Footer must not cover playlist content.
 
-**Outlined Pill**
-- Background: transparent
-- Text: `#ffffff`
-- Border: `1px solid #7c7c7c`
-- Padding: 4px 16px 4px 36px (asymmetric for icon)
-- Radius: 9999px
-- Use: Follow buttons, secondary actions
+## Visual Language
 
-**Circular Play**
-- Background: `#1f1f1f`
-- Text: `#ffffff`
-- Padding: 12px
-- Radius: 50% (circle)
-- Use: Play/pause controls
+### Color Palette
 
-### Cards & Containers
-- Background: `#181818` or `#1f1f1f`
-- Radius: 6px–8px
-- No visible borders on most cards
-- Hover: slight background lightening
-- Shadow: `rgba(0,0,0,0.3) 0px 8px 8px` on elevated
+Base:
 
-### Inputs
-- Search input: `#1f1f1f` background, `#ffffff` text
-- Radius: 500px (pill)
-- Padding: 12px 96px 12px 48px (icon-aware)
-- Focus: border becomes `#000000`, outline `1px solid`
+- App background: `#0f0c0c` to `#121212`.
+- Sidebar/card surface: `#121212`, `#181818`, `#1f1f1f`.
+- Elevated menu: `#282828`.
+- Hover surface: `rgba(255,255,255,0.06)` to `rgba(255,255,255,0.12)`.
+- Border/divider: `rgba(255,255,255,0.08)` to `rgba(255,255,255,0.14)`.
 
-### Navigation
-- Dark sidebar with SpotifyMixUI 14px weight 700 for active, 400 for inactive
-- `#b3b3b3` muted color for inactive items, `#ffffff` for active
-- Circular icon buttons (50% radius)
-- Spotify logo top-left in green
+Accent:
 
-## 5. Layout Principles
+- Primary app accent: warm orange (`#f97316`) for Melodies brand actions.
+- Spotify-like play green: `#1ed760` only for play buttons inside playlist/card contexts.
+- Liked/heart accent: rose/pink.
 
-### Spacing System
-- Base unit: 8px
-- Scale: 1px, 2px, 3px, 4px, 5px, 6px, 8px, 10px, 12px, 14px, 15px, 16px, 20px
+Text:
 
-### Grid & Container
-- Sidebar (fixed) + main content area
-- Grid-based album/playlist cards
-- Full-width now-playing bar at bottom
-- Responsive content area fills remaining space
+- Primary: off-white `#ede5dd` or `#ffffff`.
+- Secondary: `rgba(255,255,255,0.55)` / `#b3b3b3`.
+- Tertiary: `rgba(255,255,255,0.35)`.
 
-### Whitespace Philosophy
-- **Dark compression**: Spotify packs content densely — playlist grids, track lists, and navigation are all tightly spaced. The dark background provides visual rest between elements without needing large gaps.
-- **Content density over breathing room**: This is an app, not a marketing site. Every pixel serves the listening experience.
+### Typography
 
-### Border Radius Scale
-- Minimal (2px): Badges, explicit tags
-- Subtle (4px): Inputs, small elements
-- Standard (6px): Album art containers, cards
-- Comfortable (8px): Sections, dialogs
-- Medium (10px–20px): Panels, overlay elements
-- Large (100px): Large pill buttons
-- Pill (500px): Primary buttons, search input
-- Full Pill (9999px): Navigation pills, search
-- Circle (50%): Play buttons, avatars, icons
+Use a compact product UI typography system:
 
-## 6. Depth & Elevation
+- Font stack: `Be Vietnam Pro`, `Noto Sans`, system sans-serif.
+- Section title: 20-24px, 600-700.
+- Card title: 13-15px, 600.
+- Track title: 13px, 600.
+- Metadata: 11-12px, regular/medium.
+- Controls: 11-13px, medium/semibold.
 
-| Level | Treatment | Use |
-|-------|-----------|-----|
-| Base (Level 0) | `#121212` background | Deepest layer, page background |
-| Surface (Level 1) | `#181818` or `#1f1f1f` | Cards, sidebar, containers |
-| Elevated (Level 2) | `rgba(0,0,0,0.3) 0px 8px 8px` | Dropdown menus, hover cards |
-| Dialog (Level 3) | `rgba(0,0,0,0.5) 0px 8px 24px` | Modals, overlays, menus |
-| Inset (Border) | `rgb(18,18,18) 0px 1px 0px, rgb(124,124,124) 0px 0px 0px 1px inset` | Input borders |
+Rules:
 
-**Shadow Philosophy**: Spotify uses notably heavy shadows for a dark-themed app. The 0.5 opacity shadow at 24px blur creates a dramatic "floating in darkness" effect for dialogs and menus, while the 0.3 opacity at 8px blur provides a more subtle card lift. The unique inset border-shadow combination on inputs creates a recessed, tactile quality.
+- Do not use oversized marketing typography.
+- No negative letter spacing.
+- Text must truncate cleanly in cards and rows.
+- Vietnamese labels must fit without overflow.
 
-## 7. Do's and Don'ts
+### Shape and Elevation
 
-### Do
-- Use near-black backgrounds (`#121212`–`#1f1f1f`) — depth through shade variation
-- Apply Spotify Green (`#1ed760`) only for play controls, active states, and primary CTAs
-- Use pill shape (500px–9999px) for all buttons — circular (50%) for play controls
-- Apply uppercase + wide letter-spacing (1.4px–2px) on button labels
-- Keep typography compact (10px–24px range) — this is an app, not a magazine
-- Use heavy shadows (`0.3–0.5 opacity`) for elevated elements on dark backgrounds
-- Let album art provide color — the UI itself is achromatic
+- App cards: 6-8px radius.
+- Album/playlist art: 5-8px radius.
+- Pills: 9999px radius.
+- Circular play buttons: 50% radius.
+- Context menus/dropdowns: 7-8px radius.
+- Elevated menus use heavy dark shadow: `rgba(0,0,0,0.6) 0px 16px 48px`.
 
-### Don't
-- Don't use Spotify Green decoratively or on backgrounds — it's functional only
-- Don't use light backgrounds for primary surfaces — the dark immersion is core
-- Don't skip the pill/circle geometry on buttons — square buttons break the identity
-- Don't use thin/subtle shadows — on dark backgrounds, shadows need to be heavy to be visible
-- Don't add additional brand colors — green + achromatic grays is the complete palette
-- Don't use relaxed line-heights — Spotify's typography is compact and dense
-- Don't expose raw gray borders — use shadow-based or inset borders instead
+## Main Screens
 
-## 8. Responsive Behavior
+### Home
 
-### Breakpoints
-| Name | Width | Key Changes |
-|------|-------|-------------|
-| Mobile Small | <425px | Compact mobile layout |
-| Mobile | 425–576px | Standard mobile |
-| Tablet | 576–768px | 2-column grid |
-| Tablet Large | 768–896px | Expanded layout |
-| Desktop Small | 896–1024px | Sidebar visible |
-| Desktop | 1024–1280px | Full desktop layout |
-| Large Desktop | >1280px | Expanded grid |
+Home is a scrollable discovery page with horizontal shelves.
 
-### Collapsing Strategy
-- Sidebar: full → collapsed → hidden
-- Album grid: 5 columns → 3 → 2 → 1
-- Now-playing bar: maintained at all sizes
-- Search: pill input maintained, width adjusts
-- Navigation: sidebar → bottom bar on mobile
+Sections:
 
-## 9. Agent Prompt Guide
+- Trending songs.
+- Made for you.
+- Top US-UK.
+- V-Pop highlights.
+- Popular albums.
+- Popular artists.
+- Recently played.
 
-### Quick Color Reference
-- Background: Near Black (`#121212`)
-- Surface: Dark Card (`#181818`)
-- Text: White (`#ffffff`)
-- Secondary text: Silver (`#b3b3b3`)
-- Accent: Spotify Green (`#1ed760`)
-- Border: `#4d4d4d`
-- Error: Negative Red (`#f3727f`)
+Cards:
 
-### Example Component Prompts
-- "Create a dark card: #181818 background, 8px radius. Title at 16px SpotifyMixUI weight 700, white text. Subtitle at 14px weight 400, #b3b3b3. Shadow rgba(0,0,0,0.3) 0px 8px 8px on hover."
-- "Design a pill button: #1f1f1f background, white text, 9999px radius, 8px 16px padding. 14px SpotifyMixUI weight 700, uppercase, letter-spacing 1.4px."
-- "Build a circular play button: Spotify Green (#1ed760) background, #000000 icon, 50% radius, 12px padding."
-- "Create search input: #1f1f1f background, white text, 500px radius, 12px 48px padding. Inset border: rgb(124,124,124) 0px 0px 0px 1px inset."
-- "Design navigation sidebar: #121212 background. Active items: 14px weight 700, white. Inactive: 14px weight 400, #b3b3b3."
+- Song cards show cover art, title, artist.
+- Album cards group songs by `song.album`.
+- Artist cards use circular/rounded artist image.
+- Hover reveals play button with fade/slide/scale.
 
-### Iteration Guide
-1. Start with #121212 — everything lives in near-black darkness
-2. Spotify Green for functional highlights only (play, active, CTA)
-3. Pill everything — 500px for large, 9999px for small, 50% for circular
-4. Uppercase + wide tracking on buttons — the systematic label voice
-5. Heavy shadows (0.3–0.5 opacity) for elevation — light shadows are invisible on dark
-6. Album art provides all the color — the UI stays achromatic
+Important data rule:
+
+- Album data is derived from `song.album`.
+- If a song is a single and does not belong to a real album, its `album` value should be the song title.
+- Do not show fake albums like generic artist names or unrelated tour names.
+
+### Search
+
+Search page supports:
+
+- Query search by title, artist, album.
+- Genre filter chips.
+- Track results as rows.
+
+Design:
+
+- Dense list layout.
+- Genre chips can be colorful but restrained.
+- No oversized search landing page.
+
+### Library Page
+
+Library page has a two-column layout:
+
+Left:
+
+- Library title.
+- Filter pills: Playlists, Album, Artists.
+- Playlist cards/list.
+
+Right:
+
+- Selected playlist detail.
+- Large playlist cover collage.
+- Playlist metadata and track count.
+- Action row with play button.
+- Track toolbar with search and sort dropdown.
+- Track table.
+
+Track toolbar:
+
+- Search icon toggles inline search input.
+- Sort dropdown label starts as `Custom order`.
+- Sort options: Custom order, Title, Artist, Album, Date added, Duration.
+- Track search/sort applies only to songs inside the selected playlist, not the sidebar library filter.
+
+Track table columns:
+
+- Number/play indicator.
+- Title + artist + thumbnail.
+- Album.
+- Date added.
+- Duration.
+- Like button.
+
+Empty states:
+
+- Liked Songs with no liked tracks: show empty liked message.
+- New local playlist: show empty playlist message.
+- Album/Artist library tabs may show empty state until real data exists.
+
+## Sidebar Detail
+
+### View Modes
+
+Sidebar library supports four view modes:
+
+1. Compact: text-only rows.
+2. List: cover + title + subtitle.
+3. Grid: square image tiles.
+4. Card: 2-column card with image, title, metadata.
+
+View mode control:
+
+- Lives inside the sort dropdown under "View as".
+- Segmented switcher with sliding active indicator.
+- Icons only, with title/tooltips.
+- Indicator animates horizontally.
+
+### Filter Pills
+
+Filters:
+
+- Playlists.
+- Album.
+- Artists.
+
+Behavior:
+
+- Filter pills only filter library item types.
+- Do not use this filter to sort or filter songs inside a playlist.
+- Active pill background should slide/morph between tabs.
+- Changing filter should not reset search/sort state unexpectedly.
+
+### Sort Dropdown
+
+Sort options:
+
+- Recents.
+- Recently added.
+- Alphabetical.
+- Creator.
+
+Dropdown behavior:
+
+- Opens near trigger.
+- Uses fade + slide + subtle scale.
+- Click outside closes.
+- Create menu and sort menu close each other.
+
+### Playlist Cards and Hover Play
+
+In grid/card view:
+
+- Hovering a playlist card brightens the surface slightly.
+- A green circular play button appears at lower-right of cover.
+- Animation: opacity `0 -> 1`, translateY `6px -> 0`, scale `0.92 -> 1`.
+- Mouse leave reverses animation.
+- Clicking play should not select/open the playlist unless intended.
+- Empty playlists should not crash.
+
+### Right-Click Context Menu
+
+Right-clicking a playlist/card opens a custom menu near the cursor.
+
+Menu visual:
+
+- Background: `#282828`.
+- Width around 298px.
+- Radius: 7-8px.
+- Heavy shadow.
+- Items: 36px height.
+- FontAwesome-style icons, not text glyph placeholders.
+- Disabled items are muted.
+- Divider lines separate groups.
+- Hover row background: `rgba(255,255,255,0.1)`.
+
+Menu items:
+
+- Add to queue.
+- Add to profile.
+- Edit details.
+- Delete.
+- Download (disabled if unsupported).
+- Create playlist.
+- Create folder.
+- Make private.
+- Invite collaborators.
+- Exclude from your taste profile.
+- Move to folder > submenu.
+- Add to other playlist > submenu.
+- Pin/Unpin playlist.
+- Share > submenu.
+
+Submenu behavior:
+
+- Opens on hover.
+- Appears to the right.
+- Flips left if near viewport edge.
+- Closes on outside click or Escape.
+
+## Playlist Data Rules
+
+Seed playlists:
+
+- Each default playlist must have its own `songIds`.
+- Do not use `list.slice(0, 8)` for all playlists.
+- Avoid duplicate songs across seeded playlists where possible.
+- Liked Songs uses `likedIds`, not `songIds`.
+- User-created local playlists start empty.
+
+Playlist examples:
+
+- Sunset Lounge: relaxed pop, R&B, indie, soft rock.
+- Chill Vibes: ballad, acoustic, mellow, lower energy.
+- V-Pop Hits: Vietnamese pop hits.
+- Tam Trang: emotional ballads and sad songs.
+
+Helper logic:
+
+- If playlist is Liked Songs: show liked songs.
+- If playlist id is local string: show empty.
+- If playlist has `songIds`: map ids to songs.
+- No fallback to random global songs.
+
+## Album Data Rules
+
+Album is currently a field on each song, not a separate `albums.js` collection.
+
+Rules:
+
+- If a song belongs to a real album, set `album` to the real album title.
+- If a song is a standalone single/MV, set `album` to the song title.
+- Do not assign unrelated albums just to group content.
+- Do not use tour names unless the track is specifically from a live/tour release.
+
+Album section:
+
+- Home album shelf groups songs by `song.album`.
+- Representative cover is the most-played song in that album group.
+- Album tab in library can later be powered by this grouping or by a future album collection.
+
+## Bottom Player
+
+Player is persistent at the bottom.
+
+Elements:
+
+- Current song artwork/title/artist.
+- Like button.
+- Center playback controls.
+- Progress bar and time.
+- Right-side utility controls.
+
+Behavior:
+
+- Shows current song when playing.
+- Progress updates over time.
+- Play/pause button toggles state.
+- Keep controls compact and aligned.
+
+## Animation Rules
+
+Use subtle product animations:
+
+- Page transition: slide/fade up around 250-300ms.
+- Dropdown: `menuIn`, fade + translateY(-6px) + scale(0.96 -> 1), 140-170ms.
+- Hover card: background 150ms.
+- Play button reveal: opacity + translateY + scale, 180-220ms.
+- Sidebar width transition: 220-280ms cubic-bezier.
+- Active filter pill: left/width transition around 180ms.
+- View switcher indicator: transform 180-220ms.
+
+Avoid:
+
+- Large bouncy motion.
+- Marketing-style reveal animations.
+- Layout-shifting hover states.
+- Long transitions over 300ms for common controls.
+
+## Scrollbar Rules
+
+Sidebar:
+
+- Playlist list scrolls independently.
+- Header/filter/search/sort stay fixed.
+- Footer stays visible but must not cover content.
+- Scrollbar is slim and dark.
+- Scrollbar is subtle by default and clearer on hover.
+- When sidebar collapses, scrollbar is hidden.
+
+Main content:
+
+- Main page scroll is independent from sidebar.
+- Horizontal shelves hide scrollbar visually where possible.
+
+## Accessibility and Interaction
+
+- Buttons need clear hover and active states.
+- Icon-only buttons need `title` or `aria-label`.
+- Click targets should be at least 32px where possible.
+- Menus close on outside click and Escape.
+- Text truncates instead of wrapping awkwardly inside cards.
+- Keyboard focus should not be invisible on inputs/buttons.
+
+## Do Not Do
+
+- Do not create a landing page.
+- Do not use pastel/light backgrounds for the main app shell.
+- Do not replace dense app UI with decorative cards.
+- Do not use fake album data.
+- Do not make every playlist show the same songs.
+- Do not let sidebar scrollbar stay visible when collapsed.
+- Do not use Unicode text glyphs as context menu icons when icon library is available.
+- Do not use `libraryFilter` to filter playlist tracks.
+- Do not add backend requirements.
+
+## Stitch Output Target
+
+Generate a polished dark music app UI matching the Melodies app structure:
+
+- Top navbar.
+- Collapsible library sidebar.
+- Home discovery shelves.
+- Search results.
+- Library playlist detail with track table.
+- Bottom player.
+
+Prioritize realistic product behavior and dense Spotify-like ergonomics over decorative presentation.
