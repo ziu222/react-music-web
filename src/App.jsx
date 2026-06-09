@@ -276,6 +276,7 @@ export default function App() {
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(p => !p)}
           likedIds={likedIds}
+          list={list}
           onNav={nav}
           userPlaylists={userPlaylists}
           selectedPlaylistId={selectedPlaylistId}
