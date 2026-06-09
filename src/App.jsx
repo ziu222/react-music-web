@@ -24,8 +24,15 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [userPlaylists, setUserPlaylists] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("melodies_playlists") || "null") || playlistsSeed; }
-    catch { return playlistsSeed; }
+    try {
+      const stored = JSON.parse(localStorage.getItem("melodies_playlists") || "null");
+      if (!stored) return playlistsSeed;
+      const seedMap = new Map(playlistsSeed.map(pl => [pl.id, pl]));
+      return stored.map(pl => {
+        const seed = typeof pl.id === "number" ? seedMap.get(pl.id) : null;
+        return seed ? { ...pl, songIds: seed.songIds } : pl;
+      });
+    } catch { return playlistsSeed; }
   });
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(1);
   const [libraryFilter, setLibraryFilter] = useState("Danh sách phát");
