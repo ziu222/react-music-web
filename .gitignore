@@ -40,3 +40,5 @@ Thumbs.db
 .agents/
 design-system/
 skills-lock.json
+master.md
+*.claude

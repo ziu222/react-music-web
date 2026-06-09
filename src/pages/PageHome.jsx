@@ -138,7 +138,7 @@ function AlbumCard({ album, cur, onPlay }) {
 }
 
 /* ── Page ──────────────────────────────────────────────────────── */
-export default function PageHome({ list, cur, onPlay, likedIds, onLike, recentIds = [] }) {
+export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [] }) {
   const idMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
   const sorted = useMemo(() => [...list].sort((a, b) => b.plays - a.plays), [list]);
 

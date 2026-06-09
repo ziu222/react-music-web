@@ -8,7 +8,8 @@ import Sidebar from "./components/Sidebar";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
-import { C, G, BG, TEXT, BORDER } from "./constants/theme";
+import logo from "./assets/logo.png";
+import { C, BG, TEXT, BORDER } from "./constants/theme";
 
 export default function App() {
   const [screen, setScreen] = useState("splash");
@@ -23,8 +24,15 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [userPlaylists, setUserPlaylists] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("melodies_playlists") || "null") || playlistsSeed; }
-    catch { return playlistsSeed; }
+    try {
+      const stored = JSON.parse(localStorage.getItem("melodies_playlists") || "null");
+      if (!stored) return playlistsSeed;
+      const seedMap = new Map(playlistsSeed.map(pl => [pl.id, pl]));
+      return stored.map(pl => {
+        const seed = typeof pl.id === "number" ? seedMap.get(pl.id) : null;
+        return seed ? { ...pl, songIds: seed.songIds } : pl;
+      });
+    } catch { return playlistsSeed; }
   });
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(1);
   const [libraryFilter, setLibraryFilter] = useState("Danh sách phát");
@@ -50,6 +58,22 @@ export default function App() {
     setPlaying(true);
     setProg(0);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
+  };
+
+  const getPlaylistSongs = (pl) => {
+    if (!pl) return [];
+    if (pl.type === "liked") return list.filter(s => likedIds.has(s.id));
+    if (typeof pl.id === "string") return [];
+    if (pl.songIds?.length) {
+      const map = new Map(list.map(s => [s.id, s]));
+      return pl.songIds.map(id => map.get(id)).filter(Boolean);
+    }
+    return [];
+  };
+
+  const playPlaylist = (pl) => {
+    const firstSong = getPlaylistSongs(pl)[0];
+    if (firstSong) play(firstSong);
   };
 
   const createPlaylist = () => {
@@ -117,18 +141,25 @@ export default function App() {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            background: `linear-gradient(135deg, ${C[500]}, ${G[400]})`,
+            background: "#1f1713",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 13,
-            fontWeight: 500,
-            color: "#fff",
+            overflow: "hidden",
             flexShrink: 0,
             cursor: "pointer",
           }}
         >
-          M
+          <img
+            src={logo}
+            alt="Melodies"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
         </div>
 
         {/* Home button */}
@@ -258,6 +289,7 @@ export default function App() {
           libraryViewMode={libraryViewMode}
           onSetLibraryViewMode={setLibraryViewMode}
           onCreatePlaylist={createPlaylist}
+          onPlayPlaylist={playPlaylist}
         />
 
         {/* Main content */}

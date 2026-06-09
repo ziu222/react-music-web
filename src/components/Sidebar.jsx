@@ -1,6 +1,29 @@
-import { useState, useMemo, useRef, useLayoutEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faList, faTableCells, faTableCellsLarge, faPlay } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faCircleDown,
+  faCircleMinus,
+  faCircleXmark,
+  faCode,
+  faCopy,
+  faFolder,
+  faHeart,
+  faList,
+  faListUl,
+  faLock,
+  faMagnifyingGlass,
+  faMusic,
+  faPen,
+  faPlay,
+  faPlus,
+  faShareFromSquare,
+  faTableCells,
+  faTableCellsLarge,
+  faThumbtack,
+  faUserCircle,
+  faUserPlus,
+} from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER } from "../constants/theme";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -32,6 +55,54 @@ const CREATE_OPTIONS = [
   { key: "mixed",    icon: "⇄", label: "Mixed Playlist",  desc: "Kết hợp bài hát mượt mà",   badge: "Beta", disabled: true },
   { key: "blend",    icon: "♫", label: "Blend",           desc: "Kết hợp gu âm nhạc bạn bè", disabled: true },
   { key: "folder",   icon: "⊞", label: "Folder",          desc: "Sắp xếp playlist của bạn",  disabled: true },
+];
+
+const CONTEXT_MENU_W = 298;
+const CONTEXT_SUBMENU_W = 244;
+const CONTEXT_MENU_ITEMS = [
+  { key: "queue", icon: faListUl, label: "Add to queue" },
+  { key: "profile", icon: faUserCircle, label: "Add to profile" },
+  { type: "divider" },
+  { key: "edit", icon: faPen, label: "Edit details" },
+  { key: "delete", icon: faCircleMinus, label: "Delete" },
+  { key: "download", icon: faCircleDown, label: "Download", disabled: true },
+  { type: "divider" },
+  { key: "createPlaylist", icon: faMusic, label: "Create playlist" },
+  { key: "createFolder", icon: faPlus, label: "Create folder" },
+  { type: "divider" },
+  { key: "private", icon: faLock, label: "Make private" },
+  { key: "invite", icon: faUserPlus, label: "Invite collaborators" },
+  { key: "exclude", icon: faCircleXmark, label: "Exclude from your taste profile" },
+  {
+    key: "move",
+    icon: faFolder,
+    label: "Move to folder",
+    submenu: [
+      { key: "findFolder", icon: faMagnifyingGlass, label: "Find a folder" },
+      { key: "newFolder", icon: faPlus, label: "Create folder" },
+      { key: "removeFolder", icon: faCircleMinus, label: "Remove from folders" },
+    ],
+  },
+  {
+    key: "addToPlaylist",
+    icon: faPlus,
+    label: "Add to other playlist",
+    submenu: [
+      { key: "findPlaylist", icon: faMagnifyingGlass, label: "Find a playlist" },
+      { key: "newPlaylist", icon: faPlus, label: "New playlist" },
+      { key: "liked", icon: faHeart, label: "Liked Songs" },
+    ],
+  },
+  { key: "pin", icon: faThumbtack, label: "Pin playlist" },
+  {
+    key: "share",
+    icon: faShareFromSquare,
+    label: "Share",
+    submenu: [
+      { key: "copyLink", icon: faCopy, label: "Copy link to playlist" },
+      { key: "embed", icon: faCode, label: "Embed playlist" },
+    ],
+  },
 ];
 
 /* ── animation helpers ────────────────────────────────────────── */
@@ -68,6 +139,165 @@ const VIEW_ICONS = {
 };
 function ViewIcon({ mode, size = 13 }) {
   return <FontAwesomeIcon icon={VIEW_ICONS[mode]} style={{ fontSize: size }} />;
+}
+
+function PlayCircle({ visible, onClick, size = 34 }) {
+  return (
+    <button
+      type="button"
+      aria-label="Play playlist"
+      onClick={onClick}
+      style={{
+        position: "absolute",
+        right: 6,
+        bottom: 6,
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        border: "none",
+        background: "#1ed760",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "rgba(0,0,0,0.5) 0px 8px 16px",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0) scale(1)" : "translateY(6px) scale(0.92)",
+        transition: "opacity 190ms cubic-bezier(0.2,0,0,1), transform 190ms cubic-bezier(0.2,0,0,1)",
+        pointerEvents: visible ? "auto" : "none",
+        cursor: "pointer",
+      }}
+    >
+      <FontAwesomeIcon icon={faPlay} style={{ fontSize: size * 0.32, color: "#000", marginLeft: 2 }} />
+    </button>
+  );
+}
+
+function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
+  const [submenuKey, setSubmenuKey] = useState(null);
+  if (!menu) return null;
+
+  const viewportW = window.innerWidth;
+  const viewportH = window.innerHeight;
+  const menuH = CONTEXT_MENU_ITEMS.reduce((sum, item) => sum + (item.type === "divider" ? 9 : 36), 16);
+  const left = Math.min(menu.x, viewportW - CONTEXT_MENU_W - 8);
+  const top = Math.min(menu.y, viewportH - menuH - 8);
+  const safeTop = Math.max(8, top);
+  const activeItem = CONTEXT_MENU_ITEMS.find(item => item.key === submenuKey);
+  const submenuLeft =
+    left + CONTEXT_MENU_W + CONTEXT_SUBMENU_W + 10 > viewportW
+      ? left - CONTEXT_SUBMENU_W - 4
+      : left + CONTEXT_MENU_W + 4;
+
+  const menuItemStyle = {
+    height: 36,
+    borderRadius: 4,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "0 10px",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.9)",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
+
+  const renderItem = (item, itemIndex) => {
+    if (item.type === "divider") {
+      return (
+        <div
+          key={`divider-${itemIndex}`}
+          style={{
+            height: 1,
+            background: "rgba(255,255,255,0.12)",
+            margin: "4px -8px",
+          }}
+        />
+      );
+    }
+    const label = item.key === "pin" ? (pinned ? "Unpin playlist" : "Pin playlist") : item.label;
+    return (
+      <div
+        key={item.key}
+        onMouseEnter={e => {
+          if (!item.disabled) e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+          setSubmenuKey(!item.disabled && item.submenu ? item.key : null);
+        }}
+        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+        onClick={e => {
+          e.stopPropagation();
+          if (!item.disabled && !item.submenu) onAction(item.key, menu.pl);
+        }}
+        style={{
+          ...menuItemStyle,
+          color: item.disabled ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.9)",
+          cursor: item.disabled ? "default" : "pointer",
+        }}
+      >
+        <span style={{ width: 18, textAlign: "center", color: item.disabled ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.62)", flexShrink: 0 }}>
+          <FontAwesomeIcon icon={item.icon} style={{ fontSize: 15 }} />
+        </span>
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+        {item.submenu && <span style={{ color: "rgba(255,255,255,0.55)" }}>›</span>}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <div style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={onClose} />
+      <div
+        style={{
+          position: "fixed",
+          left,
+          top: safeTop,
+          width: CONTEXT_MENU_W,
+          padding: 8,
+          borderRadius: 7,
+          background: "#282828",
+          boxShadow: "rgba(0,0,0,0.65) 0px 18px 48px",
+          zIndex: 999,
+          animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {CONTEXT_MENU_ITEMS.map(renderItem)}
+      </div>
+
+      {activeItem?.submenu && (
+        <div
+          style={{
+            position: "fixed",
+            left: submenuLeft,
+            top: Math.max(8, Math.min(safeTop + 36 * CONTEXT_MENU_ITEMS.findIndex(item => item.key === submenuKey), viewportH - 150)),
+            width: CONTEXT_SUBMENU_W,
+            padding: 8,
+            borderRadius: 7,
+            background: "#282828",
+            boxShadow: "rgba(0,0,0,0.65) 0px 18px 48px",
+            zIndex: 1000,
+            animation: "menuIn 140ms cubic-bezier(0.2,0,0,1) both",
+          }}
+          onMouseEnter={() => setSubmenuKey(activeItem.key)}
+          onClick={e => e.stopPropagation()}
+        >
+          {activeItem.submenu.map(item => (
+            <div
+              key={item.key}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+              onClick={() => onAction(item.key, menu.pl)}
+              style={menuItemStyle}
+            >
+              <span style={{ width: 18, textAlign: "center", color: "rgba(255,255,255,0.62)", flexShrink: 0 }}>
+                <FontAwesomeIcon icon={item.icon} style={{ fontSize: 14 }} />
+              </span>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 /* ── Rail icon button ─────────────────────────────────────────── */
@@ -131,12 +361,13 @@ function PlCover({ pl, size = 48, radius = 6 }) {
 }
 
 /* 1. Compact — text only, no thumbnail */
-function CompactRow({ pl, isActive, onClick }) {
+function CompactRow({ pl, isActive, onClick, onContextMenu }) {
   const [hov, setHov] = useState(false);
   const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
     <div
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -165,12 +396,13 @@ function CompactRow({ pl, isActive, onClick }) {
 }
 
 /* 2. List — 48px cover + title + subtitle */
-function ListRow({ pl, isActive, onClick }) {
+function ListRow({ pl, isActive, onClick, onContextMenu }) {
   const [hov, setHov] = useState(false);
   const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
     <div
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -200,37 +432,47 @@ function ListRow({ pl, isActive, onClick }) {
 }
 
 /* 3. Grid item — square image only, 3-col */
-function GridItem({ pl, isActive, onClick }) {
+function GridItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
   const [hov, setHov] = useState(false);
   return (
     <div
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        borderRadius: 6, overflow: "hidden",
+        borderRadius: 6, overflow: "hidden", position: "relative",
         aspectRatio: "1", cursor: "pointer",
         background: pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : pl.bg,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 20, color: "rgba(255,255,255,0.85)",
         outline: isActive ? `2px solid ${C[400]}` : "none",
         outlineOffset: -2,
-        opacity: hov ? 0.85 : 1,
-        transition: "opacity 0.15s, outline 0.15s",
+        opacity: hov ? 0.9 : 1,
+        transition: "opacity 0.15s, outline 0.15s, background 0.15s",
       }}
     >
       {pl.type === "liked" ? "♥" : "♪"}
+      <PlayCircle
+        visible={hov}
+        size={32}
+        onClick={e => {
+          e.stopPropagation();
+          onPlay?.(pl);
+        }}
+      />
     </div>
   );
 }
 
 /* 4. Card — 2-col, image + title + subtitle + green play on hover */
-function CardItem({ pl, isActive, onClick }) {
+function CardItem({ pl, isActive, onClick, onPlay, onContextMenu }) {
   const [hov, setHov] = useState(false);
   const name = pl.type === "liked" ? "Liked Songs" : pl.name;
   return (
     <div
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -249,19 +491,13 @@ function CardItem({ pl, isActive, onClick }) {
         }}>
           {pl.type === "liked" ? "♥" : "♪"}
         </div>
-        <div style={{
-          position: "absolute", right: 6, bottom: 6,
-          width: 34, height: 34, borderRadius: "50%",
-          background: "#1ed760",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "rgba(0,0,0,0.5) 0px 8px 16px",
-          opacity: hov || isActive ? 1 : 0,
-          transform: hov || isActive ? "translateY(0) scale(1)" : "translateY(6px) scale(0.9)",
-          transition: "opacity 0.2s, transform 0.2s",
-          pointerEvents: "none",
-        }}>
-          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 11, color: "#000", marginLeft: 2 }} />
-        </div>
+        <PlayCircle
+          visible={hov || isActive}
+          onClick={e => {
+            e.stopPropagation();
+            onPlay?.(pl);
+          }}
+        />
       </div>
       <div style={{
         fontSize: 13, fontWeight: 600,
@@ -282,7 +518,7 @@ function CardItem({ pl, isActive, onClick }) {
 /* ── Main Sidebar ─────────────────────────────────────────────── */
 export default function Sidebar({
   isOpen, onToggle,
-  likedIds, onNav,
+  onNav,
   userPlaylists,
   selectedPlaylistId, onSelectPlaylist,
   libraryFilter, onSetLibraryFilter,
@@ -290,11 +526,14 @@ export default function Sidebar({
   librarySort, onSetLibrarySort,
   libraryViewMode, onSetLibraryViewMode,
   onCreatePlaylist,
+  onPlayPlaylist,
 }) {
   const [showSearch,     setShowSearch]     = useState(false);
   const [showSortMenu,   setShowSortMenu]   = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [libHov,         setLibHov]         = useState(false);
+  const [contextMenu,    setContextMenu]    = useState(null);
+  const [pinnedIds,      setPinnedIds]      = useState(() => new Set());
 
   const createBtnRef = useRef(null);
   const sortBtnRef   = useRef(null);
@@ -330,6 +569,15 @@ export default function Sidebar({
     setShowCreateMenu(false);
   };
 
+  useEffect(() => {
+    if (!contextMenu) return undefined;
+    const onKeyDown = e => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [contextMenu]);
+
   const dur = isOpen ? "280ms" : "220ms";
 
   /* ── filtered + sorted playlists ─────────────────────────────── */
@@ -356,7 +604,27 @@ export default function Sidebar({
 
   const currentSortLabel = SORT_OPTIONS.find(s => s.key === librarySort)?.label ?? "Recents";
 
-  const selectAndNav = (id) => { onSelectPlaylist(id); onNav("library"); };
+  const selectAndNav = (id) => { setContextMenu(null); onSelectPlaylist(id); onNav("library"); };
+  const openContextMenu = (e, pl) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowCreateMenu(false);
+    setShowSortMenu(false);
+    setContextMenu({ x: e.clientX, y: e.clientY, pl });
+  };
+  const runContextAction = (key, pl) => {
+    if (key === "createPlaylist" || key === "newPlaylist") {
+      onCreatePlaylist?.();
+    }
+    if (key === "pin") {
+      setPinnedIds(prev => {
+        const next = new Set(prev);
+        next.has(pl.id) ? next.delete(pl.id) : next.add(pl.id);
+        return next;
+      });
+    }
+    setContextMenu(null);
+  };
 
   /* ── empty state text ─────────────────────────────────────────── */
   const emptyText =
@@ -375,6 +643,12 @@ export default function Sidebar({
       borderRadius: 8, marginRight: 8,
       background: "#121212",
     }}>
+      <PlaylistContextMenu
+        menu={contextMenu}
+        pinned={contextMenu ? pinnedIds.has(contextMenu.pl.id) : false}
+        onClose={() => setContextMenu(null)}
+        onAction={runContextAction}
+      />
 
       {/* ══ RAIL ═══════════════════════════════════════════════════ */}
       <div style={{
@@ -576,7 +850,7 @@ export default function Sidebar({
             <button
               key={t.key}
               ref={el => { filterTabRefs.current[i] = el; }}
-              onClick={() => { onSetLibraryFilter(t.key); setShowCreateMenu(false); setShowSortMenu(false); }}
+              onClick={() => { onSetLibraryFilter(t.key); setShowCreateMenu(false); setShowSortMenu(false); setContextMenu(null); }}
               style={{
                 background: "transparent",
                 border: "none", borderRadius: 9999, padding: "4px 12px",
@@ -693,7 +967,7 @@ export default function Sidebar({
                     {VIEW_MODES.map(m => (
                       <div
                         key={m.key}
-                        onClick={() => onSetLibraryViewMode(m.key)}
+                        onClick={() => { setContextMenu(null); onSetLibraryViewMode(m.key); }}
                         title={m.title}
                         style={{
                           flex: 1, height: 30, borderRadius: 6,
@@ -724,7 +998,7 @@ export default function Sidebar({
         }}>
           <input
             value={librarySearch}
-            onChange={e => onSetLibrarySearch(e.target.value)}
+            onChange={e => { setContextMenu(null); onSetLibrarySearch(e.target.value); }}
             placeholder="Tìm trong thư viện..."
             autoFocus={showSearch}
             style={{
@@ -736,12 +1010,17 @@ export default function Sidebar({
         </div>
 
         {/* Scrollable playlist list */}
-        <div style={{
-          flex: 1, overflowY: "auto", overflowX: "hidden",
-          padding: libraryViewMode === "card" ? "0 8px" : libraryViewMode === "grid" ? "0 6px" : "0 4px",
-          scrollbarWidth: "thin",
-          scrollbarColor: "rgba(255,255,255,0.1) transparent",
-        }}>
+        <div
+          onScroll={() => { if (contextMenu) setContextMenu(null); }}
+          className={isOpen ? "sidebar-list-scroll is-open" : "sidebar-list-scroll"}
+          style={{
+            flex: 1,
+            overflowY: isOpen ? "auto" : "hidden",
+            overflowX: "hidden",
+            padding: libraryViewMode === "card" ? "0 8px" : libraryViewMode === "grid" ? "0 6px" : "0 4px",
+            pointerEvents: isOpen ? "auto" : "none",
+          }}
+        >
           {filteredPlaylists.length === 0 ? (
             <div style={{
               padding: "20px 12px", fontSize: 12, color: "rgba(255,255,255,0.3)",
@@ -756,6 +1035,8 @@ export default function Sidebar({
                   key={pl.id} pl={pl}
                   isActive={selectedPlaylistId === pl.id}
                   onClick={() => selectAndNav(pl.id)}
+                  onPlay={onPlayPlaylist}
+                  onContextMenu={e => openContextMenu(e, pl)}
                 />
               ))}
             </div>
@@ -765,8 +1046,9 @@ export default function Sidebar({
                 <CardItem
                   key={pl.id} pl={pl}
                   isActive={selectedPlaylistId === pl.id}
-                  likedCount={likedIds.size}
                   onClick={() => selectAndNav(pl.id)}
+                  onPlay={onPlayPlaylist}
+                  onContextMenu={e => openContextMenu(e, pl)}
                 />
               ))}
             </div>
@@ -776,6 +1058,7 @@ export default function Sidebar({
                 key={pl.id} pl={pl}
                 isActive={selectedPlaylistId === pl.id}
                 onClick={() => selectAndNav(pl.id)}
+                onContextMenu={e => openContextMenu(e, pl)}
               />
             ))
           ) : (
@@ -784,8 +1067,8 @@ export default function Sidebar({
                 key={pl.id} pl={pl}
                 index={i}
                 isActive={selectedPlaylistId === pl.id}
-                likedCount={likedIds.size}
                 onClick={() => selectAndNav(pl.id)}
+                onContextMenu={e => openContextMenu(e, pl)}
               />
             ))
           )}
