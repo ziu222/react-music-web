@@ -130,6 +130,8 @@ function PlaylistCard({ pl, likedCount, isActive, onClick }) {
       ? `${likedCount} bài hát`
       : typeof pl.id === "string"
       ? "0 bài hát"
+      : pl.songIds?.length
+      ? `${pl.songIds.length} bài hát`
       : "Danh sách phát";
 
   return (
@@ -205,12 +207,16 @@ export default function PageLibrary({
 
   const likedSongs = list.filter(s => likedIds.has(s.id));
   const isLocalCreated = typeof activePl?.id === "string";
+  const songMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
   const displaySongs = useMemo(() => {
     if (!activePl) return [];
     if (activePl.type === "liked") return likedSongs;
     if (isLocalCreated) return [];
-    return list.slice(0, 8);
-  }, [activePl, likedSongs, isLocalCreated, list]);
+    if (activePl.songIds?.length) {
+      return activePl.songIds.map(id => songMap.get(id)).filter(Boolean);
+    }
+    return [];
+  }, [activePl, likedSongs, isLocalCreated, songMap]);
 
   const visibleSongs = useMemo(() => {
     const q = trackQuery.trim().toLowerCase();

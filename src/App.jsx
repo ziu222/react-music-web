@@ -57,7 +57,11 @@ export default function App() {
     if (!pl) return [];
     if (pl.type === "liked") return list.filter(s => likedIds.has(s.id));
     if (typeof pl.id === "string") return [];
-    return list.slice(0, 8);
+    if (pl.songIds?.length) {
+      const map = new Map(list.map(s => [s.id, s]));
+      return pl.songIds.map(id => map.get(id)).filter(Boolean);
+    }
+    return [];
   };
 
   const playPlaylist = (pl) => {
