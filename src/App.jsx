@@ -143,6 +143,25 @@ export default function App() {
     requireAuth(createPlaylist, { reason: "createPlaylist" });
   };
 
+  const deletePlaylist = (id) => {
+    setUserPlaylists(prev => prev.filter(pl => pl.id !== id));
+    setSelectedPlaylistId(cur => (cur === id ? 1 : cur));
+  };
+
+  const renamePlaylist = (id, newName) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    setUserPlaylists(prev => prev.map(pl => pl.id === id ? { ...pl, name: trimmed } : pl));
+  };
+
+  const togglePinPlaylist = (id) => {
+    setUserPlaylists(prev => prev.map(pl => pl.id === id ? { ...pl, isPinned: !pl.isPinned } : pl));
+  };
+
+  const togglePublicPlaylist = (id) => {
+    setUserPlaylists(prev => prev.map(pl => pl.id === id ? { ...pl, isPublic: !pl.isPublic } : pl));
+  };
+
   const toggleLike = (id) => {
     setLikedIds(prev => {
       const next = new Set(prev);
@@ -395,6 +414,10 @@ export default function App() {
           onSetLibraryViewMode={setLibraryViewMode}
           onCreatePlaylist={createPlaylistWithAuth}
           onPlayPlaylist={playPlaylist}
+          onDeletePlaylist={deletePlaylist}
+          onRenamePlaylist={renamePlaylist}
+          onTogglePinPlaylist={togglePinPlaylist}
+          onTogglePublicPlaylist={togglePublicPlaylist}
         />
 
         {/* Main content */}

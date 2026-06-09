@@ -525,13 +525,21 @@ export default function Sidebar({
   libraryViewMode, onSetLibraryViewMode,
   onCreatePlaylist,
   onPlayPlaylist,
+  onDeletePlaylist,
+  onRenamePlaylist,
+  onTogglePinPlaylist,
+  onTogglePublicPlaylist,
 }) {
   const [showSearch,     setShowSearch]     = useState(false);
   const [showSortMenu,   setShowSortMenu]   = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [libHov,         setLibHov]         = useState(false);
   const [contextMenu,    setContextMenu]    = useState(null);
-  const [pinnedIds,      setPinnedIds]      = useState(() => new Set());
+  const [renamingId,     setRenamingId]     = useState(null);
+  const [renameValue,    setRenameValue]    = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [feedback,       setFeedback]       = useState(null);
+  const feedbackTimer = useRef(null);
 
   const createBtnRef = useRef(null);
   const sortBtnRef   = useRef(null);
@@ -546,6 +554,13 @@ export default function Sidebar({
     const el  = filterTabRefs.current[idx];
     if (el) setFilterPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true });
   }, [libraryFilter, isOpen]);
+
+  const showFeedback = (msg) => {
+    clearTimeout(feedbackTimer.current);
+    setFeedback({ msg });
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
+  };
+  useEffect(() => () => clearTimeout(feedbackTimer.current), []);
 
   const viewModeIdx = VIEW_MODES.findIndex(m => m.key === libraryViewMode);
 
@@ -618,15 +633,16 @@ export default function Sidebar({
     if (librarySort === "name" || librarySort === "creator") {
       result = [...result].sort((a, b) => a.name.localeCompare(b.name));
     }
+    result = [...result].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
     return result;
   }, [albumPlaylists, userPlaylists, libraryFilter, librarySearch, librarySort]);
 
   const railPlaylists = useMemo(() => {
-    const result = userPlaylists ?? [];
+    let result = userPlaylists ?? [];
     if (librarySort === "name" || librarySort === "creator") {
-      return [...result].sort((a, b) => a.name.localeCompare(b.name));
+      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
     }
-    return result;
+    return [...result].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
   }, [userPlaylists, librarySort]);
 
   const currentSortLabel = SORT_OPTIONS.find(s => s.key === librarySort)?.label ?? "Recents";
@@ -640,17 +656,62 @@ export default function Sidebar({
     setContextMenu({ x: e.clientX, y: e.clientY, pl });
   };
   const runContextAction = (key, pl) => {
-    if (key === "createPlaylist" || key === "newPlaylist") {
-      onCreatePlaylist?.();
-    }
-    if (key === "pin") {
-      setPinnedIds(prev => {
-        const next = new Set(prev);
-        next.has(pl.id) ? next.delete(pl.id) : next.add(pl.id);
-        return next;
-      });
-    }
     setContextMenu(null);
+    switch (key) {
+      case "createPlaylist":
+      case "newPlaylist":
+        onCreatePlaylist?.();
+        break;
+
+      case "delete":
+        if (pl.type === "liked") {
+          showFeedback("Không thể xóa danh sách Bài hát đã thích");
+          return;
+        }
+        setDeleteConfirmId(pl.id);
+        return;
+
+      case "edit":
+        setRenamingId(pl.id);
+        setRenameValue(pl.type === "liked" ? "Bài hát đã thích" : pl.name);
+        return;
+
+      case "pin":
+        onTogglePinPlaylist?.(pl.id);
+        showFeedback(pl.isPinned ? "Đã bỏ ghim" : "Đã ghim danh sách phát");
+        break;
+
+      case "copyLink":
+        navigator.clipboard
+          .writeText(`https://melodies.app/playlist/${pl.id}`)
+          .then(() => showFeedback("Đã sao chép liên kết"))
+          .catch(() => showFeedback("Không thể sao chép"));
+        break;
+
+      case "private":
+        onTogglePublicPlaylist?.(pl.id);
+        showFeedback(pl.isPublic ? "Đã đặt riêng tư" : "Đã đặt công khai");
+        break;
+
+      case "queue":
+      case "profile":
+      case "invite":
+      case "createFolder":
+      case "findFolder":
+      case "newFolder":
+      case "removeFolder":
+      case "findPlaylist":
+      case "liked":
+      case "addToPlaylist":
+      case "move":
+      case "exclude":
+      case "embed":
+        showFeedback("Tính năng sắp có");
+        break;
+
+      default:
+        break;
+    }
   };
 
   /* ── empty state text ─────────────────────────────────────────── */
@@ -672,10 +733,132 @@ export default function Sidebar({
     }}>
       <PlaylistContextMenu
         menu={contextMenu}
-        pinned={contextMenu ? pinnedIds.has(contextMenu.pl.id) : false}
+        pinned={contextMenu ? Boolean(contextMenu.pl.isPinned) : false}
         onClose={() => setContextMenu(null)}
         onAction={runContextAction}
       />
+
+      {/* ── Rename modal ── */}
+      {renamingId !== null && (() => {
+        const pl = userPlaylists?.find(p => p.id === renamingId);
+        if (!pl) return null;
+        return (
+          <>
+            <div
+              onClick={() => setRenamingId(null)}
+              style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.45)" }}
+            />
+            <div style={{
+              position: "fixed", top: "50%", left: "50%",
+              transform: "translate(-50%,-50%)",
+              width: 320, background: "#282828", borderRadius: 10,
+              padding: "22px 22px 18px", zIndex: 1101,
+              boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
+              animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#fff" }}>
+                Chỉnh sửa chi tiết
+              </div>
+              <input
+                autoFocus
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter") { onRenamePlaylist?.(renamingId, renameValue); setRenamingId(null); showFeedback("Đã lưu thay đổi"); }
+                  if (e.key === "Escape") setRenamingId(null);
+                }}
+                style={{
+                  width: "100%", background: "rgba(255,255,255,0.1)",
+                  border: `1.5px solid ${C[500]}`, borderRadius: 6,
+                  padding: "9px 12px", color: "#fff", fontSize: 14,
+                  outline: "none", boxSizing: "border-box", marginBottom: 14,
+                }}
+              />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setRenamingId(null)}
+                  style={{
+                    background: "transparent", border: "1px solid rgba(255,255,255,0.3)",
+                    borderRadius: 9999, padding: "7px 18px",
+                    fontSize: 12, color: "#ede5dd", cursor: "pointer",
+                  }}
+                >Hủy</button>
+                <button
+                  onClick={() => { onRenamePlaylist?.(renamingId, renameValue); setRenamingId(null); showFeedback("Đã lưu thay đổi"); }}
+                  style={{
+                    background: "#fff", border: "none", borderRadius: 9999,
+                    padding: "7px 18px", fontSize: 12, fontWeight: 700,
+                    color: "#141010", cursor: "pointer",
+                  }}
+                >Lưu</button>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ── Delete confirm modal ── */}
+      {deleteConfirmId !== null && (() => {
+        const pl = userPlaylists?.find(p => p.id === deleteConfirmId);
+        if (!pl) return null;
+        return (
+          <>
+            <div
+              onClick={() => setDeleteConfirmId(null)}
+              style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.45)" }}
+            />
+            <div style={{
+              position: "fixed", top: "50%", left: "50%",
+              transform: "translate(-50%,-50%)",
+              width: 300, background: "#282828", borderRadius: 10,
+              padding: "22px 22px 18px", zIndex: 1101,
+              boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
+              animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#fff" }}>
+                Xóa danh sách phát?
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 20, lineHeight: 1.55 }}>
+                Bạn có chắc muốn xóa{" "}
+                <span style={{ color: "#fff", fontWeight: 600 }}>{pl.name}</span>?
+                {" "}Hành động này không thể hoàn tác.
+              </div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  style={{
+                    background: "transparent", border: "1px solid rgba(255,255,255,0.3)",
+                    borderRadius: 9999, padding: "7px 18px",
+                    fontSize: 12, color: "#ede5dd", cursor: "pointer",
+                  }}
+                >Hủy</button>
+                <button
+                  onClick={() => { onDeletePlaylist?.(deleteConfirmId); setDeleteConfirmId(null); showFeedback("Đã xóa danh sách phát"); }}
+                  style={{
+                    background: "#ef4444", border: "none", borderRadius: 9999,
+                    padding: "7px 18px", fontSize: 12, fontWeight: 700,
+                    color: "#fff", cursor: "pointer",
+                  }}
+                >Xóa</button>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ── Feedback toast ── */}
+      {feedback && (
+        <div key={feedback.msg} style={{
+          position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)",
+          background: "#333", color: "#fff", fontSize: 12, fontWeight: 500,
+          padding: "8px 18px", borderRadius: 9999,
+          boxShadow: "rgba(0,0,0,0.5) 0px 8px 24px",
+          zIndex: 2000, pointerEvents: "none", whiteSpace: "nowrap",
+          animation: "fadeIn 200ms ease both",
+        }}>
+          {feedback.msg}
+        </div>
+      )}
 
       {/* ══ RAIL ═══════════════════════════════════════════════════ */}
       <div style={{
