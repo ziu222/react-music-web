@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Heart,
   ListMusic,
@@ -41,6 +41,8 @@ export default function Player({
 }) {
   const [hovProgress, setHovProgress] = useState(false);
   const [hovVolume, setHovVolume] = useState(false);
+  const [pressedBtn, setPressedBtn] = useState(null);
+  const pressTimerRef = useRef(null);
 
   if (!s) return null;
 
@@ -63,6 +65,20 @@ export default function Player({
     onVolumeChange(Number(ratio.toFixed(2)));
   };
 
+  const pressAnim = (id, callback) => {
+    clearTimeout(pressTimerRef.current);
+    setPressedBtn(id);
+    callback?.();
+    pressTimerRef.current = setTimeout(() => setPressedBtn(null), 180);
+  };
+
+  const btnClass = (id, extraClass = "") => {
+    const parts = [];
+    if (pressedBtn === id) parts.push("player-btn-press");
+    if (extraClass) parts.push(extraClass);
+    return parts.join(" ") || undefined;
+  };
+
   const iconButton = (active = false) => ({
     width: 32,
     height: 32,
@@ -75,7 +91,7 @@ export default function Player({
     justifyContent: "center",
     cursor: "pointer",
     flexShrink: 0,
-    transition: "background 0.14s ease, color 0.14s ease, transform 0.14s ease",
+    transition: "background 0.14s ease, color 0.14s ease",
   });
 
   const hoverOn = (event, active = false) => {
@@ -104,6 +120,7 @@ export default function Player({
         boxShadow: "0 -10px 28px rgba(0,0,0,0.32)",
       }}
     >
+      {/* Now playing */}
       <div className="player-now" style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
         <div
           style={{
@@ -193,12 +210,14 @@ export default function Player({
         </button>
       </div>
 
+      {/* Playback controls + progress */}
       <div className="player-controls" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
             type="button"
             aria-label="Shuffle"
-            onClick={onShuffleToggle}
+            className={btnClass("shuffle", shuffle ? "player-btn-active-glow" : "")}
+            onClick={() => pressAnim("shuffle", onShuffleToggle)}
             style={iconButton(shuffle)}
             onMouseEnter={e => hoverOn(e, shuffle)}
             onMouseLeave={e => hoverOff(e, shuffle)}
@@ -208,7 +227,8 @@ export default function Player({
           <button
             type="button"
             aria-label="Previous track"
-            onClick={onPrevious}
+            className={btnClass("prev")}
+            onClick={() => pressAnim("prev", onPrevious)}
             style={iconButton(false)}
             onMouseEnter={hoverOn}
             onMouseLeave={hoverOff}
@@ -249,7 +269,8 @@ export default function Player({
           <button
             type="button"
             aria-label="Next track"
-            onClick={onNext}
+            className={btnClass("next")}
+            onClick={() => pressAnim("next", onNext)}
             style={iconButton(false)}
             onMouseEnter={hoverOn}
             onMouseLeave={hoverOff}
@@ -259,7 +280,8 @@ export default function Player({
           <button
             type="button"
             aria-label="Repeat"
-            onClick={onRepeatCycle}
+            className={btnClass("repeat", repeatMode !== "off" ? "player-btn-active-glow" : "")}
+            onClick={() => pressAnim("repeat", onRepeatCycle)}
             style={iconButton(repeatMode !== "off")}
             onMouseEnter={e => hoverOn(e, repeatMode !== "off")}
             onMouseLeave={e => hoverOff(e, repeatMode !== "off")}
@@ -268,6 +290,7 @@ export default function Player({
           </button>
         </div>
 
+        {/* Progress bar */}
         <div
           style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 520 }}
           onMouseEnter={() => setHovProgress(true)}
@@ -321,31 +344,67 @@ export default function Player({
         </div>
       </div>
 
+      {/* Side tools + volume */}
       <div className="player-side-tools" style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", minWidth: 0 }}>
-        <button type="button" aria-label="Lyrics" style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        <button
+          type="button"
+          aria-label="Lyrics"
+          className={btnClass("lyrics")}
+          onClick={() => pressAnim("lyrics")}
+          style={iconButton(false)}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
           <Mic2 size={16} />
         </button>
-        <button type="button" aria-label="Queue" style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        <button
+          type="button"
+          aria-label="Queue"
+          className={btnClass("queue")}
+          onClick={() => pressAnim("queue")}
+          style={iconButton(false)}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
           <ListMusic size={16} />
         </button>
-        <button type="button" aria-label="Connect device" style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        <button
+          type="button"
+          aria-label="Connect device"
+          className={btnClass("connect")}
+          onClick={() => pressAnim("connect")}
+          style={iconButton(false)}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
           <MonitorSpeaker size={16} />
         </button>
-        <button type="button" aria-label={muted ? "Unmute" : "Mute"} onClick={onMuteToggle} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        <button
+          type="button"
+          aria-label={muted ? "Unmute" : "Mute"}
+          className={btnClass("mute")}
+          onClick={() => pressAnim("mute", onMuteToggle)}
+          style={iconButton(false)}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
           {muted || volPct === 0 ? <VolumeX size={17} /> : <Volume2 size={17} />}
         </button>
+
+        {/* Volume slider */}
         <div
           onClick={volumeFromEvent}
           onMouseEnter={() => setHovVolume(true)}
           onMouseLeave={() => setHovVolume(false)}
           style={{
             width: 92,
-            height: 4,
+            height: hovVolume ? 6 : 4,
             background: "rgba(255,255,255,0.16)",
             borderRadius: 999,
             cursor: "pointer",
             position: "relative",
             flexShrink: 0,
+            transition: "height 0.1s ease",
           }}
         >
           <div
@@ -354,26 +413,36 @@ export default function Player({
               height: "100%",
               background: muted ? "rgba(255,255,255,0.34)" : "rgba(255,255,255,0.72)",
               borderRadius: 999,
+              transition: "width 160ms ease, background 140ms ease",
             }}
           />
-          {hovVolume && (
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: `${volPct}%`,
-                transform: "translate(-50%, -50%)",
-                width: 11,
-                height: 11,
-                background: "#fff",
-                borderRadius: "50%",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
-                pointerEvents: "none",
-              }}
-            />
-          )}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: `${volPct}%`,
+              transform: "translate(-50%, -50%)",
+              width: 11,
+              height: 11,
+              background: "#fff",
+              borderRadius: "50%",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+              pointerEvents: "none",
+              opacity: hovVolume ? 1 : 0,
+              transition: "left 160ms ease, opacity 140ms ease, transform 140ms ease",
+            }}
+          />
         </div>
-        <button type="button" aria-label="Fullscreen" style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+
+        <button
+          type="button"
+          aria-label="Fullscreen"
+          className={btnClass("fullscreen")}
+          onClick={() => pressAnim("fullscreen")}
+          style={iconButton(false)}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
           <Maximize2 size={16} />
         </button>
       </div>

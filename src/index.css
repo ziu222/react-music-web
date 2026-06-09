@@ -112,3 +112,30 @@ body {
     justify-content: center !important;
   }
 }
+
+/* Player control button press animation */
+@keyframes player-btn-press {
+  0%   { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+/* Active state subtle glow pulse for shuffle / repeat */
+@keyframes player-active-glow {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(251,146,60,0); }
+  50%       { box-shadow: 0 0 0 3px rgba(251,146,60,0.22); }
+}
+
+.player-btn-press {
+  animation: player-btn-press 160ms ease-out forwards;
+}
+
+.player-btn-active-glow {
+  animation: player-active-glow 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-btn-press,
+  .player-btn-active-glow {
+    animation: none !important;
+  }
+}
