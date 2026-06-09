@@ -177,6 +177,12 @@ function playlistName(pl) {
   return pl.type === "liked" ? "Bài hát đã thích" : pl.name;
 }
 
+function itemMeta(pl) {
+  if (pl.type === "album") return `Album · ${pl.artist ?? "Nhiều nghệ sĩ"}`;
+  if (pl.type === "liked") return "Danh sách phát · Nghĩa";
+  return "Danh sách phát · Nghĩa";
+}
+
 function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
   const [submenuKey, setSubmenuKey] = useState(null);
   if (!menu) return null;
@@ -357,6 +363,7 @@ function CompactRow({ pl, isActive, onClick, onContextMenu }) {
     <div
       onClick={onClick}
       onContextMenu={onContextMenu}
+      title={itemMeta(pl)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -392,6 +399,7 @@ function ListRow({ pl, coverSongs = [], isActive, onClick, onContextMenu }) {
     <div
       onClick={onClick}
       onContextMenu={onContextMenu}
+      title={itemMeta(pl)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -427,6 +435,7 @@ function GridItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMen
     <div
       onClick={onClick}
       onContextMenu={onContextMenu}
+      title={itemMeta(pl)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -507,6 +516,7 @@ export default function Sidebar({
   likedIds,
   list = [],
   userPlaylists,
+  albumPlaylists = [],
   isAuthed = false,
   selectedPlaylistId, onSelectPlaylist,
   libraryFilter, onSetLibraryFilter,
@@ -583,6 +593,22 @@ export default function Sidebar({
 
   /* ── filtered + sorted playlists ─────────────────────────────── */
   const filteredPlaylists = useMemo(() => {
+    if (libraryFilter === "Album") {
+      let result = albumPlaylists;
+      if (librarySearch.trim()) {
+        const q = librarySearch.toLowerCase();
+        result = result.filter(pl =>
+          pl.name.toLowerCase().includes(q) ||
+          (pl.artist ?? "").toLowerCase().includes(q)
+        );
+      }
+      if (librarySort === "creator") {
+        result = [...result].sort((a, b) => (a.artist ?? a.name).localeCompare(b.artist ?? b.name));
+      } else if (librarySort === "name") {
+        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+      }
+      return result;
+    }
     if (libraryFilter === "Album" || libraryFilter === "Nghệ sĩ") return [];
     let result = userPlaylists ?? [];
     if (librarySearch.trim()) {
@@ -593,7 +619,7 @@ export default function Sidebar({
       result = [...result].sort((a, b) => a.name.localeCompare(b.name));
     }
     return result;
-  }, [userPlaylists, libraryFilter, librarySearch, librarySort]);
+  }, [albumPlaylists, userPlaylists, libraryFilter, librarySearch, librarySort]);
 
   const railPlaylists = useMemo(() => {
     const result = userPlaylists ?? [];

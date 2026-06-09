@@ -180,6 +180,7 @@ function PlaylistCard({ pl, likedCount, coverSongs = [], isActive, onClick }) {
 export default function PageLibrary({
   list, cur, onPlay, likedIds, onLike,
   userPlaylists = [],
+  albumPlaylists = [],
   selectedPlaylistId,
   onSelectPlaylist,
   libraryFilter = "Danh sách phát",
@@ -192,13 +193,15 @@ export default function PageLibrary({
   const sortBtnRef = useRef(null);
   const [sortMenuPos, setSortMenuPos] = useState({ top: 0, right: 0 });
 
+  const libraryItems = libraryFilter === "Album" ? albumPlaylists : userPlaylists;
+
   const activePl =
-    userPlaylists.find(pl => pl.id === selectedPlaylistId) ??
-    userPlaylists[0] ??
+    libraryItems.find(pl => pl.id === selectedPlaylistId) ??
+    libraryItems[0] ??
     null;
 
   const likedSongs = list.filter(s => likedIds.has(s.id));
-  const isLocalCreated = typeof activePl?.id === "string";
+  const isLocalCreated = Boolean(activePl?.isPersonal);
   const songMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
 
   const getCoverSongs = (pl) => {
@@ -262,7 +265,7 @@ export default function PageLibrary({
   }, [showTrackSortMenu]);
 
   /* filtered playlist list for left panel */
-  const shownPlaylists =
+  const shownPlaylists = libraryFilter === "Album" ? albumPlaylists :
     libraryFilter === "Danh sách phát" ? userPlaylists : [];
 
   return (

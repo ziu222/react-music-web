@@ -17,6 +17,8 @@ const US_UK_ARTISTS = new Set([
   "Justin Bieber", "The Weeknd", "Ed Sheeran", "Harry Styles", "Dua Lipa",
   "Adele", "Billie Eilish", "Taylor Swift", "Drake", "Post Malone",
   "Mark Ronson", "Ariana Grande", "Coldplay", "Imagine Dragons",
+  "Lady Gaga & Bruno Mars", "Sabrina Carpenter", "Kendrick Lamar",
+  "Chappell Roan",
 ]);
 
 /* ── shared layout helpers ─────────────────────────────────────── */
@@ -52,15 +54,24 @@ function SectionHeader({ title }) {
 }
 
 /* ── Album card ────────────────────────────────────────────────── */
-function AlbumCard({ album, cur, onPlay }) {
+function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
   const [hov, setHov] = useState(false);
   const cover = getSongImage(album.representative);
   const isActive = cur?.id === album.representative.id;
 
   return (
     <div
+      onClick={() => onOpenAlbum?.(album.album)}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpenAlbum?.(album.album);
+        }
+      }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
+      role="button"
+      tabIndex={0}
       style={{
         flexShrink: 0,
         width: 160,
@@ -103,7 +114,10 @@ function AlbumCard({ album, cur, onPlay }) {
 
         {/* Play button */}
         <div
-          onClick={() => onPlay(album.representative)}
+          onClick={e => {
+            e.stopPropagation();
+            onPlay(album.representative);
+          }}
           style={{
             position: "absolute", right: 6, bottom: 6,
             width: 40, height: 40, borderRadius: "50%",
@@ -138,7 +152,7 @@ function AlbumCard({ album, cur, onPlay }) {
 }
 
 /* ── Page ──────────────────────────────────────────────────────── */
-export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [] }) {
+export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum }) {
   const idMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
   const sorted = useMemo(() => [...list].sort((a, b) => b.plays - a.plays), [list]);
 
@@ -176,7 +190,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [] }
     return result.slice(0, 12);
   }, [sorted, list, likedIds]);
 
-  const albums = useMemo(() => {
+  const albumCollections = useMemo(() => {
     const albumMap = new Map();
     list.forEach(s => {
       if (!albumMap.has(s.album)) albumMap.set(s.album, []);
@@ -189,12 +203,25 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [] }
           album: albumName,
           artist: getPrimaryArtist(rep.artist),
           representative: rep,
+          songCount: songs.length,
+          latestSongId: Math.max(...songs.map(s => s.id)),
           totalPlays: songs.reduce((acc, s) => acc + s.plays, 0),
         };
       })
-      .sort((a, b) => b.totalPlays - a.totalPlays)
-      .slice(0, 10);
   }, [list]);
+
+  const newAlbums = useMemo(() =>
+    [...albumCollections]
+      .filter(album => album.songCount > 1)
+      .sort((a, b) => b.songCount - a.songCount || b.latestSongId - a.latestSongId)
+      .slice(0, 10),
+    [albumCollections]);
+
+  const albums = useMemo(() =>
+    [...albumCollections]
+      .sort((a, b) => b.totalPlays - a.totalPlays)
+      .slice(0, 10),
+    [albumCollections]);
 
   const artists = useMemo(() =>
     [...new Map(
@@ -266,12 +293,23 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [] }
       )}
 
       {/* Album phổ biến */}
+      {newAlbums.length > 0 && (
+        <section style={{ marginBottom: 48 }}>
+          <SectionHeader title="Album mới" />
+          <HScroll>
+            {newAlbums.map(al => (
+              <AlbumCard key={al.album} album={al} cur={cur} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
+            ))}
+          </HScroll>
+        </section>
+      )}
+
       {albums.length > 0 && (
         <section style={{ marginBottom: 48 }}>
           <SectionHeader title="Album phổ biến" />
           <HScroll>
             {albums.map((al, i) => (
-              <AlbumCard key={i} album={al} cur={cur} onPlay={onPlay} />
+              <AlbumCard key={i} album={al} cur={cur} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
             ))}
           </HScroll>
         </section>

@@ -103,11 +103,11 @@ export default function App() {
   const getPlaylistSongs = (pl) => {
     if (!pl) return [];
     if (pl.type === "liked") return list.filter(s => likedIds.has(s.id));
-    if (typeof pl.id === "string") return [];
     if (pl.songIds?.length) {
       const map = new Map(list.map(s => [s.id, s]));
       return pl.songIds.map(id => map.get(id)).filter(Boolean);
     }
+    if (typeof pl.id === "string") return [];
     return [];
   };
 
@@ -116,6 +116,13 @@ export default function App() {
     if (firstSong) {
       requireAuth(() => play(firstSong), { reason: "play", playlist: pl, song: firstSong });
     }
+  };
+
+  const openAlbum = (albumName) => {
+    setLibraryFilter("Album");
+    setSelectedPlaylistId(`album:${albumName}`);
+    setSidebarOpen(true);
+    nav("library");
   };
 
   const createPlaylist = () => {
@@ -153,6 +160,33 @@ export default function App() {
     () => authUser ? userPlaylists : userPlaylists.filter(pl => typeof pl.id !== "string" && !pl.isPersonal),
     [authUser, userPlaylists]
   );
+
+  const albumPlaylists = useMemo(() => {
+    const albumMap = new Map();
+    list.forEach((song, index) => {
+      if (!albumMap.has(song.album)) {
+        albumMap.set(song.album, { songs: [], firstIndex: index });
+      }
+      albumMap.get(song.album).songs.push(song);
+    });
+
+    return [...albumMap.entries()]
+      .map(([albumName, value]) => {
+        const representative = [...value.songs].sort((a, b) => b.plays - a.plays)[0];
+        return {
+          id: `album:${albumName}`,
+          name: albumName,
+          type: "album",
+          artist: representative.artist.split(" ft.")[0].trim(),
+          bg: representative.bg,
+          songIds: value.songs.map(song => song.id),
+          firstIndex: value.firstIndex,
+          latestSongId: Math.max(...value.songs.map(song => song.id)),
+          totalPlays: value.songs.reduce((sum, song) => sum + song.plays, 0),
+        };
+      })
+      .sort((a, b) => b.songIds.length - a.songIds.length || b.latestSongId - a.latestSongId);
+  }, [list]);
 
   useEffect(() => {
     if (!playing || !cur) return;
@@ -347,6 +381,7 @@ export default function App() {
           list={list}
           onNav={nav}
           userPlaylists={visiblePlaylists}
+          albumPlaylists={albumPlaylists}
           isAuthed={Boolean(authUser)}
           selectedPlaylistId={selectedPlaylistId}
           onSelectPlaylist={setSelectedPlaylistId}
@@ -376,6 +411,7 @@ export default function App() {
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
                   recentIds={recentIds}
+                  onOpenAlbum={openAlbum}
                 />
               )}
               {page === "search" && (
@@ -396,6 +432,7 @@ export default function App() {
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
                   userPlaylists={visiblePlaylists}
+                  albumPlaylists={albumPlaylists}
                   selectedPlaylistId={selectedPlaylistId}
                   onSelectPlaylist={setSelectedPlaylistId}
                   libraryFilter={libraryFilter}
