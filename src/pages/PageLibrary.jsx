@@ -1,8 +1,126 @@
-import { useState } from "react";
-import TrackRow from "../components/TrackRow";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { C, TEXT, BORDER } from "../constants/theme";
+import { getSongImage } from "../data/media";
 
 const FILTER_TABS = ["Danh sách phát", "Album", "Nghệ sĩ"];
+const TRACK_SORT_OPTIONS = [
+  { key: "custom", label: "Custom order" },
+  { key: "title", label: "Title" },
+  { key: "artist", label: "Artist" },
+  { key: "album", label: "Album" },
+  { key: "date", label: "Date added" },
+  { key: "duration", label: "Duration" },
+];
+
+function dateLabel(song) {
+  return song.dateAdded ?? "Feb 23, 2022";
+}
+
+function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike }) {
+  const [hov, setHov] = useState(false);
+  const playing = cur?.id === song.id;
+  const liked = likedIds.has(song.id);
+  const cover = getSongImage(song);
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={() => onPlay(song)}
+      style={{
+        display: "grid",
+        gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px",
+        alignItems: "center",
+        gap: 12,
+        minHeight: 52,
+        padding: "0 10px",
+        borderRadius: 6,
+        cursor: "pointer",
+        background: playing ? `${C[500]}12` : hov ? "rgba(255,255,255,0.06)" : "transparent",
+        transition: "background 0.15s",
+      }}
+    >
+      <div style={{
+        fontSize: 12,
+        color: playing ? C[400] : "rgba(255,255,255,0.45)",
+        textAlign: "center",
+        fontVariantNumeric: "tabular-nums",
+      }}>
+        {hov && !playing ? "▶" : index + 1}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+        <div style={{
+          width: 40,
+          height: 40,
+          borderRadius: 5,
+          background: song.bg,
+          flexShrink: 0,
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
+          {cover ? (
+            <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          ) : (
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>♪</span>
+          )}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: playing ? C[400] : TEXT.primary,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            marginBottom: 2,
+          }}>
+            {song.title}
+          </div>
+          <div style={{
+            fontSize: 11,
+            color: TEXT.secondary,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}>
+            {song.artist}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: TEXT.secondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {song.album}
+      </div>
+      <div style={{ fontSize: 12, color: TEXT.secondary }}>
+        {dateLabel(song)}
+      </div>
+      <div style={{ fontSize: 12, color: TEXT.secondary, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+        {song.duration}
+      </div>
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); onLike(song.id); }}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: liked ? "#fb7185" : "rgba(255,255,255,0)",
+          opacity: liked || hov ? 1 : 0,
+          fontSize: 15,
+          lineHeight: 1,
+          transition: "opacity 0.15s, color 0.15s, transform 0.1s",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+      >
+        {liked ? "♥" : "♡"}
+      </button>
+    </div>
+  );
+}
 
 /* ── PlaylistCard ─────────────────────────────────────────────── */
 function PlaylistCard({ pl, likedCount, isActive, onClick }) {
@@ -73,6 +191,13 @@ export default function PageLibrary({
   libraryFilter = "Danh sách phát",
   onSetLibraryFilter,
 }) {
+  const [trackSort, setTrackSort] = useState("custom");
+  const [trackQuery, setTrackQuery] = useState("");
+  const [showTrackSearch, setShowTrackSearch] = useState(false);
+  const [showTrackSortMenu, setShowTrackSortMenu] = useState(false);
+  const sortBtnRef = useRef(null);
+  const [sortMenuPos, setSortMenuPos] = useState({ top: 0, right: 0 });
+
   const activePl =
     userPlaylists.find(pl => pl.id === selectedPlaylistId) ??
     userPlaylists[0] ??
@@ -80,13 +205,54 @@ export default function PageLibrary({
 
   const likedSongs = list.filter(s => likedIds.has(s.id));
   const isLocalCreated = typeof activePl?.id === "string";
-  const displaySongs = !activePl
-    ? []
-    : activePl.type === "liked"
-    ? likedSongs
-    : isLocalCreated
-    ? []
-    : list.slice(0, 8);
+  const displaySongs = useMemo(() => {
+    if (!activePl) return [];
+    if (activePl.type === "liked") return likedSongs;
+    if (isLocalCreated) return [];
+    return list.slice(0, 8);
+  }, [activePl, likedSongs, isLocalCreated, list]);
+
+  const visibleSongs = useMemo(() => {
+    const q = trackQuery.trim().toLowerCase();
+    let rows = displaySongs.map((song, originalIndex) => ({ song, originalIndex }));
+
+    if (q) {
+      rows = rows.filter(({ song }) =>
+        song.title.toLowerCase().includes(q) ||
+        song.artist.toLowerCase().includes(q) ||
+        song.album.toLowerCase().includes(q) ||
+        song.genre.toLowerCase().includes(q)
+      );
+    }
+
+    const byText = key => (a, b) => a.song[key].localeCompare(b.song[key]);
+    if (trackSort === "title") rows = [...rows].sort(byText("title"));
+    if (trackSort === "artist") rows = [...rows].sort(byText("artist"));
+    if (trackSort === "album") rows = [...rows].sort(byText("album"));
+    if (trackSort === "duration") rows = [...rows].sort((a, b) => a.song.durationSecs - b.song.durationSecs);
+    if (trackSort === "date") rows = [...rows].sort((a, b) => a.originalIndex - b.originalIndex);
+
+    return rows;
+  }, [displaySongs, trackQuery, trackSort]);
+
+  const currentTrackSortLabel = TRACK_SORT_OPTIONS.find(opt => opt.key === trackSort)?.label ?? "Custom order";
+
+  const openTrackSortMenu = () => {
+    if (sortBtnRef.current) {
+      const r = sortBtnRef.current.getBoundingClientRect();
+      setSortMenuPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    }
+    setShowTrackSortMenu(s => !s);
+  };
+
+  useEffect(() => {
+    if (!showTrackSortMenu) return undefined;
+    const onKeyDown = e => {
+      if (e.key === "Escape") setShowTrackSortMenu(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showTrackSortMenu]);
 
   /* filtered playlist list for left panel */
   const shownPlaylists =
@@ -225,7 +391,7 @@ export default function PageLibrary({
               </span>
             </div>
 
-            {/* Track list */}
+            {/* Track tools + list */}
             <div style={{ padding: "0 24px 80px" }}>
               {displaySongs.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "60px 0", color: TEXT.secondary }}>
@@ -244,17 +410,186 @@ export default function PageLibrary({
                   </div>
                 </div>
               ) : (
-                displaySongs.map((s, i) => (
-                  <TrackRow
-                    key={s.id}
-                    song={s}
-                    index={i}
-                    cur={cur}
-                    onPlay={onPlay}
-                    likedIds={likedIds}
-                    onLike={onLike}
-                  />
-                ))
+                <>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 16,
+                    padding: "0 4px 10px",
+                  }}>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      minWidth: 0,
+                      flex: 1,
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowTrackSearch(s => !s)}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "50%",
+                          border: "none",
+                          background: showTrackSearch || trackQuery ? "rgba(255,255,255,0.12)" : "transparent",
+                          color: showTrackSearch || trackQuery ? "#fff" : TEXT.secondary,
+                          cursor: "pointer",
+                          fontSize: 14,
+                          transition: "background 0.15s, color 0.15s",
+                          flexShrink: 0,
+                        }}
+                      >
+                        ⌕
+                      </button>
+                      <div style={{
+                        overflow: "hidden",
+                        width: showTrackSearch ? 260 : 0,
+                        opacity: showTrackSearch ? 1 : 0,
+                        transition: "width 180ms cubic-bezier(0.2,0,0,1), opacity 150ms ease",
+                      }}>
+                        <input
+                          value={trackQuery}
+                          onChange={e => setTrackQuery(e.target.value)}
+                          placeholder="Tìm trong danh sách này"
+                          autoFocus={showTrackSearch}
+                          style={{
+                            width: 260,
+                            background: "rgba(255,255,255,0.1)",
+                            border: "none",
+                            borderRadius: 4,
+                            padding: "7px 10px",
+                            color: TEXT.primary,
+                            fontSize: 12,
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                      <button
+                        ref={sortBtnRef}
+                        type="button"
+                        onClick={openTrackSortMenu}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: "transparent",
+                          border: "none",
+                          color: showTrackSortMenu ? "#fff" : TEXT.secondary,
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          padding: "7px 4px",
+                          transition: "color 0.15s",
+                        }}
+                      >
+                        {currentTrackSortLabel}
+                        <span style={{ fontSize: 9 }}>▾</span>
+                      </button>
+
+                      {showTrackSortMenu && (
+                        <>
+                          <div
+                            style={{ position: "fixed", inset: 0, zIndex: 98 }}
+                            onClick={() => setShowTrackSortMenu(false)}
+                          />
+                          <div style={{
+                            position: "fixed",
+                            top: sortMenuPos.top,
+                            right: sortMenuPos.right,
+                            width: 190,
+                            padding: 8,
+                            borderRadius: 8,
+                            background: "#282828",
+                            boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
+                            zIndex: 999,
+                            transformOrigin: "top right",
+                            animation: "menuIn 160ms cubic-bezier(0.2,0,0,1) both",
+                          }}>
+                            <div style={{
+                              padding: "4px 12px 8px",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: "rgba(255,255,255,0.35)",
+                              textTransform: "uppercase",
+                              letterSpacing: 0.8,
+                            }}>
+                              Sort songs
+                            </div>
+                            {TRACK_SORT_OPTIONS.map(opt => (
+                              <div
+                                key={opt.key}
+                                onClick={() => { setTrackSort(opt.key); setShowTrackSortMenu(false); }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                  padding: "8px 12px",
+                                  borderRadius: 4,
+                                  cursor: "pointer",
+                                  fontSize: 13,
+                                  color: trackSort === opt.key ? C[400] : "rgba(255,255,255,0.85)",
+                                  transition: "background 0.12s",
+                                }}
+                              >
+                                <span style={{ width: 14, textAlign: "center", fontSize: 11 }}>
+                                  {trackSort === opt.key ? "✓" : ""}
+                                </span>
+                                {opt.label}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px",
+                    gap: 12,
+                    alignItems: "center",
+                    minHeight: 34,
+                    padding: "0 10px",
+                    borderBottom: `1px solid ${BORDER}`,
+                    color: TEXT.secondary,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.6,
+                  }}>
+                    <span style={{ textAlign: "center" }}>#</span>
+                    <span>Title</span>
+                    <span>Album</span>
+                    <span>Date added</span>
+                    <span style={{ textAlign: "right" }}>Time</span>
+                    <span />
+                  </div>
+
+                  {visibleSongs.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "40px 0", color: TEXT.secondary, fontSize: 13 }}>
+                      Không tìm thấy bài hát phù hợp
+                    </div>
+                  ) : (
+                    visibleSongs.map(({ song }, i) => (
+                      <LibraryTrackRow
+                        key={song.id}
+                        song={song}
+                        index={i}
+                        cur={cur}
+                        onPlay={onPlay}
+                        likedIds={likedIds}
+                        onLike={onLike}
+                      />
+                    ))
+                  )}
+                </>
               )}
             </div>
           </>
