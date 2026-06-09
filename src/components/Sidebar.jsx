@@ -503,6 +503,7 @@ export default function Sidebar({
   likedIds,
   list = [],
   userPlaylists,
+  isAuthed = false,
   selectedPlaylistId, onSelectPlaylist,
   libraryFilter, onSetLibraryFilter,
   librarySearch, onSetLibrarySearch,
@@ -535,6 +536,10 @@ export default function Sidebar({
   const viewModeIdx = VIEW_MODES.findIndex(m => m.key === libraryViewMode);
 
   const openCreateMenu = () => {
+    if (!isAuthed) {
+      onCreatePlaylist?.();
+      return;
+    }
     if (createBtnRef.current) {
       const r = createBtnRef.current.getBoundingClientRect();
       setCreateMenuPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
@@ -693,7 +698,7 @@ export default function Sidebar({
           onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
         >
-          +
+          <FontAwesomeIcon icon={isAuthed ? faPlus : faLock} style={{ fontSize: isAuthed ? 16 : 13 }} />
         </div>
 
         {/* Playlist thumbnails */}
@@ -757,6 +762,7 @@ export default function Sidebar({
               onMouseEnter={e => { if (!showCreateMenu) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
               onMouseLeave={e => { if (!showCreateMenu) e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
             >
+              <FontAwesomeIcon icon={isAuthed ? faPlus : faLock} style={{ fontSize: 11 }} />
               {showCreateMenu ? "× Tạo" : "+ Tạo"}
             </div>
 

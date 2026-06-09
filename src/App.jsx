@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import songs from "./data/songs";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/Splash";
@@ -72,6 +72,7 @@ export default function App() {
     setCur(null);
     setPlaying(false);
     setProg(0);
+    setSelectedPlaylistId(1);
   };
 
   const nav = (p) => {
@@ -122,12 +123,17 @@ export default function App() {
       id: `local-${Date.now()}`,
       name: "Danh sách phát mới",
       type: "playlist",
+      isPersonal: true,
       bg: "linear-gradient(135deg,#334155,#64748b)",
     };
     setUserPlaylists(prev => [...prev, newPl]);
     setSelectedPlaylistId(newPl.id);
     setSidebarOpen(true);
     setPage("library");
+  };
+
+  const createPlaylistWithAuth = () => {
+    requireAuth(createPlaylist, { reason: "createPlaylist" });
   };
 
   const toggleLike = (id) => {
@@ -142,6 +148,11 @@ export default function App() {
     const song = list.find(s => s.id === id);
     requireAuth(() => toggleLike(id), { reason: "like", song });
   };
+
+  const visiblePlaylists = useMemo(
+    () => authUser ? userPlaylists : userPlaylists.filter(pl => typeof pl.id !== "string" && !pl.isPersonal),
+    [authUser, userPlaylists]
+  );
 
   useEffect(() => {
     if (!playing || !cur) return;
@@ -335,7 +346,8 @@ export default function App() {
           likedIds={likedIds}
           list={list}
           onNav={nav}
-          userPlaylists={userPlaylists}
+          userPlaylists={visiblePlaylists}
+          isAuthed={Boolean(authUser)}
           selectedPlaylistId={selectedPlaylistId}
           onSelectPlaylist={setSelectedPlaylistId}
           libraryFilter={libraryFilter}
@@ -346,7 +358,7 @@ export default function App() {
           onSetLibrarySort={setLibrarySort}
           libraryViewMode={libraryViewMode}
           onSetLibraryViewMode={setLibraryViewMode}
-          onCreatePlaylist={createPlaylist}
+          onCreatePlaylist={createPlaylistWithAuth}
           onPlayPlaylist={playPlaylist}
         />
 
@@ -383,7 +395,7 @@ export default function App() {
                   onPlay={playWithAuth}
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
-                  userPlaylists={userPlaylists}
+                  userPlaylists={visiblePlaylists}
                   selectedPlaylistId={selectedPlaylistId}
                   onSelectPlaylist={setSelectedPlaylistId}
                   libraryFilter={libraryFilter}
