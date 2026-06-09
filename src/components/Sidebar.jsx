@@ -1,6 +1,29 @@
 import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faList, faTableCells, faTableCellsLarge, faPlay } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faCircleDown,
+  faCircleMinus,
+  faCircleXmark,
+  faCode,
+  faCopy,
+  faFolder,
+  faHeart,
+  faList,
+  faListUl,
+  faLock,
+  faMagnifyingGlass,
+  faMusic,
+  faPen,
+  faPlay,
+  faPlus,
+  faShareFromSquare,
+  faTableCells,
+  faTableCellsLarge,
+  faThumbtack,
+  faUserCircle,
+  faUserPlus,
+} from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER } from "../constants/theme";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -34,42 +57,50 @@ const CREATE_OPTIONS = [
   { key: "folder",   icon: "⊞", label: "Folder",          desc: "Sắp xếp playlist của bạn",  disabled: true },
 ];
 
-const CONTEXT_MENU_W = 224;
-const CONTEXT_SUBMENU_W = 222;
+const CONTEXT_MENU_W = 298;
+const CONTEXT_SUBMENU_W = 244;
 const CONTEXT_MENU_ITEMS = [
-  { key: "queue", icon: "☰", label: "Add to queue" },
-  { key: "profile", icon: "◎", label: "Add to profile" },
-  { key: "library", icon: "⊕", label: "Add to Your Library" },
-  { key: "createPlaylist", icon: "♫", label: "Create playlist" },
-  { key: "createFolder", icon: "+", label: "Create folder" },
+  { key: "queue", icon: faListUl, label: "Add to queue" },
+  { key: "profile", icon: faUserCircle, label: "Add to profile" },
+  { type: "divider" },
+  { key: "edit", icon: faPen, label: "Edit details" },
+  { key: "delete", icon: faCircleMinus, label: "Delete" },
+  { key: "download", icon: faCircleDown, label: "Download", disabled: true },
+  { type: "divider" },
+  { key: "createPlaylist", icon: faMusic, label: "Create playlist" },
+  { key: "createFolder", icon: faPlus, label: "Create folder" },
+  { type: "divider" },
+  { key: "private", icon: faLock, label: "Make private" },
+  { key: "invite", icon: faUserPlus, label: "Invite collaborators" },
+  { key: "exclude", icon: faCircleXmark, label: "Exclude from your taste profile" },
   {
     key: "move",
-    icon: "□",
+    icon: faFolder,
     label: "Move to folder",
     submenu: [
-      { key: "findFolder", icon: "⌕", label: "Find a folder" },
-      { key: "newFolder", icon: "+", label: "Create folder" },
-      { key: "removeFolder", icon: "−", label: "Remove from folders" },
+      { key: "findFolder", icon: faMagnifyingGlass, label: "Find a folder" },
+      { key: "newFolder", icon: faPlus, label: "Create folder" },
+      { key: "removeFolder", icon: faCircleMinus, label: "Remove from folders" },
     ],
   },
   {
     key: "addToPlaylist",
-    icon: "+",
+    icon: faPlus,
     label: "Add to other playlist",
     submenu: [
-      { key: "findPlaylist", icon: "⌕", label: "Find a playlist" },
-      { key: "newPlaylist", icon: "+", label: "New playlist" },
-      { key: "liked", icon: "♥", label: "Liked Songs" },
+      { key: "findPlaylist", icon: faMagnifyingGlass, label: "Find a playlist" },
+      { key: "newPlaylist", icon: faPlus, label: "New playlist" },
+      { key: "liked", icon: faHeart, label: "Liked Songs" },
     ],
   },
-  { key: "pin", icon: "✦", label: "Pin playlist" },
+  { key: "pin", icon: faThumbtack, label: "Pin playlist" },
   {
     key: "share",
-    icon: "⇪",
+    icon: faShareFromSquare,
     label: "Share",
     submenu: [
-      { key: "copyLink", icon: "□", label: "Copy link to playlist" },
-      { key: "embed", icon: "▣", label: "Embed playlist" },
+      { key: "copyLink", icon: faCopy, label: "Copy link to playlist" },
+      { key: "embed", icon: faCode, label: "Embed playlist" },
     ],
   },
 ];
@@ -147,7 +178,7 @@ function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
 
   const viewportW = window.innerWidth;
   const viewportH = window.innerHeight;
-  const menuH = 36 * CONTEXT_MENU_ITEMS.length + 16;
+  const menuH = CONTEXT_MENU_ITEMS.reduce((sum, item) => sum + (item.type === "divider" ? 9 : 36), 16);
   const left = Math.min(menu.x, viewportW - CONTEXT_MENU_W - 8);
   const top = Math.min(menu.y, viewportH - menuH - 8);
   const safeTop = Math.max(8, top);
@@ -170,24 +201,40 @@ function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
     whiteSpace: "nowrap",
   };
 
-  const renderItem = (item) => {
+  const renderItem = (item, itemIndex) => {
+    if (item.type === "divider") {
+      return (
+        <div
+          key={`divider-${itemIndex}`}
+          style={{
+            height: 1,
+            background: "rgba(255,255,255,0.12)",
+            margin: "4px -8px",
+          }}
+        />
+      );
+    }
     const label = item.key === "pin" ? (pinned ? "Unpin playlist" : "Pin playlist") : item.label;
     return (
       <div
         key={item.key}
         onMouseEnter={e => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-          setSubmenuKey(item.submenu ? item.key : null);
+          if (!item.disabled) e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+          setSubmenuKey(!item.disabled && item.submenu ? item.key : null);
         }}
         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
         onClick={e => {
           e.stopPropagation();
-          if (!item.submenu) onAction(item.key, menu.pl);
+          if (!item.disabled && !item.submenu) onAction(item.key, menu.pl);
         }}
-        style={menuItemStyle}
+        style={{
+          ...menuItemStyle,
+          color: item.disabled ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.9)",
+          cursor: item.disabled ? "default" : "pointer",
+        }}
       >
-        <span style={{ width: 16, textAlign: "center", color: "rgba(255,255,255,0.6)", flexShrink: 0 }}>
-          {item.icon}
+        <span style={{ width: 18, textAlign: "center", color: item.disabled ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.62)", flexShrink: 0 }}>
+          <FontAwesomeIcon icon={item.icon} style={{ fontSize: 15 }} />
         </span>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
         {item.submenu && <span style={{ color: "rgba(255,255,255,0.55)" }}>›</span>}
@@ -241,8 +288,8 @@ function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
               onClick={() => onAction(item.key, menu.pl)}
               style={menuItemStyle}
             >
-              <span style={{ width: 16, textAlign: "center", color: "rgba(255,255,255,0.6)", flexShrink: 0 }}>
-                {item.icon}
+              <span style={{ width: 18, textAlign: "center", color: "rgba(255,255,255,0.62)", flexShrink: 0 }}>
+                <FontAwesomeIcon icon={item.icon} style={{ fontSize: 14 }} />
               </span>
               <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
             </div>
