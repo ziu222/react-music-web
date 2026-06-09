@@ -6,6 +6,7 @@ import Loader from "./components/Loader";
 import Player from "./components/Player";
 import Sidebar from "./components/Sidebar";
 import AuthModal from "./components/AuthModal";
+import AuthGateModal from "./components/AuthGateModal";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -24,6 +25,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(null);
+  const [authGate, setAuthGate] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [userPlaylists, setUserPlaylists] = useState(() => {
@@ -55,8 +57,11 @@ export default function App() {
   const handleAuth = (user) => {
     setAuthUser(user);
     setAuthMode(null);
+    const pendingAction = authGate?.afterAuth;
+    setAuthGate(null);
     setSearch("");
     setPage("home");
+    pendingAction?.();
   };
 
   const nav = (p) => {
@@ -72,6 +77,18 @@ export default function App() {
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
   };
 
+  const requireAuth = (action, gate) => {
+    if (authUser) {
+      action();
+      return;
+    }
+    setAuthGate({ ...gate, afterAuth: action });
+  };
+
+  const playWithAuth = (s) => {
+    requireAuth(() => play(s), { reason: "play", song: s });
+  };
+
   const getPlaylistSongs = (pl) => {
     if (!pl) return [];
     if (pl.type === "liked") return list.filter(s => likedIds.has(s.id));
@@ -85,7 +102,9 @@ export default function App() {
 
   const playPlaylist = (pl) => {
     const firstSong = getPlaylistSongs(pl)[0];
-    if (firstSong) play(firstSong);
+    if (firstSong) {
+      requireAuth(() => play(firstSong), { reason: "play", playlist: pl, song: firstSong });
+    }
   };
 
   const createPlaylist = () => {
@@ -107,6 +126,11 @@ export default function App() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const toggleLikeWithAuth = (id) => {
+    const song = list.find(s => s.id === id);
+    requireAuth(() => toggleLike(id), { reason: "like", song });
   };
 
   useEffect(() => {
@@ -341,9 +365,9 @@ export default function App() {
                 <PageHome
                   list={list}
                   cur={cur}
-                  onPlay={play}
+                  onPlay={playWithAuth}
                   likedIds={likedIds}
-                  onLike={toggleLike}
+                  onLike={toggleLikeWithAuth}
                   recentIds={recentIds}
                 />
               )}
@@ -352,18 +376,18 @@ export default function App() {
                   list={list}
                   query={search}
                   cur={cur}
-                  onPlay={play}
+                  onPlay={playWithAuth}
                   likedIds={likedIds}
-                  onLike={toggleLike}
+                  onLike={toggleLikeWithAuth}
                 />
               )}
               {page === "library" && (
                 <PageLibrary
                   list={list}
                   cur={cur}
-                  onPlay={play}
+                  onPlay={playWithAuth}
                   likedIds={likedIds}
-                  onLike={toggleLike}
+                  onLike={toggleLikeWithAuth}
                   userPlaylists={userPlaylists}
                   selectedPlaylistId={selectedPlaylistId}
                   onSelectPlaylist={setSelectedPlaylistId}
@@ -383,7 +407,14 @@ export default function App() {
         prog={prog}
         onToggle={() => setPlaying(p => !p)}
         likedIds={likedIds}
-        onLike={toggleLike}
+        onLike={toggleLikeWithAuth}
+      />
+
+      <AuthGateModal
+        gate={authGate}
+        onClose={() => setAuthGate(null)}
+        onLogin={() => openAuth("login")}
+        onRegister={() => openAuth("register")}
       />
 
       {authMode && (
