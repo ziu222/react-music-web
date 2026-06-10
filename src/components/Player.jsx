@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import EqBars from "./EqBars";
 import QueuePanel from "./QueuePanel";
+import ExpandedPlayer from "./ExpandedPlayer";
 import { C, R } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
@@ -48,6 +49,7 @@ export default function Player({
   const [isVolDragging, setIsVolDragging] = useState(false);
   const [pressedBtn, setPressedBtn] = useState(null);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [expandOpen, setExpandOpen] = useState(false);
 
   const pressTimerRef = useRef(null);
   const progressBarRef = useRef(null);
@@ -157,6 +159,15 @@ export default function Player({
 
   return (
     <>
+      <ExpandedPlayer
+        isOpen={expandOpen}
+        onClose={() => setExpandOpen(false)}
+        s={s} playing={playing} prog={prog} volume={volume} muted={muted}
+        shuffle={shuffle} repeatMode={repeatMode} likedIds={likedIds}
+        onToggle={onToggle} onPrevious={onPrevious} onNext={onNext}
+        onSeek={onSeek} onVolumeChange={onVolumeChange} onMuteToggle={onMuteToggle}
+        onShuffleToggle={onShuffleToggle} onRepeatCycle={onRepeatCycle} onLike={onLike}
+      />
       <QueuePanel
         isOpen={queueOpen}
         onClose={() => setQueueOpen(false)}
@@ -181,11 +192,15 @@ export default function Player({
       >
         {/* ── Now Playing ── */}
         <div className="player-now" style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 8, background: s.bg, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            overflow: "hidden", position: "relative", boxShadow: "0 8px 22px rgba(0,0,0,0.38)",
-          }}>
+          <div
+            onClick={() => setExpandOpen(true)}
+            title="Open expanded player"
+            style={{
+              width: 56, height: 56, borderRadius: 8, background: s.bg, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              overflow: "hidden", position: "relative", boxShadow: "0 8px 22px rgba(0,0,0,0.38)",
+              cursor: "pointer",
+            }}>
             {cover && <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
             {playing ? (
               <div style={{
@@ -364,7 +379,11 @@ export default function Player({
             }} />
           </div>
 
-          <button type="button" aria-label="Expanded player" className={btnClass("expand")} onClick={() => pressAnim("expand")} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          <button type="button" aria-label="Expanded player"
+            className={btnClass("expand")}
+            onClick={() => { pressAnim("expand"); setExpandOpen(o => !o); }}
+            style={iconButton(expandOpen)}
+            onMouseEnter={e => hoverOn(e, expandOpen)} onMouseLeave={e => hoverOff(e, expandOpen)}>
             <Maximize2 size={16} />
           </button>
         </div>
