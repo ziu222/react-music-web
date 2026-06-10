@@ -117,12 +117,19 @@ export default function App() {
 
   // Play a track that the user picked from the Queue panel — seeks in the existing queue.
   const playFromQueue = useCallback((song) => {
-    if (shuffle && shuffleQueue.length > 0) {
-      const pos = shuffleQueue.indexOf(song.id);
-      if (pos >= 0) setShufflePos(pos);
+    if (shuffle) {
+      if (shuffleQueue.length > 0) {
+        const pos = shuffleQueue.indexOf(song.id);
+        if (pos >= 0) setShufflePos(pos);
+      } else {
+        // shuffle on but queue missing — build it now
+        const otherIds = list.filter(s => s.id !== song.id).map(s => s.id);
+        setShuffleQueue([song.id, ...fisherYates(otherIds)]);
+        setShufflePos(0);
+      }
     }
     play(song);
-  }, [play, shuffle, shuffleQueue]);
+  }, [play, shuffle, shuffleQueue, list]);
 
   const playByIndex = useCallback((index) => {
     if (!list.length) return;
@@ -133,27 +140,37 @@ export default function App() {
   const playNext = useCallback(({ allowWrap = true } = {}) => {
     if (!list.length) return;
 
-    if (shuffle && shuffleQueue.length > 0) {
-      let nextPos = shufflePos + 1;
+    if (shuffle) {
       let queue = shuffleQueue;
-      if (nextPos >= queue.length) {
-        // End of shuffle cycle: put cur at front, shuffle everything else,
-        // then start from position 1 so cur is not replayed immediately.
-        const curId = cur?.id;
-        if (curId && list.length > 1) {
-          const rest = fisherYates(queue.filter(id => id !== curId));
-          queue = [curId, ...rest];
-          nextPos = 1;
-        } else {
-          queue = fisherYates([...queue]);
-          nextPos = 0;
-        }
+      let pos = shufflePos;
+      if (queue.length === 0 && cur) {
+        // queue missing while shuffle is on — build it from current song
+        const otherIds = list.filter(s => s.id !== cur.id).map(s => s.id);
+        queue = [cur.id, ...fisherYates(otherIds)];
         setShuffleQueue(queue);
+        pos = 0;
       }
-      setShufflePos(nextPos);
-      const song = list.find(s => s.id === queue[nextPos]);
-      if (song) play(song);
-      return;
+      if (queue.length > 0) {
+        let nextPos = pos + 1;
+        if (nextPos >= queue.length) {
+          // End of shuffle cycle: put cur at front, shuffle everything else,
+          // then start from position 1 so cur is not replayed immediately.
+          const curId = cur?.id;
+          if (curId && list.length > 1) {
+            const rest = fisherYates(queue.filter(id => id !== curId));
+            queue = [curId, ...rest];
+            nextPos = 1;
+          } else {
+            queue = fisherYates([...queue]);
+            nextPos = 0;
+          }
+          setShuffleQueue(queue);
+        }
+        setShufflePos(nextPos);
+        const song = list.find(s => s.id === queue[nextPos]);
+        if (song) play(song);
+        return;
+      }
     }
 
     const currentIndex = cur ? list.findIndex(song => song.id === cur.id) : -1;
@@ -326,12 +343,15 @@ export default function App() {
   );
 
   const upcomingTracks = useMemo(() => {
-    if (shuffle && shuffleQueue.length > 0) {
-      const songMap = new Map(list.map(s => [s.id, s]));
-      return shuffleQueue
-        .slice(shufflePos + 1, shufflePos + 21)
-        .map(id => songMap.get(id))
-        .filter(Boolean);
+    if (shuffle) {
+      if (shuffleQueue.length > 0) {
+        const songMap = new Map(list.map(s => [s.id, s]));
+        return shuffleQueue
+          .slice(shufflePos + 1, shufflePos + 21)
+          .map(id => songMap.get(id))
+          .filter(Boolean);
+      }
+      return []; // shuffle on but queue not yet built — show empty
     }
     const curIdx = cur ? list.findIndex(s => s.id === cur.id) : -1;
     return curIdx >= 0 ? list.slice(curIdx + 1, curIdx + 21) : [];
