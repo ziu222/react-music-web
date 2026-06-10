@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Heart,
   ListMusic,
@@ -41,8 +41,54 @@ export default function Player({
 }) {
   const [hovProgress, setHovProgress] = useState(false);
   const [hovVolume, setHovVolume] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isVolDragging, setIsVolDragging] = useState(false);
   const [pressedBtn, setPressedBtn] = useState(null);
+
   const pressTimerRef = useRef(null);
+  const progressBarRef = useRef(null);
+  const volumeBarRef = useRef(null);
+  const dragStateRef = useRef({ progress: false, volume: false });
+
+  // Stable refs to avoid stale closures in the drag listeners
+  const sRef = useRef(s);
+  const onSeekRef = useRef(onSeek);
+  const onVolumeChangeRef = useRef(onVolumeChange);
+  useEffect(() => { sRef.current = s; }, [s]);
+  useEffect(() => { onSeekRef.current = onSeek; }, [onSeek]);
+  useEffect(() => { onVolumeChangeRef.current = onVolumeChange; }, [onVolumeChange]);
+
+  // Document-level drag listeners — set up once
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (dragStateRef.current.progress && progressBarRef.current) {
+        const rect = progressBarRef.current.getBoundingClientRect();
+        const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        onSeekRef.current(Math.round(ratio * (sRef.current?.durationSecs || 0)));
+      }
+      if (dragStateRef.current.volume && volumeBarRef.current) {
+        const rect = volumeBarRef.current.getBoundingClientRect();
+        const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        onVolumeChangeRef.current(Number(ratio.toFixed(2)));
+      }
+    };
+    const handleMouseUp = () => {
+      if (dragStateRef.current.progress) {
+        dragStateRef.current.progress = false;
+        setIsDragging(false);
+      }
+      if (dragStateRef.current.volume) {
+        dragStateRef.current.volume = false;
+        setIsVolDragging(false);
+      }
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
 
   if (!s) return null;
 
@@ -51,18 +97,28 @@ export default function Player({
   const pct = s.durationSecs > 0 ? Math.min(100, Math.max(0, (prog / s.durationSecs) * 100)) : 0;
   const volPct = muted ? 0 : Math.round(volume * 100);
   const mins = Math.floor(prog / 60);
-  const secs = String(prog % 60).padStart(2, "0");
+  const secs = String(Math.floor(prog % 60)).padStart(2, "0");
 
-  const seekFromEvent = (event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-    onSeek(Math.round(ratio * s.durationSecs));
+  const handleProgressMouseDown = (e) => {
+    e.preventDefault();
+    dragStateRef.current.progress = true;
+    setIsDragging(true);
+    if (progressBarRef.current) {
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      onSeek(Math.round(ratio * s.durationSecs));
+    }
   };
 
-  const volumeFromEvent = (event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-    onVolumeChange(Number(ratio.toFixed(2)));
+  const handleVolumeMouseDown = (e) => {
+    e.preventDefault();
+    dragStateRef.current.volume = true;
+    setIsVolDragging(true);
+    if (volumeBarRef.current) {
+      const rect = volumeBarRef.current.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      onVolumeChange(Number(ratio.toFixed(2)));
+    }
   };
 
   const pressAnim = (id, callback) => {
@@ -72,12 +128,7 @@ export default function Player({
     pressTimerRef.current = setTimeout(() => setPressedBtn(null), 180);
   };
 
-  const btnClass = (id, extraClass = "") => {
-    const parts = [];
-    if (pressedBtn === id) parts.push("player-btn-press");
-    if (extraClass) parts.push(extraClass);
-    return parts.join(" ") || undefined;
-  };
+  const btnClass = (id) => (pressedBtn === id ? "player-btn-press" : undefined);
 
   const iconButton = (active = false) => ({
     width: 32,
@@ -91,18 +142,20 @@ export default function Player({
     justifyContent: "center",
     cursor: "pointer",
     flexShrink: 0,
-    transition: "background 0.14s ease, color 0.14s ease",
+    transition: "background 80ms ease, color 80ms ease",
   });
 
-  const hoverOn = (event, active = false) => {
-    event.currentTarget.style.background = "rgba(255,255,255,0.08)";
-    event.currentTarget.style.color = active ? C[400] : "#fff";
+  const hoverOn = (e, active = false) => {
+    e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+    e.currentTarget.style.color = active ? C[400] : "#fff";
+  };
+  const hoverOff = (e, active = false) => {
+    e.currentTarget.style.background = "transparent";
+    e.currentTarget.style.color = active ? C[400] : "rgba(255,255,255,0.64)";
   };
 
-  const hoverOff = (event, active = false) => {
-    event.currentTarget.style.background = "transparent";
-    event.currentTarget.style.color = active ? C[400] : "rgba(255,255,255,0.64)";
-  };
+  const showThumb = hovProgress || isDragging;
+  const showVolThumb = hovVolume || isVolDragging;
 
   return (
     <div
@@ -113,48 +166,29 @@ export default function Player({
         background: "#181818",
         borderTop: "1px solid rgba(255,255,255,0.08)",
         display: "grid",
-        gridTemplateColumns: "minmax(230px, 1fr) minmax(360px, 1.45fr) minmax(220px, 1fr)",
+        gridTemplateColumns: "minmax(230px,1fr) minmax(360px,1.45fr) minmax(220px,1fr)",
         alignItems: "center",
         padding: "10px 18px",
         gap: 14,
         boxShadow: "0 -10px 28px rgba(0,0,0,0.32)",
       }}
     >
-      {/* Now playing */}
+      {/* ── Now Playing ── */}
       <div className="player-now" style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
         <div
           style={{
-            width: 56,
-            height: 56,
-            borderRadius: 8,
-            background: s.bg,
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            position: "relative",
-            boxShadow: "0 8px 22px rgba(0,0,0,0.38)",
+            width: 56, height: 56, borderRadius: 8, background: s.bg,
+            flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            overflow: "hidden", position: "relative", boxShadow: "0 8px 22px rgba(0,0,0,0.38)",
           }}
         >
-          {cover ? (
-            <img
-              src={cover}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
-          ) : null}
+          {cover && <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
           {playing ? (
-            <div
-              style={{
-                position: cover ? "absolute" : "static",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: cover ? "rgba(0,0,0,0.34)" : "transparent",
-              }}
-            >
+            <div style={{
+              position: cover ? "absolute" : "static", inset: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: cover ? "rgba(0,0,0,0.34)" : "transparent",
+            }}>
               <EqBars size={16} />
             </div>
           ) : !cover ? (
@@ -163,28 +197,10 @@ export default function Player({
         </div>
 
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: "#f4eee8",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              marginBottom: 3,
-            }}
-          >
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#f4eee8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3 }}>
             {s.title}
           </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.52)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.52)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {s.artist}
           </div>
         </div>
@@ -194,14 +210,10 @@ export default function Player({
           aria-label={liked ? "Unlike song" : "Like song"}
           onClick={() => onLike(s.id)}
           style={{
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
+            background: "transparent", border: "none", cursor: "pointer",
             color: liked ? R[400] : "rgba(255,255,255,0.34)",
-            flexShrink: 0,
-            transition: "color 0.15s, transform 0.1s",
-            display: "inline-flex",
-            padding: 5,
+            flexShrink: 0, transition: "color 0.15s, transform 0.1s",
+            display: "inline-flex", padding: 5,
           }}
           onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
           onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
@@ -210,239 +222,176 @@ export default function Player({
         </button>
       </div>
 
-      {/* Playback controls + progress */}
+      {/* ── Playback Controls ── */}
       <div className="player-controls" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+
+          {/* Shuffle — with active dot */}
+          <div style={{ position: "relative" }}>
+            <button
+              type="button" aria-label="Shuffle"
+              className={btnClass("shuffle")}
+              onClick={() => pressAnim("shuffle", onShuffleToggle)}
+              style={iconButton(shuffle)}
+              onMouseEnter={e => hoverOn(e, shuffle)}
+              onMouseLeave={e => hoverOff(e, shuffle)}
+            >
+              <Shuffle size={16} />
+            </button>
+            {shuffle && <span className="player-active-dot" />}
+          </div>
+
           <button
-            type="button"
-            aria-label="Shuffle"
-            className={btnClass("shuffle", shuffle ? "player-btn-active-glow" : "")}
-            onClick={() => pressAnim("shuffle", onShuffleToggle)}
-            style={iconButton(shuffle)}
-            onMouseEnter={e => hoverOn(e, shuffle)}
-            onMouseLeave={e => hoverOff(e, shuffle)}
-          >
-            <Shuffle size={16} />
-          </button>
-          <button
-            type="button"
-            aria-label="Previous track"
+            type="button" aria-label="Previous track"
             className={btnClass("prev")}
             onClick={() => pressAnim("prev", onPrevious)}
             style={iconButton(false)}
-            onMouseEnter={hoverOn}
-            onMouseLeave={hoverOff}
+            onMouseEnter={hoverOn} onMouseLeave={hoverOff}
           >
             <SkipBack size={19} fill="currentColor" />
           </button>
+
+          {/* Play / Pause */}
           <button
-            type="button"
-            aria-label={playing ? "Pause" : "Play"}
+            type="button" aria-label={playing ? "Pause" : "Play"}
             onClick={onToggle}
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              border: "none",
-              background: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              color: "#141010",
-              flexShrink: 0,
-              margin: "0 4px",
+              width: 40, height: 40, borderRadius: "50%", border: "none",
+              background: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "#141010", flexShrink: 0, margin: "0 4px",
               transition: "transform 0.12s, box-shadow 0.12s",
               boxShadow: "0 6px 18px rgba(0,0,0,0.44)",
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = "scale(1.06)";
-              e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.52)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,0,0,0.44)";
-            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.06)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.52)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,0,0,0.44)"; }}
           >
-            {playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" style={{ marginLeft: 2 }} />}
+            {playing
+              ? <Pause size={19} fill="currentColor" />
+              : <Play size={19} fill="currentColor" style={{ marginLeft: 2 }} />}
           </button>
+
           <button
-            type="button"
-            aria-label="Next track"
+            type="button" aria-label="Next track"
             className={btnClass("next")}
             onClick={() => pressAnim("next", onNext)}
             style={iconButton(false)}
-            onMouseEnter={hoverOn}
-            onMouseLeave={hoverOff}
+            onMouseEnter={hoverOn} onMouseLeave={hoverOff}
           >
             <SkipForward size={19} fill="currentColor" />
           </button>
-          <button
-            type="button"
-            aria-label="Repeat"
-            className={btnClass("repeat", repeatMode !== "off" ? "player-btn-active-glow" : "")}
-            onClick={() => pressAnim("repeat", onRepeatCycle)}
-            style={iconButton(repeatMode !== "off")}
-            onMouseEnter={e => hoverOn(e, repeatMode !== "off")}
-            onMouseLeave={e => hoverOff(e, repeatMode !== "off")}
-          >
-            {repeatMode === "one" ? <Repeat1 size={16} /> : <Repeat size={16} />}
-          </button>
+
+          {/* Repeat — with active dot */}
+          <div style={{ position: "relative" }}>
+            <button
+              type="button" aria-label="Repeat"
+              className={btnClass("repeat")}
+              onClick={() => pressAnim("repeat", onRepeatCycle)}
+              style={iconButton(repeatMode !== "off")}
+              onMouseEnter={e => hoverOn(e, repeatMode !== "off")}
+              onMouseLeave={e => hoverOff(e, repeatMode !== "off")}
+            >
+              {repeatMode === "one" ? <Repeat1 size={16} /> : <Repeat size={16} />}
+            </button>
+            {repeatMode !== "off" && <span className="player-active-dot" />}
+          </div>
         </div>
 
-        {/* Progress bar */}
-        <div
-          style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 520 }}
-          onMouseEnter={() => setHovProgress(true)}
-          onMouseLeave={() => setHovProgress(false)}
-        >
+        {/* Progress bar — 16px hit area, instant seek on drag */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 520 }}>
           <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", minWidth: 34, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
             {mins}:{secs}
           </span>
+
           <div
-            onClick={seekFromEvent}
-            style={{
-              flex: 1,
-              height: hovProgress ? 6 : 4,
-              background: "rgba(255,255,255,0.16)",
-              borderRadius: 999,
-              position: "relative",
-              cursor: "pointer",
-              transition: "height 0.1s",
-            }}
+            ref={progressBarRef}
+            onMouseDown={handleProgressMouseDown}
+            onMouseEnter={() => setHovProgress(true)}
+            onMouseLeave={() => setHovProgress(false)}
+            style={{ flex: 1, height: 16, display: "flex", alignItems: "center", position: "relative", cursor: "pointer", userSelect: "none" }}
           >
-            <div
-              style={{
-                width: `${pct}%`,
-                height: "100%",
-                background: C[500],
-                borderRadius: 999,
-                transition: "width 1s linear, background 0.15s",
-              }}
-            />
-            {hovProgress && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: `${pct}%`,
-                  transform: "translate(-50%, -50%)",
-                  width: 13,
-                  height: 13,
-                  background: "#fff",
-                  borderRadius: "50%",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
-                  transition: "left 1s linear",
-                  pointerEvents: "none",
-                }}
-              />
+            {/* Visual track */}
+            <div style={{
+              position: "absolute", left: 0, right: 0, top: "50%",
+              transform: "translateY(-50%)",
+              height: showThumb ? 6 : 4,
+              background: "rgba(255,255,255,0.16)", borderRadius: 999,
+              overflow: "hidden", transition: "height 0.1s",
+            }}>
+              <div style={{
+                width: `${pct}%`, height: "100%", background: C[500], borderRadius: 999,
+                transition: isDragging ? "none" : "width 1s linear",
+              }} />
+            </div>
+            {/* Thumb */}
+            {showThumb && (
+              <div style={{
+                position: "absolute", top: "50%", left: `${pct}%`,
+                transform: "translate(-50%, -50%)",
+                width: 13, height: 13, background: "#fff", borderRadius: "50%",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.4)", pointerEvents: "none", zIndex: 1,
+              }} />
             )}
           </div>
+
           <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", minWidth: 34, fontVariantNumeric: "tabular-nums" }}>
             {s.duration}
           </span>
         </div>
       </div>
 
-      {/* Side tools + volume */}
+      {/* ── Side Tools ── */}
       <div className="player-side-tools" style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", minWidth: 0 }}>
-        <button
-          type="button"
-          aria-label="Lyrics"
-          className={btnClass("lyrics")}
-          onClick={() => pressAnim("lyrics")}
-          style={iconButton(false)}
-          onMouseEnter={hoverOn}
-          onMouseLeave={hoverOff}
-        >
+        <button type="button" aria-label="Lyrics" className={btnClass("lyrics")} onClick={() => pressAnim("lyrics")} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
           <Mic2 size={16} />
         </button>
-        <button
-          type="button"
-          aria-label="Queue"
-          className={btnClass("queue")}
-          onClick={() => pressAnim("queue")}
-          style={iconButton(false)}
-          onMouseEnter={hoverOn}
-          onMouseLeave={hoverOff}
-        >
+        <button type="button" aria-label="Queue" className={btnClass("queue")} onClick={() => pressAnim("queue")} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
           <ListMusic size={16} />
         </button>
-        <button
-          type="button"
-          aria-label="Connect device"
-          className={btnClass("connect")}
-          onClick={() => pressAnim("connect")}
-          style={iconButton(false)}
-          onMouseEnter={hoverOn}
-          onMouseLeave={hoverOff}
-        >
+        <button type="button" aria-label="Connect device" className={btnClass("connect")} onClick={() => pressAnim("connect")} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
           <MonitorSpeaker size={16} />
         </button>
         <button
-          type="button"
-          aria-label={muted ? "Unmute" : "Mute"}
+          type="button" aria-label={muted ? "Unmute" : "Mute"}
           className={btnClass("mute")}
           onClick={() => pressAnim("mute", onMuteToggle)}
-          style={iconButton(false)}
-          onMouseEnter={hoverOn}
-          onMouseLeave={hoverOff}
+          style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}
         >
           {muted || volPct === 0 ? <VolumeX size={17} /> : <Volume2 size={17} />}
         </button>
 
-        {/* Volume slider */}
+        {/* Volume — 16px hit area, drag-to-volume */}
         <div
-          onClick={volumeFromEvent}
+          ref={volumeBarRef}
+          onMouseDown={handleVolumeMouseDown}
           onMouseEnter={() => setHovVolume(true)}
           onMouseLeave={() => setHovVolume(false)}
-          style={{
-            width: 92,
-            height: hovVolume ? 6 : 4,
-            background: "rgba(255,255,255,0.16)",
-            borderRadius: 999,
-            cursor: "pointer",
-            position: "relative",
-            flexShrink: 0,
-            transition: "height 0.1s ease",
-          }}
+          style={{ width: 92, height: 16, display: "flex", alignItems: "center", position: "relative", cursor: "pointer", flexShrink: 0, userSelect: "none" }}
         >
-          <div
-            style={{
-              width: `${volPct}%`,
-              height: "100%",
+          <div style={{
+            position: "absolute", left: 0, right: 0, top: "50%",
+            transform: "translateY(-50%)",
+            height: showVolThumb ? 6 : 4,
+            background: "rgba(255,255,255,0.16)", borderRadius: 999,
+            overflow: "hidden", transition: "height 0.1s ease",
+          }}>
+            <div style={{
+              width: `${volPct}%`, height: "100%",
               background: muted ? "rgba(255,255,255,0.34)" : "rgba(255,255,255,0.72)",
               borderRadius: 999,
-              transition: "width 160ms ease, background 140ms ease",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: `${volPct}%`,
-              transform: "translate(-50%, -50%)",
-              width: 11,
-              height: 11,
-              background: "#fff",
-              borderRadius: "50%",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
-              pointerEvents: "none",
-              opacity: hovVolume ? 1 : 0,
-              transition: "left 160ms ease, opacity 140ms ease, transform 140ms ease",
-            }}
-          />
+              transition: isVolDragging ? "none" : "width 160ms ease, background 140ms ease",
+            }} />
+          </div>
+          <div style={{
+            position: "absolute", top: "50%", left: `${volPct}%`,
+            transform: "translate(-50%, -50%)",
+            width: 11, height: 11, background: "#fff", borderRadius: "50%",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.4)", pointerEvents: "none", zIndex: 1,
+            opacity: showVolThumb ? 1 : 0,
+            transition: isVolDragging ? "opacity 140ms ease" : "left 160ms ease, opacity 140ms ease",
+          }} />
         </div>
 
-        <button
-          type="button"
-          aria-label="Fullscreen"
-          className={btnClass("fullscreen")}
-          onClick={() => pressAnim("fullscreen")}
-          style={iconButton(false)}
-          onMouseEnter={hoverOn}
-          onMouseLeave={hoverOff}
-        >
+        <button type="button" aria-label="Expanded player" className={btnClass("expand")} onClick={() => pressAnim("expand")} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
           <Maximize2 size={16} />
         </button>
       </div>
