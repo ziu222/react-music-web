@@ -137,9 +137,17 @@ export default function App() {
       let nextPos = shufflePos + 1;
       let queue = shuffleQueue;
       if (nextPos >= queue.length) {
-        // End of shuffle cycle — reshuffle and continue regardless of allowWrap.
-        queue = fisherYates([...shuffleQueue]);
-        nextPos = 0;
+        // End of shuffle cycle: put cur at front, shuffle everything else,
+        // then start from position 1 so cur is not replayed immediately.
+        const curId = cur?.id;
+        if (curId && list.length > 1) {
+          const rest = fisherYates(queue.filter(id => id !== curId));
+          queue = [curId, ...rest];
+          nextPos = 1;
+        } else {
+          queue = fisherYates([...queue]);
+          nextPos = 0;
+        }
         setShuffleQueue(queue);
       }
       setShufflePos(nextPos);
@@ -328,6 +336,11 @@ export default function App() {
     const curIdx = cur ? list.findIndex(s => s.id === cur.id) : -1;
     return curIdx >= 0 ? list.slice(curIdx + 1, curIdx + 21) : [];
   }, [shuffle, shuffleQueue, shufflePos, cur, list]);
+
+  const recentSongs = useMemo(() => {
+    const songMap = new Map(list.map(s => [s.id, s]));
+    return recentIds.map(id => songMap.get(id)).filter(Boolean);
+  }, [recentIds, list]);
 
   const albumPlaylists = useMemo(() => {
     const albumMap = new Map();
@@ -694,6 +707,8 @@ export default function App() {
         onShuffleToggle={toggleShuffle}
         onRepeatCycle={cycleRepeatMode}
         onPlayTrack={playFromQueueWithAuth}
+        onPlayRecent={playWithAuth}
+        recentSongs={recentSongs}
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
       />

@@ -41,6 +41,8 @@ export default function Player({
   onShuffleToggle,
   onRepeatCycle,
   onPlayTrack,
+  onPlayRecent,
+  recentSongs = [],
   likedIds,
   onLike,
 }) {
@@ -176,6 +178,9 @@ export default function Player({
         currentSong={s}
         upcomingTracks={upcomingTracks}
         onPlayTrack={onPlayTrack}
+        shuffle={shuffle}
+        recentTracks={recentSongs}
+        onPlayRecent={onPlayRecent}
       />
 
       <div
