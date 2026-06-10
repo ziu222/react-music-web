@@ -16,6 +16,7 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, lyrics = nul
       role="dialog"
       aria-label="Lyrics"
       aria-hidden={!isOpen}
+      className="player-side-panel"
       style={{
         position: "fixed",
         right: 0,

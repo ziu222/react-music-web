@@ -16,6 +16,7 @@ export default function QueuePanel({ isOpen, onClose, currentSong, upcomingTrack
       role="dialog"
       aria-label="Queue"
       aria-hidden={!isOpen}
+      className="player-side-panel"
       style={{
         position: "fixed",
         right: 0,

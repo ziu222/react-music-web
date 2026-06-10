@@ -357,7 +357,7 @@ export default function Player({
             <MonitorSpeaker size={16} />
           </button>
 
-          <button type="button" aria-label={muted ? "Unmute" : "Mute"} className={btnClass("mute")}
+          <button type="button" aria-label={muted ? "Unmute" : "Mute"} className={`${btnClass("mute")} player-mute-btn`}
             onClick={() => pressAnim("mute", onMuteToggle)}
             style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
             {muted || volPct === 0 ? <VolumeX size={17} /> : <Volume2 size={17} />}
@@ -366,6 +366,7 @@ export default function Player({
           {/* Volume — 16px hit area, drag */}
           <div
             ref={volumeBarRef}
+            className="player-vol-slider"
             onMouseDown={handleVolumeMouseDown}
             onMouseEnter={() => setHovVolume(true)}
             onMouseLeave={() => setHovVolume(false)}

@@ -93,8 +93,12 @@ body {
   .player-side-tools { grid-area: tools; }
   .player-side-tools button[aria-label="Lyrics"],
   .player-side-tools button[aria-label="Queue"],
-  .player-side-tools button[aria-label="Fullscreen"] {
+  .player-side-tools button[aria-label="Expanded player"] {
     display: none !important;
+  }
+
+  .player-side-panel {
+    bottom: 142px !important;
   }
 }
 
@@ -110,6 +114,23 @@ body {
 
   .player-side-tools {
     justify-content: center !important;
+    gap: 2px !important;
+  }
+
+  .player-side-tools button[aria-label="Lyrics"],
+  .player-side-tools button[aria-label="Queue"],
+  .player-side-tools button[aria-label="Connect device"],
+  .player-side-tools button[aria-label="Expanded player"] {
+    display: none !important;
+  }
+
+  .player-mute-btn,
+  .player-vol-slider {
+    display: none !important;
+  }
+
+  .player-side-panel {
+    display: none !important;
   }
 }
 
