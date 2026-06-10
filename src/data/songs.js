@@ -1,3 +1,5 @@
+import audioFiles from "./audioFiles";
+
 const songs = [
   {
     id: 1,
@@ -826,4 +828,7 @@ const songs = [
   },
 ];
 
-export default songs;
+export default songs.map(song => ({
+  ...song,
+  audioUrl: audioFiles[song.id] ? `/audio/${encodeURIComponent(audioFiles[song.id])}` : null,
+}));
