@@ -88,13 +88,15 @@ export default function ExpandedPlayer({
   return (
     <div
       role="dialog"
-      aria-modal="true"
+      aria-modal={isOpen}
       aria-label="Expanded Player"
       aria-hidden={!isOpen}
+      inert={!isOpen ? "" : undefined}
       style={{
         position: "fixed", inset: 0, zIndex: 300, overflow: "hidden",
         transform: isOpen ? "translateY(0)" : "translateY(100%)",
         transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        pointerEvents: isOpen ? undefined : "none",
       }}
     >
       {/* Layered background: song color + heavy dark overlay */}
