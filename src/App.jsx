@@ -14,6 +14,15 @@ import PageLibrary from "./pages/PageLibrary";
 import logo from "./assets/logo.png";
 import { C, BG, TEXT, BORDER } from "./constants/theme";
 
+function fisherYates(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default function App() {
   const audioRef = useRef(new Audio());
   const [screen, setScreen] = useState("splash");
@@ -25,6 +34,8 @@ export default function App() {
   const [volume, setVolume] = useState(0.7);
   const [muted, setMuted] = useState(false);
   const [shuffle, setShuffle] = useState(false);
+  const [shuffleQueue, setShuffleQueue] = useState([]);
+  const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
   const [likedIds, setLikedIds] = useState(new Set());
   const [list] = useState(songs);
@@ -93,6 +104,26 @@ export default function App() {
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
   }, []);
 
+  // Play a track selected outside the queue (library, home, search) — rebuilds shuffle queue.
+  const playExternal = useCallback((song) => {
+    play(song);
+    if (shuffle) {
+      const otherIds = list.filter(s => s.id !== song.id).map(s => s.id);
+      const queue = [song.id, ...fisherYates(otherIds)];
+      setShuffleQueue(queue);
+      setShufflePos(0);
+    }
+  }, [play, shuffle, list]);
+
+  // Play a track that the user picked from the Queue panel — seeks in the existing queue.
+  const playFromQueue = useCallback((song) => {
+    if (shuffle && shuffleQueue.length > 0) {
+      const pos = shuffleQueue.indexOf(song.id);
+      if (pos >= 0) setShufflePos(pos);
+    }
+    play(song);
+  }, [play, shuffle, shuffleQueue]);
+
   const playByIndex = useCallback((index) => {
     if (!list.length) return;
     const normalized = (index + list.length) % list.length;
@@ -102,18 +133,23 @@ export default function App() {
   const playNext = useCallback(({ allowWrap = true } = {}) => {
     if (!list.length) return;
 
-    const currentIndex = cur ? list.findIndex(song => song.id === cur.id) : -1;
-    if (shuffle && list.length > 1) {
-      let randomIndex = Math.floor(Math.random() * list.length);
-      if (randomIndex === currentIndex) randomIndex = (randomIndex + 1) % list.length;
-      playByIndex(randomIndex);
+    if (shuffle && shuffleQueue.length > 0) {
+      let nextPos = shufflePos + 1;
+      let queue = shuffleQueue;
+      if (nextPos >= queue.length) {
+        // End of shuffle cycle — reshuffle and continue regardless of allowWrap.
+        queue = fisherYates([...shuffleQueue]);
+        nextPos = 0;
+        setShuffleQueue(queue);
+      }
+      setShufflePos(nextPos);
+      const song = list.find(s => s.id === queue[nextPos]);
+      if (song) play(song);
       return;
     }
 
-    if (currentIndex === -1) {
-      playByIndex(0);
-      return;
-    }
+    const currentIndex = cur ? list.findIndex(song => song.id === cur.id) : -1;
+    if (currentIndex === -1) { playByIndex(0); return; }
 
     if (currentIndex === list.length - 1 && !allowWrap) {
       setPlaying(false);
@@ -122,7 +158,7 @@ export default function App() {
     }
 
     playByIndex(currentIndex + 1);
-  }, [cur, list, playByIndex, shuffle]);
+  }, [cur, list, play, playByIndex, shuffle, shuffleQueue, shufflePos]);
 
   const playPrevious = useCallback(() => {
     if (!list.length) return;
@@ -134,9 +170,22 @@ export default function App() {
       return;
     }
 
+    if (shuffle && shuffleQueue.length > 0) {
+      if (shufflePos <= 0) {
+        audioRef.current.currentTime = 0;
+        setProg(0);
+        return;
+      }
+      const prevPos = shufflePos - 1;
+      setShufflePos(prevPos);
+      const song = list.find(s => s.id === shuffleQueue[prevPos]);
+      if (song) play(song);
+      return;
+    }
+
     const currentIndex = cur ? list.findIndex(song => song.id === cur.id) : -1;
     playByIndex(currentIndex <= 0 ? list.length - 1 : currentIndex - 1);
-  }, [cur, list, playByIndex, prog]);
+  }, [cur, list, play, playByIndex, prog, shuffle, shuffleQueue, shufflePos]);
 
   const seekTo = useCallback((seconds) => {
     if (!cur) return;
@@ -155,6 +204,23 @@ export default function App() {
     setRepeatMode(mode => mode === "off" ? "all" : mode === "all" ? "one" : "off");
   }, []);
 
+  const toggleShuffle = useCallback(() => {
+    setShuffle(prev => {
+      if (!prev) {
+        if (cur) {
+          const otherIds = list.filter(s => s.id !== cur.id).map(s => s.id);
+          const queue = [cur.id, ...fisherYates(otherIds)];
+          setShuffleQueue(queue);
+          setShufflePos(0);
+        }
+      } else {
+        setShuffleQueue([]);
+        setShufflePos(0);
+      }
+      return !prev;
+    });
+  }, [cur, list]);
+
   const requireAuth = (action, gate) => {
     if (authUser) {
       action();
@@ -164,7 +230,11 @@ export default function App() {
   };
 
   const playWithAuth = (s) => {
-    requireAuth(() => play(s), { reason: "play", song: s });
+    requireAuth(() => playExternal(s), { reason: "play", song: s });
+  };
+
+  const playFromQueueWithAuth = (s) => {
+    requireAuth(() => playFromQueue(s), { reason: "play", song: s });
   };
 
   const getPlaylistSongs = (pl) => {
@@ -181,7 +251,7 @@ export default function App() {
   const playPlaylist = (pl) => {
     const firstSong = getPlaylistSongs(pl)[0];
     if (firstSong) {
-      requireAuth(() => play(firstSong), { reason: "play", playlist: pl, song: firstSong });
+      requireAuth(() => playExternal(firstSong), { reason: "play", playlist: pl, song: firstSong });
     }
   };
 
@@ -246,6 +316,18 @@ export default function App() {
     () => authUser ? userPlaylists : userPlaylists.filter(pl => typeof pl.id !== "string" && !pl.isPersonal),
     [authUser, userPlaylists]
   );
+
+  const upcomingTracks = useMemo(() => {
+    if (shuffle && shuffleQueue.length > 0) {
+      const songMap = new Map(list.map(s => [s.id, s]));
+      return shuffleQueue
+        .slice(shufflePos + 1, shufflePos + 21)
+        .map(id => songMap.get(id))
+        .filter(Boolean);
+    }
+    const curIdx = cur ? list.findIndex(s => s.id === cur.id) : -1;
+    return curIdx >= 0 ? list.slice(curIdx + 1, curIdx + 21) : [];
+  }, [shuffle, shuffleQueue, shufflePos, cur, list]);
 
   const albumPlaylists = useMemo(() => {
     const albumMap = new Map();
@@ -602,16 +684,16 @@ export default function App() {
         muted={muted}
         shuffle={shuffle}
         repeatMode={repeatMode}
-        list={list}
+        upcomingTracks={upcomingTracks}
         onToggle={() => setPlaying(p => !p)}
         onPrevious={playPrevious}
         onNext={() => playNext()}
         onSeek={seekTo}
         onVolumeChange={changeVolume}
         onMuteToggle={() => setMuted(p => !p)}
-        onShuffleToggle={() => setShuffle(p => !p)}
+        onShuffleToggle={toggleShuffle}
         onRepeatCycle={cycleRepeatMode}
-        onPlayTrack={playWithAuth}
+        onPlayTrack={playFromQueueWithAuth}
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
       />

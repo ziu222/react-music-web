@@ -16,6 +16,8 @@ export default function QueuePanel({ isOpen, onClose, currentSong, upcomingTrack
       role="dialog"
       aria-label="Queue"
       aria-hidden={!isOpen}
+      aria-modal={isOpen}
+      inert={!isOpen ? "" : undefined}
       className="player-side-panel"
       style={{
         position: "fixed",
@@ -32,6 +34,7 @@ export default function QueuePanel({ isOpen, onClose, currentSong, upcomingTrack
         transition: "transform 250ms cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
         boxShadow: isOpen ? "-8px 0 24px rgba(0,0,0,0.36)" : "none",
+        pointerEvents: isOpen ? undefined : "none",
       }}
     >
       {/* Header */}

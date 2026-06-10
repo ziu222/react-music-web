@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Heart,
   ListMusic,
@@ -31,7 +31,7 @@ export default function Player({
   muted,
   shuffle,
   repeatMode,
-  list = [],
+  upcomingTracks = [],
   onToggle,
   onPrevious,
   onNext,
@@ -92,14 +92,6 @@ export default function Player({
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
-
-  // Upcoming tracks for queue panel (non-shuffle order)
-  const upcomingTracks = useMemo(() => {
-    if (!s || !list.length) return [];
-    const idx = list.findIndex(song => song.id === s.id);
-    if (idx === -1) return [];
-    return list.slice(idx + 1, idx + 21);
-  }, [s, list]);
 
   if (!s) return null;
 
