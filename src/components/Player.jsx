@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import EqBars from "./EqBars";
 import QueuePanel from "./QueuePanel";
+import LyricsPanel from "./LyricsPanel";
 import ExpandedPlayer from "./ExpandedPlayer";
 import { C, R } from "../constants/theme";
 import { getSongImage } from "../data/media";
@@ -49,7 +50,11 @@ export default function Player({
   const [isVolDragging, setIsVolDragging] = useState(false);
   const [pressedBtn, setPressedBtn] = useState(null);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [lyricsOpen, setLyricsOpen] = useState(false);
   const [expandOpen, setExpandOpen] = useState(false);
+
+  const toggleQueue = () => { setQueueOpen(o => !o); setLyricsOpen(false); };
+  const toggleLyrics = () => { setLyricsOpen(o => !o); setQueueOpen(false); };
 
   const pressTimerRef = useRef(null);
   const progressBarRef = useRef(null);
@@ -167,6 +172,11 @@ export default function Player({
         onToggle={onToggle} onPrevious={onPrevious} onNext={onNext}
         onSeek={onSeek} onVolumeChange={onVolumeChange} onMuteToggle={onMuteToggle}
         onShuffleToggle={onShuffleToggle} onRepeatCycle={onRepeatCycle} onLike={onLike}
+      />
+      <LyricsPanel
+        isOpen={lyricsOpen}
+        onClose={() => setLyricsOpen(false)}
+        currentSong={s}
       />
       <QueuePanel
         isOpen={queueOpen}
@@ -325,13 +335,18 @@ export default function Player({
 
         {/* ── Side Tools ── */}
         <div className="player-side-tools" style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", minWidth: 0 }}>
-          <button type="button" aria-label="Lyrics" className={btnClass("lyrics")} onClick={() => pressAnim("lyrics")} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          <button type="button" aria-label="Lyrics"
+            className={btnClass("lyrics")}
+            onClick={() => { pressAnim("lyrics"); toggleLyrics(); }}
+            style={iconButton(lyricsOpen)}
+            onMouseEnter={e => hoverOn(e, lyricsOpen)}
+            onMouseLeave={e => hoverOff(e, lyricsOpen)}>
             <Mic2 size={16} />
           </button>
 
           <button type="button" aria-label="Queue"
             className={btnClass("queue")}
-            onClick={() => { pressAnim("queue"); setQueueOpen(o => !o); }}
+            onClick={() => { pressAnim("queue"); toggleQueue(); }}
             style={iconButton(queueOpen)}
             onMouseEnter={e => hoverOn(e, queueOpen)}
             onMouseLeave={e => hoverOff(e, queueOpen)}>
