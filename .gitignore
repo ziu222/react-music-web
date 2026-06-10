@@ -44,3 +44,6 @@ master.md
 *.claude
 .mcp.json
 .mcp.local.json
+
+# Binary audio assets — served locally, not tracked in git
+public/audio/
