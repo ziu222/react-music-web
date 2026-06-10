@@ -602,6 +602,7 @@ export default function App() {
         muted={muted}
         shuffle={shuffle}
         repeatMode={repeatMode}
+        list={list}
         onToggle={() => setPlaying(p => !p)}
         onPrevious={playPrevious}
         onNext={() => playNext()}
@@ -610,6 +611,7 @@ export default function App() {
         onMuteToggle={() => setMuted(p => !p)}
         onShuffleToggle={() => setShuffle(p => !p)}
         onRepeatCycle={cycleRepeatMode}
+        onPlayTrack={playWithAuth}
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
       />
