@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, LogOut, Settings, UserRound } from "lucide-react";
-import { C, BORDER, TEXT } from "../constants/theme";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBolt, faCrown, faLock } from "@fortawesome/free-solid-svg-icons";
+import { C, G, BORDER, TEXT } from "../constants/theme";
 
 const notifications = [
   {
@@ -68,7 +70,39 @@ function IconButton({ label, active, children, onClick }) {
   );
 }
 
-export default function NavbarUserActions({ user, onHome, onLogout }) {
+function PlanChip({ premium }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        borderRadius: 9999,
+        padding: "2px 8px",
+        fontSize: 9,
+        fontWeight: 800,
+        letterSpacing: 0.5,
+        textTransform: "uppercase",
+        flexShrink: 0,
+        background: premium ? `linear-gradient(90deg, ${C[600]}, ${G[500]})` : "rgba(255,255,255,0.1)",
+        color: premium ? "#fff" : "rgba(255,255,255,0.6)",
+      }}
+    >
+      {premium && <FontAwesomeIcon icon={faCrown} style={{ fontSize: 8 }} />}
+      {premium ? "Premium" : "Free"}
+    </span>
+  );
+}
+
+export default function NavbarUserActions({
+  user,
+  isPremium = false,
+  audioQuality = "normal",
+  onOpenPremium,
+  onToggleAudioQuality,
+  onHome,
+  onLogout,
+}) {
   const [openPanel, setOpenPanel] = useState(null);
   const ref = useRef(null);
 
@@ -151,6 +185,7 @@ export default function NavbarUserActions({ user, onHome, onLogout }) {
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {user.name || user.email}
         </span>
+        <PlanChip premium={isPremium} />
       </button>
 
       {openPanel === "notifications" && (
@@ -183,13 +218,92 @@ export default function NavbarUserActions({ user, onHome, onLogout }) {
       {openPanel === "profile" && (
         <FloatingPanel right={0}>
           <div style={{ padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 6 }}>
-            <div style={{ fontSize: 13, color: TEXT.primary, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {user.name || "Người nghe Melodies"}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 13, color: TEXT.primary, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {user.name || "Người nghe Melodies"}
+              </div>
+              <PlanChip premium={isPremium} />
             </div>
             <div style={{ fontSize: 11, color: TEXT.secondary, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {user.email}
             </div>
           </div>
+
+          {!isPremium && (
+            <button
+              type="button"
+              onClick={() => { setOpenPanel(null); onOpenPremium?.(); }}
+              style={{
+                width: "100%",
+                height: 38,
+                border: "none",
+                borderRadius: 5,
+                background: `linear-gradient(90deg, ${C[600]}33, ${G[500]}26)`,
+                color: C[400],
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "0 10px",
+                fontSize: 12,
+                fontWeight: 800,
+                textAlign: "left",
+                marginBottom: 4,
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = `linear-gradient(90deg, ${C[600]}4d, ${G[500]}3d)`; }}
+              onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(90deg, ${C[600]}33, ${G[500]}26)`; }}
+            >
+              <FontAwesomeIcon icon={faCrown} style={{ fontSize: 13, width: 15 }} />
+              Nâng cấp Premium
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (isPremium) { onToggleAudioQuality?.(); return; }
+              setOpenPanel(null);
+              onOpenPremium?.();
+            }}
+            title={isPremium ? "Bật/tắt âm thanh chất lượng cao" : "Tính năng Premium"}
+            style={{
+              width: "100%",
+              height: 38,
+              border: "none",
+              borderRadius: 5,
+              background: "transparent",
+              color: TEXT.primary,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "0 10px",
+              fontSize: 12,
+              fontWeight: 800,
+              textAlign: "left",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <FontAwesomeIcon icon={faBolt} style={{ fontSize: 13, width: 15, color: isPremium && audioQuality === "high" ? C[400] : "inherit" }} />
+            <span style={{ flex: 1 }}>Âm thanh chất lượng cao</span>
+            {isPremium ? (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: audioQuality === "high" ? C[400] : TEXT.secondary,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.4,
+                }}
+              >
+                {audioQuality === "high" ? "Bật" : "Tắt"}
+              </span>
+            ) : (
+              <FontAwesomeIcon icon={faLock} style={{ fontSize: 11, color: TEXT.tertiary }} />
+            )}
+          </button>
 
           {[
             { key: "profile", icon: UserRound, label: "Hồ sơ", onClick: onHome },

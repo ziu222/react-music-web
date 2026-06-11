@@ -9,7 +9,14 @@ import Player from "./components/Player";
 import Sidebar from "./components/Sidebar";
 import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
+import PremiumModal from "./components/PremiumModal";
 import NavbarUserActions from "./components/NavbarUserActions";
+import {
+  loadSession, saveSession, clearSession,
+  normalizeUser, applyEntitlement, saveEntitlement, isPremiumUser,
+  loadAudioQuality, saveAudioQuality,
+  PLAN_PREMIUM,
+} from "./auth/session";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -46,8 +53,10 @@ export default function App() {
   const [list] = useState(songs);
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
-  const [authUser, setAuthUser] = useState(null);
+  const [authUser, setAuthUser] = useState(() => loadSession());
   const [authGate, setAuthGate] = useState(null);
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [audioQuality, setAudioQuality] = useState(() => loadAudioQuality());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
@@ -98,27 +107,56 @@ export default function App() {
 
   const done = useCallback(() => setScreen("app"), []);
 
+  const isPremium = isPremiumUser(authUser);
+
+  // Persist mock session so reload giữ trạng thái đăng nhập/gói
+  useEffect(() => {
+    if (authUser) saveSession(authUser);
+    else clearSession();
+  }, [authUser]);
+
   const openAuth = (mode) => setAuthMode(mode);
 
   const handleAuth = (user) => {
-    setAuthUser(user);
+    // Entitlement đã mua (premium) thắng plan mặc định của tài khoản seed
+    setAuthUser(normalizeUser(applyEntitlement(user)));
     setAuthMode(null);
     const pendingAction = authGate?.afterAuth;
     setAuthGate(null);
+    if (pendingAction) {
+      // Giữ nguyên ngữ cảnh (search/artist/album) để hành động chờ chạy đúng chỗ
+      pendingAction();
+      return;
+    }
     setSearch("");
     setPage("home");
-    pendingAction?.();
   };
 
   const handleLogout = () => {
+    clearSession();
     setAuthUser(null);
     setAuthGate(null);
     setAuthMode(null);
+    setPremiumOpen(false);
     setCur(null);
     setPlaying(false);
     setProg(0);
     setSelectedPlaylistId(1);
     setQueuedTrackIds([]);
+  };
+
+  const upgradeToPremium = () => {
+    if (!authUser) return;
+    saveEntitlement(authUser.email, PLAN_PREMIUM);
+    setAuthUser(prev => prev ? { ...prev, plan: PLAN_PREMIUM } : prev);
+  };
+
+  const toggleAudioQuality = () => {
+    setAudioQuality(prev => {
+      const next = prev === "high" ? "normal" : "high";
+      saveAudioQuality(next);
+      return next;
+    });
   };
 
   /* ── In-app navigation history (back / forward) ── */
@@ -382,6 +420,15 @@ export default function App() {
       return;
     }
     setAuthGate({ ...gate, afterAuth: action });
+  };
+
+  // Download là premium gate nhẹ: guest → auth gate, free → modal nâng cấp
+  const requestDownload = (pl) => {
+    if (!authUser) {
+      setAuthGate({ reason: "download", playlist: pl, afterAuth: () => setPremiumOpen(true) });
+      return;
+    }
+    setPremiumOpen(true);
   };
 
   const playWithAuth = (s) => {
@@ -825,20 +872,31 @@ export default function App() {
 
         {/* Right links */}
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-          {["Premium", "Hỗ trợ"].map(l => (
+          {!isPremium && (
             <span
-              key={l}
-              style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px", fontWeight: 500 }}
+              onClick={() => setPremiumOpen(true)}
+              style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px", fontWeight: 500, transition: "color 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = C[400]; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
             >
-              {l}
+              Premium
             </span>
-          ))}
+          )}
+          <span
+            style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px", fontWeight: 500 }}
+          >
+            Hỗ trợ
+          </span>
           <div style={{ width: 1, height: 20, background: BORDER, margin: "0 4px" }} />
           <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px" }}>
             Cài đặt
           </span>
           <NavbarUserActions
             user={authUser}
+            isPremium={isPremium}
+            audioQuality={audioQuality}
+            onOpenPremium={() => setPremiumOpen(true)}
+            onToggleAudioQuality={toggleAudioQuality}
             onHome={() => { nav("home"); setSearch(""); }}
             onLogout={handleLogout}
           />
@@ -914,6 +972,8 @@ export default function App() {
           onRenamePlaylist={renamePlaylist}
           onTogglePinPlaylist={togglePinPlaylist}
           onTogglePublicPlaylist={togglePublicPlaylist}
+          canDownload={isPremium}
+          onRequestDownload={requestDownload}
         />
 
         {/* Main content */}
@@ -1079,8 +1139,18 @@ export default function App() {
         />
       )}
 
-      {/* ── Bottom promo banner (when not logged in) ── */}
-      {!cur && !authUser && (
+      {premiumOpen && (
+        <PremiumModal
+          onClose={() => setPremiumOpen(false)}
+          user={authUser}
+          isPremium={isPremium}
+          onUpgrade={upgradeToPremium}
+          onRequireAuth={() => setAuthGate({ reason: "premium", afterAuth: () => setPremiumOpen(true) })}
+        />
+      )}
+
+      {/* ── Bottom promo banner: guest → đăng ký, free → nâng cấp, premium → ẩn ── */}
+      {!cur && !isPremium && (
         <div
           style={{
             background: `linear-gradient(90deg, ${C[700]}, ${C[500]}, ${G[500]})`,
@@ -1092,14 +1162,18 @@ export default function App() {
           }}
         >
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>Xem trước Melodies</div>
+            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>
+              {authUser ? "Nâng cấp lên Melodies Premium" : "Xem trước Melodies"}
+            </div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>
-              Đăng ký để nghe không giới hạn, không quảng cáo
+              {authUser
+                ? "Không quảng cáo, tải xuống offline và âm thanh chất lượng cao"
+                : "Đăng ký để nghe không giới hạn, không quảng cáo"}
             </div>
           </div>
           <button
             type="button"
-            onClick={() => openAuth("register")}
+            onClick={() => authUser ? setPremiumOpen(true) : openAuth("register")}
             style={{
               background: "#fff",
               border: "none",
@@ -1110,9 +1184,12 @@ export default function App() {
               color: "#141010",
               cursor: "pointer",
               flexShrink: 0,
+              transition: "transform 0.15s",
             }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
           >
-            Đăng ký miễn phí
+            {authUser ? "Khám phá Premium" : "Đăng ký miễn phí"}
           </button>
         </div>
       )}
