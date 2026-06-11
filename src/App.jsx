@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import songs from "./data/songs";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/Splash";
@@ -119,11 +121,69 @@ export default function App() {
     setQueuedTrackIds([]);
   };
 
-  const nav = (p) => {
-    if (loading || p === page) return;
+  /* ── In-app navigation history (back / forward) ── */
+  const [hist, setHist] = useState({ stack: [{ page: "home" }], index: 0 });
+  const canBack = hist.index > 0;
+  const canForward = hist.index < hist.stack.length - 1;
+
+  const pushEntry = useCallback((entry) => {
+    setHist(h => {
+      const last = h.stack[h.index];
+      if (
+        last &&
+        last.page === entry.page &&
+        last.artist === entry.artist &&
+        last.album === entry.album &&
+        last.playlistId === entry.playlistId
+      ) return h;
+      const stack = [...h.stack.slice(0, h.index + 1), entry];
+      return { stack, index: stack.length - 1 };
+    });
+  }, []);
+
+  const applyEntry = useCallback((entry) => {
+    if (entry.artist) setSelectedArtist(entry.artist);
+    if (entry.album) setSelectedAlbum(entry.album);
+    if (entry.playlistId !== undefined) {
+      setSelectedPlaylistId(entry.playlistId);
+      setLibraryFilter("Danh sách phát");
+    }
+    setPage(entry.page);
+  }, []);
+
+  // entry: extra route state (artist/album/playlistId) recorded in history
+  const nav = (p, entry) => {
+    if (loading || (p === page && !entry)) return;
+    pushEntry({ page: p, ...entry });
+    if (p === page) return; // same page, new entity — switch without loader
     setLoading(true);
     setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
   };
+
+  // Back/forward restore instantly — no fake loader on history moves
+  const goBack = useCallback(() => {
+    if (loading || hist.index <= 0) return;
+    const idx = hist.index - 1;
+    applyEntry(hist.stack[idx]);
+    setHist(h => ({ ...h, index: idx }));
+  }, [loading, hist, applyEntry]);
+
+  const goForward = useCallback(() => {
+    if (loading || hist.index >= hist.stack.length - 1) return;
+    const idx = hist.index + 1;
+    applyEntry(hist.stack[idx]);
+    setHist(h => ({ ...h, index: idx }));
+  }, [loading, hist, applyEntry]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!e.altKey) return;
+      if (e.key === "ArrowLeft") { e.preventDefault(); goBack(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); goForward(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goBack, goForward]);
 
   const play = useCallback((s) => {
     setCur(s);
@@ -320,20 +380,20 @@ export default function App() {
   const openAlbum = (albumName) => {
     if (!albumName) return;
     setSelectedAlbum(albumName);
-    if (page !== "album") nav("album");
+    nav("album", { album: albumName });
   };
 
   const openArtist = (artistName) => {
     if (!artistName) return;
     setSelectedArtist(artistName);
-    if (page !== "artist") nav("artist");
+    nav("artist", { artist: artistName });
   };
 
   const openPlaylist = (pl) => {
     if (!pl) return;
     setLibraryFilter("Danh sách phát");
     setSelectedPlaylistId(pl.id);
-    if (page !== "library") nav("library");
+    nav("library", { playlistId: pl.id });
   };
 
   const toggleFollowArtist = (artistName) => {
@@ -371,6 +431,7 @@ export default function App() {
     setUserPlaylists(prev => [...prev, newPl]);
     setSelectedPlaylistId(newPl.id);
     setSidebarOpen(true);
+    pushEntry({ page: "library", playlistId: newPl.id });
     setPage("library");
   };
 
@@ -640,42 +701,77 @@ export default function App() {
           />
         </div>
 
+        {/* Back / forward */}
+        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+          {[
+            { icon: faChevronLeft, label: "Quay lại", action: goBack, enabled: canBack },
+            { icon: faChevronRight, label: "Tiến tới", action: goForward, enabled: canForward },
+          ].map(btn => (
+            <button
+              key={btn.label}
+              type="button"
+              aria-label={btn.label}
+              title={`${btn.label} (Alt+${btn.label === "Quay lại" ? "←" : "→"})`}
+              disabled={!btn.enabled}
+              onClick={btn.action}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.07)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: btn.enabled ? "pointer" : "default",
+                color: btn.enabled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.25)",
+                transition: "color 0.15s, background 0.15s",
+              }}
+              onMouseEnter={e => { if (btn.enabled) e.currentTarget.style.background = "rgba(255,255,255,0.14)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
+            >
+              <FontAwesomeIcon icon={btn.icon} style={{ fontSize: 13 }} />
+            </button>
+          ))}
+        </div>
+
         {/* Home button */}
-        <div
+        <button
+          type="button"
+          aria-label="Trang chủ"
           onClick={() => { nav("home"); setSearch(""); }}
           style={{
             width: 40,
             height: 40,
             borderRadius: "50%",
+            border: "none",
             background: page === "home" ? `${C[500]}20` : "rgba(255,255,255,0.07)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            fontSize: 17,
             color: page === "home" ? C[400] : "rgba(255,255,255,0.7)",
             flexShrink: 0,
             transition: "all 0.15s",
           }}
         >
-          ⌂
-        </div>
+          <FontAwesomeIcon icon={faHouse} style={{ fontSize: 15 }} />
+        </button>
 
         {/* Search bar */}
         <div style={{ flex: 1, maxWidth: 440, position: "relative" }}>
-          <span
+          <FontAwesomeIcon
+            icon={faMagnifyingGlass}
             style={{
               position: "absolute",
               left: 14,
               top: "50%",
               transform: "translateY(-50%)",
-              fontSize: 13,
+              fontSize: 12,
               color: "rgba(255,255,255,0.4)",
               pointerEvents: "none",
             }}
-          >
-            ⌕
-          </span>
+          />
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); if (page !== "search") setPage("search"); }}
