@@ -41,6 +41,8 @@ export default function Player({
   onShuffleToggle,
   onRepeatCycle,
   onPlayTrack,
+  onPlayRecent,
+  recentSongs = [],
   likedIds,
   onLike,
 }) {
@@ -52,9 +54,12 @@ export default function Player({
   const [queueOpen, setQueueOpen] = useState(false);
   const [lyricsOpen, setLyricsOpen] = useState(false);
   const [expandOpen, setExpandOpen] = useState(false);
+  const [connectFlash, setConnectFlash] = useState(false);
+  const connectTimerRef = useRef(null);
 
   const toggleQueue = () => { setQueueOpen(o => !o); setLyricsOpen(false); };
   const toggleLyrics = () => { setLyricsOpen(o => !o); setQueueOpen(false); };
+  useEffect(() => () => { if (connectTimerRef.current) clearTimeout(connectTimerRef.current); }, []);
 
   const pressTimerRef = useRef(null);
   const progressBarRef = useRef(null);
@@ -176,6 +181,9 @@ export default function Player({
         currentSong={s}
         upcomingTracks={upcomingTracks}
         onPlayTrack={onPlayTrack}
+        shuffle={shuffle}
+        recentTracks={recentSongs}
+        onPlayRecent={onPlayRecent}
       />
 
       <div
@@ -345,9 +353,35 @@ export default function Player({
             <ListMusic size={16} />
           </button>
 
-          <button type="button" aria-label="Connect device" className={btnClass("connect")} onClick={() => pressAnim("connect")} style={iconButton(false)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-            <MonitorSpeaker size={16} />
-          </button>
+          <div style={{ position: "relative" }}>
+            <button
+              type="button" aria-label="Connect device"
+              title="Connect to a device"
+              className={btnClass("connect")}
+              onClick={() => {
+                pressAnim("connect");
+                if (connectTimerRef.current) clearTimeout(connectTimerRef.current);
+                setConnectFlash(true);
+                connectTimerRef.current = setTimeout(() => setConnectFlash(false), 2000);
+              }}
+              style={iconButton(false)}
+              onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+              <MonitorSpeaker size={16} />
+            </button>
+            {connectFlash && (
+              <div style={{
+                position: "absolute", bottom: "calc(100% + 8px)", left: "50%",
+                transform: "translateX(-50%)",
+                background: "rgba(24,20,20,0.96)", color: "rgba(255,255,255,0.76)",
+                fontSize: 11, fontWeight: 500, padding: "4px 8px",
+                borderRadius: 4, whiteSpace: "nowrap", pointerEvents: "none",
+                zIndex: 200, border: "1px solid rgba(255,255,255,0.10)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+              }}>
+                Not available
+              </div>
+            )}
+          </div>
 
           <button type="button" aria-label={muted ? "Unmute" : "Mute"} className={`${btnClass("mute")} player-mute-btn`}
             onClick={() => pressAnim("mute", onMuteToggle)}
