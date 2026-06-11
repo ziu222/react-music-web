@@ -3,61 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import EntityHeader from "../components/EntityHeader";
 import TrackList from "../components/TrackList";
+import AlbumTile from "../components/AlbumTile";
 import { TEXT } from "../constants/theme";
-import { getSongImage } from "../data/media";
 import { getArtist, deriveAlbums, formatPlays } from "../data/derived";
-
-function AlbumTile({ album, onOpenAlbum }) {
-  const [hov, setHov] = useState(false);
-  const cover = getSongImage(album.representative);
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`Mở album ${album.name}`}
-      onClick={() => onOpenAlbum(album.name)}
-      onKeyDown={e => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpenAlbum(album.name);
-        }
-      }}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        flexShrink: 0,
-        width: 160,
-        padding: 12,
-        borderRadius: 8,
-        scrollSnapAlign: "start",
-        background: hov ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
-        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
-        cursor: "pointer",
-      }}
-    >
-      <div style={{
-        width: 136, height: 136, borderRadius: 6,
-        background: album.representative.bg ?? "rgba(255,255,255,0.08)",
-        overflow: "hidden", marginBottom: 10,
-        boxShadow: "rgba(0,0,0,0.4) 0px 8px 24px",
-      }}>
-        {cover && (
-          <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-        )}
-      </div>
-      <div style={{
-        fontSize: 13, fontWeight: 600, color: TEXT.primary,
-        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3,
-      }}>
-        {album.name}
-      </div>
-      <div style={{ fontSize: 11, color: TEXT.secondary }}>
-        {album.songCount > 1 ? `Album · ${album.songCount} bài hát` : "Đĩa đơn"}
-      </div>
-    </div>
-  );
-}
 
 export default function PageArtist({
   artistName,

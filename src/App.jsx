@@ -928,6 +928,7 @@ export default function App() {
                   onLike={toggleLikeWithAuth}
                   onAddToQueue={addToQueue}
                   onOpenArtist={openArtist}
+                  onOpenAlbum={openAlbum}
                   isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
                   onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
                 />

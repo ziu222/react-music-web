@@ -17,7 +17,7 @@ export default function EntityHeader({
   return (
     <div style={{
       padding: "40px 32px 28px",
-      background: `linear-gradient(180deg, ${accent}40 0%, transparent 100%)`,
+      background: `linear-gradient(180deg, ${accent}59 0%, ${accent}1f 60%, transparent 100%)`,
       display: "flex",
       alignItems: "flex-end",
       gap: 24,
