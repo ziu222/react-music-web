@@ -27,6 +27,16 @@ const COPY = {
     body: "Đăng nhập để lưu album và nghe lại bất cứ lúc nào từ thư viện của bạn.",
     primary: "Đăng ký miễn phí",
   },
+  premium: {
+    title: "Đăng nhập để nâng cấp Premium",
+    body: "Tạo tài khoản miễn phí trước, sau đó nâng cấp để mở khóa tải xuống và âm thanh chất lượng cao.",
+    primary: "Đăng ký miễn phí",
+  },
+  download: {
+    title: "Tải xuống là tính năng Premium",
+    body: "Đăng nhập và nâng cấp Premium để tải danh sách phát và nghe offline.",
+    primary: "Đăng ký miễn phí",
+  },
 };
 
 export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {

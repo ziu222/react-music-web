@@ -70,7 +70,7 @@ const CONTEXT_MENU_ITEMS = [
   { type: "divider" },
   { key: "edit", icon: faPen, label: "Chỉnh sửa chi tiết" },
   { key: "delete", icon: faCircleMinus, label: "Xóa" },
-  { key: "download", icon: faCircleDown, label: "Tải xuống", disabled: true },
+  { key: "download", icon: faCircleDown, label: "Tải xuống", premium: true },
   { type: "divider" },
   { key: "createPlaylist", icon: faMusic, label: "Tạo danh sách phát" },
   { key: "createFolder", icon: faPlus, label: "Tạo thư mục" },
@@ -188,7 +188,7 @@ function itemMeta(pl) {
   return "Danh sách phát · Nghĩa";
 }
 
-function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
+function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAction }) {
   const [submenuKey, setSubmenuKey] = useState(null);
   if (!menu) return null;
 
@@ -231,6 +231,7 @@ function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
       );
     }
     const label = item.key === "pin" ? (pinned ? "Bỏ ghim danh sách phát" : "Ghim danh sách phát") : item.label;
+    const showPremiumTag = item.premium && !canDownload;
     return (
       <div
         key={item.key}
@@ -253,6 +254,23 @@ function PlaylistContextMenu({ menu, pinned, onClose, onAction }) {
           <FontAwesomeIcon icon={item.icon} style={{ fontSize: 15 }} />
         </span>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+        {showPremiumTag && (
+          <span
+            style={{
+              borderRadius: 9999,
+              padding: "2px 8px",
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+              background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
+              color: "#fff",
+              flexShrink: 0,
+            }}
+          >
+            Premium
+          </span>
+        )}
         {item.submenu && <span style={{ color: "rgba(255,255,255,0.55)" }}>›</span>}
       </div>
     );
@@ -533,6 +551,8 @@ export default function Sidebar({
   onRenamePlaylist,
   onTogglePinPlaylist,
   onTogglePublicPlaylist,
+  canDownload = false,
+  onRequestDownload,
 }) {
   const [showSearch,     setShowSearch]     = useState(false);
   const [showSortMenu,   setShowSortMenu]   = useState(false);
@@ -696,6 +716,14 @@ export default function Sidebar({
         showFeedback(pl.isPublic ? "Đã đặt riêng tư" : "Đã đặt công khai");
         break;
 
+      case "download":
+        if (canDownload) {
+          showFeedback(`Đã tải xuống "${pl.type === "liked" ? "Bài hát đã thích" : pl.name}"`);
+        } else {
+          onRequestDownload?.(pl);
+        }
+        break;
+
       case "queue":
       case "profile":
       case "invite":
@@ -737,6 +765,7 @@ export default function Sidebar({
       <PlaylistContextMenu
         menu={contextMenu}
         pinned={contextMenu ? Boolean(contextMenu.pl.isPinned) : false}
+        canDownload={canDownload}
         onClose={() => setContextMenu(null)}
         onAction={runContextAction}
       />

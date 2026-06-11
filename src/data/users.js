@@ -1,3 +1,5 @@
+// Seed accounts cho preview frontend.
+// role: listener | artist | admin — plan: free | premium (chỉ áp dụng cho listener).
 const users = [
   {
     id: 1,
@@ -6,7 +8,8 @@ const users = [
     name: "Nghia B.",
     initial: "N",
     color: "#f97316",
-    role: "user",
+    role: "listener",
+    plan: "free",
     status: "active",
     joinedAt: "2024-01-15",
   },
@@ -17,7 +20,8 @@ const users = [
     name: "An T.",
     initial: "A",
     color: "#fb7185",
-    role: "user",
+    role: "listener",
+    plan: "free",
     status: "new",
     joinedAt: "2024-06-08",
   },
@@ -28,7 +32,8 @@ const users = [
     name: "Minh K.",
     initial: "M",
     color: "#fbbf24",
-    role: "user",
+    role: "listener",
+    plan: "premium",
     status: "active",
     joinedAt: "2024-03-22",
   },
@@ -40,6 +45,7 @@ const users = [
     initial: "L",
     color: "#34d399",
     role: "admin",
+    plan: "free",
     status: "active",
     joinedAt: "2023-11-10",
   },
@@ -50,9 +56,22 @@ const users = [
     name: "Huy D.",
     initial: "H",
     color: "#60a5fa",
-    role: "user",
+    role: "listener",
+    plan: "free",
     status: "new",
     joinedAt: "2024-06-07",
+  },
+  {
+    id: 6,
+    email: "myanh@melodies.local",
+    password: "123456",
+    name: "Mỹ Anh",
+    initial: "MA",
+    color: "#a78bfa",
+    role: "artist",
+    plan: "free",
+    status: "active",
+    joinedAt: "2024-02-19",
   },
 ];
 
