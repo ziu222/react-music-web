@@ -318,20 +318,21 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
 }
 
 /* ── Artist card ───────────────────────────────────────────────── */
-function ArtistCard({ artist, cur, onPlay }) {
+function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
   const [hov, setHov] = useState(false);
   const isActive = cur?.id === artist.song.id;
+  const open = () => (onOpenArtist ? onOpenArtist(artist.name) : onPlay(artist.song));
 
   return (
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Phát nhạc của ${artist.name}`}
-      onClick={() => onPlay(artist.song)}
+      aria-label={onOpenArtist ? `Mở trang nghệ sĩ ${artist.name}` : `Phát nhạc của ${artist.name}`}
+      onClick={open}
       onKeyDown={e => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onPlay(artist.song);
+          open();
         }
       }}
       onMouseEnter={() => setHov(true)}
@@ -402,7 +403,7 @@ function ArtistCard({ artist, cur, onPlay }) {
 }
 
 /* ── Page ──────────────────────────────────────────────────────── */
-export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum }) {
+export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum, onOpenArtist }) {
   const idMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
   const sorted = useMemo(() => [...list].sort((a, b) => b.plays - a.plays), [list]);
 
@@ -624,7 +625,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
         <SectionHeader title="Nghệ sĩ phổ biến" />
         <HScroll>
           {artists.map(a => (
-            <ArtistCard key={a.name} artist={a} cur={cur} onPlay={onPlay} />
+            <ArtistCard key={a.name} artist={a} cur={cur} onPlay={onPlay} onOpenArtist={onOpenArtist} />
           ))}
         </HScroll>
       </section>
