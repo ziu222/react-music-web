@@ -430,7 +430,6 @@ export default function App() {
   useEffect(() => {
     const audio = audioRef.current;
     audio.pause();
-    setProg(0);
 
     if (!cur?.audioUrl) {
       audio.removeAttribute("src");
@@ -447,7 +446,7 @@ export default function App() {
     const audio = audioRef.current;
 
     if (!cur?.audioUrl) {
-      if (playing) setPlaying(false);
+      audio.pause();
       return;
     }
 
