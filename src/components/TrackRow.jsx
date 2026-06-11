@@ -3,7 +3,7 @@ import EqBars from "./EqBars";
 import { C, R } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
-export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike }) {
+export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQueue }) {
   const [hov, setHov] = useState(false);
   const playing = cur?.id === song.id;
   const liked = likedIds.has(song.id);
@@ -127,6 +127,30 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike })
       >
         {song.duration}
       </span>
+
+      {/* Add to queue */}
+      {onAddToQueue && (
+        <button
+          onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
+          title="Add to queue"
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 16,
+            color: "rgba(255,255,255,0.5)",
+            padding: "2px 4px",
+            lineHeight: 1,
+            flexShrink: 0,
+            opacity: hov ? 1 : 0,
+            transition: "opacity 0.15s, color 0.1s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+        >
+          ⊕
+        </button>
+      )}
 
       {/* Like */}
       <button

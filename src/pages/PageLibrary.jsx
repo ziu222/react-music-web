@@ -17,7 +17,7 @@ function dateLabel(song) {
   return song.dateAdded ?? "Feb 23, 2022";
 }
 
-function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike }) {
+function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQueue }) {
   const [hov, setHov] = useState(false);
   const playing = cur?.id === song.id;
   const liked = likedIds.has(song.id);
@@ -30,7 +30,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike }) {
       onClick={() => onPlay(song)}
       style={{
         display: "grid",
-        gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px",
+        gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px 34px",
         alignItems: "center",
         gap: 12,
         minHeight: 52,
@@ -119,6 +119,27 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike }) {
       >
         {liked ? "♥" : "♡"}
       </button>
+      {onAddToQueue ? (
+        <button
+          type="button"
+          aria-label={`Add ${song.title} to queue`}
+          onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "rgba(255,255,255,0.5)",
+            fontSize: 15,
+            lineHeight: 1,
+            opacity: hov ? 1 : 0,
+            transition: "opacity 0.15s, color 0.1s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+        >
+          ⊕
+        </button>
+      ) : <span />}
     </div>
   );
 }
@@ -179,6 +200,7 @@ function PlaylistCard({ pl, likedCount, coverSongs = [], isActive, onClick }) {
 /* ── Page ─────────────────────────────────────────────────────── */
 export default function PageLibrary({
   list, cur, onPlay, likedIds, onLike,
+  onAddToQueue,
   userPlaylists = [],
   albumPlaylists = [],
   selectedPlaylistId,
@@ -562,7 +584,7 @@ export default function PageLibrary({
 
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px",
+                    gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px 34px",
                     gap: 12,
                     alignItems: "center",
                     minHeight: 34,
@@ -578,6 +600,7 @@ export default function PageLibrary({
                     <span>Album</span>
                     <span>Ngày thêm</span>
                     <span style={{ textAlign: "right" }}>Time</span>
+                    <span />
                     <span />
                   </div>
 
@@ -595,6 +618,7 @@ export default function PageLibrary({
                         onPlay={onPlay}
                         likedIds={likedIds}
                         onLike={onLike}
+                        onAddToQueue={onAddToQueue}
                       />
                     ))
                   )}

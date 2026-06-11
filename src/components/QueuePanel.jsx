@@ -11,6 +11,11 @@ export default function QueuePanel({
   shuffle = false,
   recentTracks = [],
   onPlayRecent,
+  queuedTracks = [],
+  onPlayQueuedTrack,
+  onRemoveFromQueue,
+  onMoveQueueItem,
+  onClearQueue,
 }) {
   const [tab, setTab] = useState("queue");
 
@@ -116,7 +121,46 @@ export default function QueuePanel({
               </section>
             )}
 
-            {/* Next Up */}
+            {/* Queued (manual queue) */}
+            {queuedTracks.length > 0 && (
+              <section style={{ padding: "12px 12px 4px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, padding: "0 4px" }}>
+                  <p style={{ ...sectionLabel, margin: 0 }}>Queued</p>
+                  <button
+                    type="button"
+                    aria-label="Clear queue"
+                    onClick={onClearQueue}
+                    title="Clear queue"
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      fontSize: 11, fontWeight: 600,
+                      color: "rgba(255,255,255,0.38)",
+                      padding: "2px 4px", borderRadius: 3,
+                      transition: "color 80ms ease",
+                      lineHeight: 1,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.38)"; }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {queuedTracks.map((song, i) => (
+                  <QueuedRow
+                    key={`queued-${song.id}-${i}`}
+                    song={song}
+                    index={i}
+                    total={queuedTracks.length}
+                    onPlay={() => onPlayQueuedTrack?.(song, i)}
+                    onRemove={() => onRemoveFromQueue?.(i)}
+                    onMoveUp={() => onMoveQueueItem?.(i, i - 1)}
+                    onMoveDown={() => onMoveQueueItem?.(i, i + 1)}
+                  />
+                ))}
+              </section>
+            )}
+
+            {/* Next Up (auto) */}
             <section style={{ padding: "12px 12px 4px" }}>
               <p style={sectionLabel}>Next Up</p>
               {upcomingTracks.length === 0 ? (
@@ -170,6 +214,90 @@ const sectionLabel = {
   textTransform: "uppercase", letterSpacing: "0.08em",
   marginBottom: 6, padding: "0 4px", margin: "0 0 6px",
 };
+
+function ActionButton({ label, children, onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={e => { e.stopPropagation(); onClick?.(); }}
+      disabled={disabled}
+      style={{
+        background: "none", border: "none", cursor: disabled ? "default" : "pointer",
+        color: disabled ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)",
+        fontSize: 13, lineHeight: 1,
+        padding: "3px 4px", borderRadius: 3,
+        transition: "color 80ms ease",
+        flexShrink: 0,
+      }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.color = "#fff"; }}
+      onMouseLeave={e => { if (!disabled) e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function QueuedRow({ song, index, total, onPlay, onRemove, onMoveUp, onMoveDown }) {
+  const cover = getSongImage(song);
+  const [hov, setHov] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const showActions = hov || focused;
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onPlay}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPlay(); }
+      }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
+      style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "5px 4px", borderRadius: 6,
+        cursor: "pointer",
+        background: showActions ? "rgba(255,255,255,0.08)" : "transparent",
+        transition: "background 80ms ease",
+      }}
+    >
+      <div style={{
+        width: 40, height: 40, borderRadius: 4, flexShrink: 0,
+        background: song.bg, overflow: "hidden",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {cover && <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+      </div>
+
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          fontSize: 13, fontWeight: 600, color: "#f4eee8",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {song.title}
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {song.artist}
+        </div>
+      </div>
+
+      {showActions ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 0, flexShrink: 0 }}>
+          <ActionButton label="Move up" onClick={onMoveUp} disabled={index === 0}>↑</ActionButton>
+          <ActionButton label="Move down" onClick={onMoveDown} disabled={index === total - 1}>↓</ActionButton>
+          <ActionButton label="Remove from queue" onClick={onRemove}>✕</ActionButton>
+        </div>
+      ) : (
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+          {song.duration}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function QueueRow({ song, isActive = false, onPlay }) {
   const cover = getSongImage(song);

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -539,7 +539,6 @@ export default function Sidebar({
   const [renameValue,    setRenameValue]    = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [feedback,       setFeedback]       = useState(null);
-  const feedbackTimer = useRef(null);
 
   const createBtnRef = useRef(null);
   const sortBtnRef   = useRef(null);
@@ -555,12 +554,12 @@ export default function Sidebar({
     if (el) setFilterPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true });
   }, [libraryFilter, isOpen]);
 
-  const showFeedback = (msg) => {
-    clearTimeout(feedbackTimer.current);
-    setFeedback({ msg });
-    feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
-  };
-  useEffect(() => () => clearTimeout(feedbackTimer.current), []);
+  const showFeedback = useCallback((msg) => { setFeedback({ msg }); }, []);
+  useEffect(() => {
+    if (!feedback) return;
+    const t = setTimeout(() => setFeedback(null), 2000);
+    return () => clearTimeout(t);
+  }, [feedback]);
 
   const viewModeIdx = VIEW_MODES.findIndex(m => m.key === libraryViewMode);
 

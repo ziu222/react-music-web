@@ -25,6 +25,7 @@ function fisherYates(arr) {
 
 export default function App() {
   const audioRef = useRef(new Audio());
+  const feedbackTimerRef = useRef(null);
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,8 @@ export default function App() {
   const [authGate, setAuthGate] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
+  const [queuedTrackIds, setQueuedTrackIds] = useState([]);
+  const [queueFeedback, setQueueFeedback] = useState(null);
   const [userPlaylists, setUserPlaylists] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("melodies_playlists") || "null");
@@ -66,6 +69,8 @@ export default function App() {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
     catch (err) { void err; }
   }, [userPlaylists]);
+
+  useEffect(() => () => { clearTimeout(feedbackTimerRef.current); }, []);
 
   const done = useCallback(() => setScreen("app"), []);
 
@@ -89,6 +94,7 @@ export default function App() {
     setPlaying(false);
     setProg(0);
     setSelectedPlaylistId(1);
+    setQueuedTrackIds([]);
   };
 
   const nav = (p) => {
@@ -140,6 +146,15 @@ export default function App() {
   const playNext = useCallback(({ allowWrap = true } = {}) => {
     if (!list.length) return;
 
+    // Manual queue takes priority over shuffle/linear
+    if (queuedTrackIds.length > 0) {
+      const [nextId, ...rest] = queuedTrackIds;
+      setQueuedTrackIds(rest);
+      const song = list.find(s => s.id === nextId);
+      if (song) play(song);
+      return;
+    }
+
     if (shuffle) {
       let queue = shuffleQueue;
       let pos = shufflePos;
@@ -183,7 +198,7 @@ export default function App() {
     }
 
     playByIndex(currentIndex + 1);
-  }, [cur, list, play, playByIndex, shuffle, shuffleQueue, shufflePos]);
+  }, [cur, list, play, playByIndex, shuffle, shuffleQueue, shufflePos, queuedTrackIds]);
 
   const playPrevious = useCallback(() => {
     if (!list.length) return;
@@ -337,6 +352,34 @@ export default function App() {
     requireAuth(() => toggleLike(id), { reason: "like", song });
   };
 
+  const addToQueue = useCallback((song) => {
+    setQueuedTrackIds(prev => [...prev, song.id]);
+    clearTimeout(feedbackTimerRef.current);
+    setQueueFeedback(song.title);
+    feedbackTimerRef.current = setTimeout(() => setQueueFeedback(null), 2000);
+  }, []);
+
+  const removeFromQueue = useCallback((index) => {
+    setQueuedTrackIds(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const moveQueueItem = useCallback((from, to) => {
+    setQueuedTrackIds(prev => {
+      if (to < 0 || to >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  }, []);
+
+  const clearQueue = useCallback(() => setQueuedTrackIds([]), []);
+
+  const playManualQueued = useCallback((song, index) => {
+    setQueuedTrackIds(prev => prev.filter((_, i) => i !== index));
+    play(song);
+  }, [play]);
+
   const visiblePlaylists = useMemo(
     () => authUser ? userPlaylists : userPlaylists.filter(pl => typeof pl.id !== "string" && !pl.isPersonal),
     [authUser, userPlaylists]
@@ -361,6 +404,11 @@ export default function App() {
     const songMap = new Map(list.map(s => [s.id, s]));
     return recentIds.map(id => songMap.get(id)).filter(Boolean);
   }, [recentIds, list]);
+
+  const queuedTracks = useMemo(() => {
+    const songMap = new Map(list.map(s => [s.id, s]));
+    return queuedTrackIds.map(id => songMap.get(id)).filter(Boolean);
+  }, [queuedTrackIds, list]);
 
   const albumPlaylists = useMemo(() => {
     const albumMap = new Map();
@@ -430,7 +478,6 @@ export default function App() {
   useEffect(() => {
     const audio = audioRef.current;
     audio.pause();
-    setProg(0);
 
     if (!cur?.audioUrl) {
       audio.removeAttribute("src");
@@ -447,7 +494,7 @@ export default function App() {
     const audio = audioRef.current;
 
     if (!cur?.audioUrl) {
-      if (playing) setPlaying(false);
+      audio.pause();
       return;
     }
 
@@ -686,6 +733,7 @@ export default function App() {
                   onPlay={playWithAuth}
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
+                  onAddToQueue={addToQueue}
                 />
               )}
               {page === "library" && (
@@ -695,6 +743,7 @@ export default function App() {
                   onPlay={playWithAuth}
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
+                  onAddToQueue={addToQueue}
                   userPlaylists={visiblePlaylists}
                   albumPlaylists={albumPlaylists}
                   selectedPlaylistId={selectedPlaylistId}
@@ -718,6 +767,7 @@ export default function App() {
         shuffle={shuffle}
         repeatMode={repeatMode}
         upcomingTracks={upcomingTracks}
+        queuedTracks={queuedTracks}
         onToggle={() => setPlaying(p => !p)}
         onPrevious={playPrevious}
         onNext={() => playNext()}
@@ -728,10 +778,38 @@ export default function App() {
         onRepeatCycle={cycleRepeatMode}
         onPlayTrack={playFromQueueWithAuth}
         onPlayRecent={playWithAuth}
+        onPlayQueuedTrack={playManualQueued}
+        onRemoveFromQueue={removeFromQueue}
+        onMoveQueueItem={moveQueueItem}
+        onClearQueue={clearQueue}
         recentSongs={recentSongs}
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
       />
+
+      {queueFeedback && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: cur ? 104 : 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(28,28,28,0.96)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 6,
+            padding: "9px 18px",
+            fontSize: 13,
+            fontWeight: 500,
+            color: "#f4eee8",
+            zIndex: 200,
+            pointerEvents: "none",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Added to queue
+        </div>
+      )}
 
       <AuthGateModal
         gate={authGate}
