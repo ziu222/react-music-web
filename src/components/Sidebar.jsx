@@ -212,7 +212,7 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
     gap: 10,
     padding: "0 10px",
     fontSize: 12,
-    color: "rgba(255,255,255,0.9)",
+    color: "var(--island-text)",
     cursor: "pointer",
     whiteSpace: "nowrap",
   };
@@ -224,7 +224,7 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
           key={`divider-${itemIndex}`}
           style={{
             height: 1,
-            background: "rgba(255,255,255,0.12)",
+            background: "var(--island-border)",
             margin: "4px -8px",
           }}
         />
@@ -236,7 +236,7 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
       <div
         key={item.key}
         onMouseEnter={e => {
-          if (!item.disabled) e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+          if (!item.disabled) e.currentTarget.style.background = "var(--island-hover)";
           setSubmenuKey(!item.disabled && item.submenu ? item.key : null);
         }}
         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
@@ -246,11 +246,11 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
         }}
         style={{
           ...menuItemStyle,
-          color: item.disabled ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.9)",
+          color: item.disabled ? "var(--island-faint)" : "var(--island-text)",
           cursor: item.disabled ? "default" : "pointer",
         }}
       >
-        <span style={{ width: 18, textAlign: "center", color: item.disabled ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.62)", flexShrink: 0 }}>
+        <span style={{ width: 18, textAlign: "center", color: item.disabled ? "var(--island-faint)" : "var(--island-muted)", flexShrink: 0 }}>
           <FontAwesomeIcon icon={item.icon} style={{ fontSize: 15 }} />
         </span>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
@@ -271,7 +271,7 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
             Premium
           </span>
         )}
-        {item.submenu && <span style={{ color: "rgba(255,255,255,0.55)" }}>›</span>}
+        {item.submenu && <span style={{ color: "var(--island-muted)" }}>›</span>}
       </div>
     );
   };
@@ -287,8 +287,8 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
           width: CONTEXT_MENU_W,
           padding: 8,
           borderRadius: 7,
-          background: "#282828",
-          boxShadow: "rgba(0,0,0,0.65) 0px 18px 48px",
+          background: "var(--island-menu)",
+          boxShadow: "var(--shadow-menu)",
           zIndex: 999,
           animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
         }}
@@ -306,8 +306,8 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
             width: CONTEXT_SUBMENU_W,
             padding: 8,
             borderRadius: 7,
-            background: "#282828",
-            boxShadow: "rgba(0,0,0,0.65) 0px 18px 48px",
+            background: "var(--island-menu)",
+            boxShadow: "var(--shadow-menu)",
             zIndex: 1000,
             animation: "menuIn 140ms cubic-bezier(0.2,0,0,1) both",
           }}
@@ -317,12 +317,12 @@ function PlaylistContextMenu({ menu, pinned, canDownload = false, onClose, onAct
           {activeItem.submenu.map(item => (
             <div
               key={item.key}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--island-hover)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               onClick={() => onAction(item.key, menu.pl)}
               style={menuItemStyle}
             >
-              <span style={{ width: 18, textAlign: "center", color: "rgba(255,255,255,0.62)", flexShrink: 0 }}>
+              <span style={{ width: 18, textAlign: "center", color: "var(--island-muted)", flexShrink: 0 }}>
                 <FontAwesomeIcon icon={item.icon} style={{ fontSize: 14 }} />
               </span>
               <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
@@ -346,7 +346,7 @@ function RailItem({ pl, coverSongs = [], tooltip, onClick, isActive }) {
         width: 48, height: 48,
         display: "flex", alignItems: "center", justifyContent: "center",
         borderRadius: 8,
-        background: hov ? "rgba(255,255,255,0.08)" : "transparent",
+        background: hov ? "var(--island-hover)" : "transparent",
         cursor: "pointer", flexShrink: 0, position: "relative",
         transition: "background 0.15s",
       }}
@@ -363,10 +363,10 @@ function RailItem({ pl, coverSongs = [], tooltip, onClick, isActive }) {
         <div style={{
           position: "absolute", left: "calc(100% + 10px)", top: "50%",
           transform: "translateY(-50%)",
-          background: "#282828", color: "#fff",
+          background: "var(--island-menu)", color: "var(--island-text)",
           fontSize: 11, fontWeight: 600, padding: "5px 10px",
           borderRadius: 4, whiteSpace: "nowrap",
-          boxShadow: "rgba(0,0,0,0.5) 0px 8px 24px",
+          boxShadow: "var(--shadow-menu)",
           zIndex: 300, pointerEvents: "none", letterSpacing: 0.1,
         }}>
           {tooltip}
@@ -392,7 +392,7 @@ function CompactRow({ pl, isActive, onClick, onContextMenu }) {
       style={{
         display: "flex", alignItems: "center", gap: 5,
         padding: "6px 8px", borderRadius: 4, cursor: "pointer",
-        background: isActive ? "rgba(255,255,255,0.1)" : hov ? "rgba(255,255,255,0.07)" : "transparent",
+        background: isActive ? "var(--island-hover)" : hov ? "var(--island-hover)" : "transparent",
         transition: "background 0.15s",
       }}
     >
@@ -401,13 +401,13 @@ function CompactRow({ pl, isActive, onClick, onContextMenu }) {
       )}
       <span style={{
         fontSize: 13, fontWeight: 500,
-        color: isActive ? C[400] : "#ede5dd",
+        color: isActive ? C[400] : "var(--island-text)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         flex: 1,
       }}>
         {name}
       </span>
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", flexShrink: 0 }}>
+      <span style={{ fontSize: 11, color: "var(--island-faint)", flexShrink: 0 }}>
         · Danh sách phát
       </span>
     </div>
@@ -428,7 +428,7 @@ function ListRow({ pl, coverSongs = [], isActive, onClick, onContextMenu }) {
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "6px 8px", borderRadius: 6, cursor: "pointer",
-        background: isActive ? "rgba(255,255,255,0.1)" : hov ? "rgba(255,255,255,0.07)" : "transparent",
+        background: isActive ? "var(--island-hover)" : hov ? "var(--island-hover)" : "transparent",
         transition: "background 0.15s",
       }}
     >
@@ -436,13 +436,13 @@ function ListRow({ pl, coverSongs = [], isActive, onClick, onContextMenu }) {
       <div style={{ minWidth: 0 }}>
         <div style={{
           fontSize: 14, fontWeight: 600,
-          color: isActive ? C[400] : "#ede5dd",
+          color: isActive ? C[400] : "var(--island-text)",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           marginBottom: 3,
         }}>
           {name}
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ fontSize: 12, color: "var(--island-muted)", display: "flex", alignItems: "center", gap: 4 }}>
           {pl.type === "liked" && <span style={{ color: "#1ed760", fontSize: 9 }}>♦</span>}
           Danh sách phát · Nghĩa
         </div>
@@ -495,7 +495,7 @@ function CardItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMen
       onMouseLeave={() => setHov(false)}
       style={{
         borderRadius: 8, padding: 8, cursor: "pointer",
-        background: hov || isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+        background: hov || isActive ? "var(--island-hover)" : "rgba(252,249,245,0.035)",
         transition: "background 0.15s",
       }}
     >
@@ -518,13 +518,13 @@ function CardItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMen
       </div>
       <div style={{
         fontSize: 13, fontWeight: 600,
-        color: isActive ? C[400] : "#ede5dd",
+        color: isActive ? C[400] : "var(--island-text)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         marginBottom: 3,
       }}>
         {name}
       </div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", gap: 4 }}>
+      <div style={{ fontSize: 11, color: "var(--island-faint)", display: "flex", alignItems: "center", gap: 4 }}>
         {pl.type === "liked" && <span style={{ color: "#1ed760", fontSize: 9 }}>♦</span>}
         Danh sách phát · Nghĩa
       </div>
@@ -760,7 +760,9 @@ export default function Sidebar({
       transition: `width ${dur} ${EASE}`,
       overflow: "hidden",
       borderRadius: 8, marginRight: 8,
-      background: "#121212",
+      background: "var(--island-bg)",
+      borderRight: "1px solid var(--island-border)",
+      boxShadow: "10px 0 28px rgba(26,22,20,0.12)",
     }}>
       <PlaylistContextMenu
         menu={contextMenu}
@@ -783,7 +785,7 @@ export default function Sidebar({
             <div style={{
               position: "fixed", top: "50%", left: "50%",
               transform: "translate(-50%,-50%)",
-              width: 320, background: "#282828", borderRadius: 10,
+              width: 320, background: "var(--island-menu)", borderRadius: 10,
               padding: "22px 22px 18px", zIndex: 1101,
               boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
               animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
@@ -800,7 +802,7 @@ export default function Sidebar({
                   if (e.key === "Escape") setRenamingId(null);
                 }}
                 style={{
-                  width: "100%", background: "rgba(255,255,255,0.1)",
+                  width: "100%", background: "rgba(252,249,245,0.08)",
                   border: `1.5px solid ${C[500]}`, borderRadius: 6,
                   padding: "9px 12px", color: "#fff", fontSize: 14,
                   outline: "none", boxSizing: "border-box", marginBottom: 14,
@@ -812,7 +814,7 @@ export default function Sidebar({
                   style={{
                     background: "transparent", border: "1px solid rgba(255,255,255,0.3)",
                     borderRadius: 9999, padding: "7px 18px",
-                    fontSize: 12, color: "#ede5dd", cursor: "pointer",
+                    fontSize: 12, color: "var(--island-text)", cursor: "pointer",
                   }}
                 >Hủy</button>
                 <button
@@ -842,7 +844,7 @@ export default function Sidebar({
             <div style={{
               position: "fixed", top: "50%", left: "50%",
               transform: "translate(-50%,-50%)",
-              width: 300, background: "#282828", borderRadius: 10,
+              width: 300, background: "var(--island-menu)", borderRadius: 10,
               padding: "22px 22px 18px", zIndex: 1101,
               boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
               animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
@@ -850,7 +852,7 @@ export default function Sidebar({
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#fff" }}>
                 Xóa danh sách phát?
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 20, lineHeight: 1.55 }}>
+              <div style={{ fontSize: 12, color: "var(--island-muted)", marginBottom: 20, lineHeight: 1.55 }}>
                 Bạn có chắc muốn xóa{" "}
                 <span style={{ color: "#fff", fontWeight: 600 }}>{pl.name}</span>?
                 {" "}Hành động này không thể hoàn tác.
@@ -861,7 +863,7 @@ export default function Sidebar({
                   style={{
                     background: "transparent", border: "1px solid rgba(255,255,255,0.3)",
                     borderRadius: 9999, padding: "7px 18px",
-                    fontSize: 12, color: "#ede5dd", cursor: "pointer",
+                    fontSize: 12, color: "var(--island-text)", cursor: "pointer",
                   }}
                 >Hủy</button>
                 <button
@@ -906,10 +908,10 @@ export default function Sidebar({
           onMouseLeave={() => setLibHov(false)}
           style={{
             width: 48, height: 48, borderRadius: 8,
-            background: libHov ? "rgba(255,255,255,0.08)" : "transparent",
+            background: libHov ? "var(--island-hover)" : "transparent",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", fontSize: 17,
-            color: libHov ? "#fff" : "rgba(255,255,255,0.6)",
+            color: libHov ? "var(--island-text)" : "var(--island-muted)",
             transition: "background 0.15s, color 0.15s",
             flexShrink: 0, position: "relative",
           }}
@@ -919,10 +921,10 @@ export default function Sidebar({
             <div style={{
               position: "absolute", left: "calc(100% + 10px)", top: "50%",
               transform: "translateY(-50%)",
-              background: "#282828", color: "#fff",
+              background: "var(--island-menu)", color: "var(--island-text)",
               fontSize: 11, fontWeight: 600, padding: "5px 10px",
               borderRadius: 4, whiteSpace: "nowrap",
-              boxShadow: "rgba(0,0,0,0.5) 0px 8px 24px",
+              boxShadow: "var(--shadow-menu)",
               zIndex: 300, pointerEvents: "none",
             }}>
               Mở Thư viện
@@ -937,11 +939,11 @@ export default function Sidebar({
             width: 48, height: 40, borderRadius: 8,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", fontSize: 22, fontWeight: 300,
-            color: "rgba(255,255,255,0.5)",
+            color: "var(--island-muted)",
             transition: "background 0.15s, color 0.15s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "var(--island-hover)"; e.currentTarget.style.color = "var(--island-text)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--island-muted)"; }}
         >
           <FontAwesomeIcon icon={isAuthed ? faPlus : faLock} style={{ fontSize: isAuthed ? 16 : 13 }} />
         </div>
@@ -982,11 +984,11 @@ export default function Sidebar({
               borderRadius: 6, padding: "4px 6px",
               transition: "background 0.15s",
             }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--island-hover)"}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}
           >
-            <span style={{ fontSize: 18, flexShrink: 0, color: "rgba(255,255,255,0.85)" }}>☷</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 18, flexShrink: 0, color: "var(--island-muted)" }}>☷</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--island-text)", whiteSpace: "nowrap" }}>
               Thư viện
             </span>
           </div>
@@ -998,14 +1000,14 @@ export default function Sidebar({
               onClick={openCreateMenu}
               style={{
                 display: "flex", alignItems: "center", gap: 4,
-                background: showCreateMenu ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.07)",
+                background: showCreateMenu ? "var(--island-hover)" : "rgba(252,249,245,0.06)",
                 borderRadius: 9999, padding: "5px 12px",
                 cursor: "pointer", fontSize: 12,
-                color: showCreateMenu ? "#fff" : "rgba(255,255,255,0.7)",
+                color: showCreateMenu ? "var(--island-text)" : "var(--island-muted)",
                 whiteSpace: "nowrap", transition: "background 0.15s",
               }}
-              onMouseEnter={e => { if (!showCreateMenu) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
-              onMouseLeave={e => { if (!showCreateMenu) e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
+              onMouseEnter={e => { if (!showCreateMenu) e.currentTarget.style.background = "var(--island-hover)"; }}
+              onMouseLeave={e => { if (!showCreateMenu) e.currentTarget.style.background = "rgba(252,249,245,0.06)"; }}
             >
               <FontAwesomeIcon icon={showCreateMenu ? faXmark : faPlus} style={{ fontSize: 11 }} />
               Tạo
@@ -1019,9 +1021,9 @@ export default function Sidebar({
                 />
                 <div style={{
                   position: "fixed", top: createMenuPos.top, right: createMenuPos.right,
-                  background: "#282828", borderRadius: 8, zIndex: 999,
+                  background: "var(--island-menu)", borderRadius: 8, zIndex: 999,
                   padding: 8, width: 244,
-                  boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
+                  boxShadow: "var(--shadow-menu)",
                   transformOrigin: "top right",
                   animation: "menuIn 160ms cubic-bezier(0.2,0,0,1) both",
                 }}>
@@ -1038,7 +1040,7 @@ export default function Sidebar({
                         opacity: opt.disabled ? 0.4 : 1,
                         transition: "background 0.12s",
                       }}
-                      onMouseEnter={e => { if (!opt.disabled) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+                      onMouseEnter={e => { if (!opt.disabled) e.currentTarget.style.background = "var(--island-hover)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                     >
                       <span style={{ width: 18, flexShrink: 0, marginTop: 1, textAlign: "center" }}>
@@ -1047,7 +1049,7 @@ export default function Sidebar({
                       <div>
                         <div style={{
                           display: "flex", alignItems: "center", gap: 6,
-                          fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 2,
+                          fontSize: 13, fontWeight: 600, color: "var(--island-text)", marginBottom: 2,
                         }}>
                           {opt.label}
                           {opt.badge && (
@@ -1060,7 +1062,7 @@ export default function Sidebar({
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 11, color: "var(--island-muted)", lineHeight: 1.4 }}>
                           {opt.desc}
                         </div>
                       </div>
@@ -1085,7 +1087,7 @@ export default function Sidebar({
               top: 0, bottom: 8,
               left: filterPill.left,
               width: filterPill.width,
-              background: "rgba(255,255,255,0.14)",
+              background: "var(--island-hover)",
               borderRadius: 9999,
               transition: "left 180ms cubic-bezier(0.4,0,0.2,1), width 180ms cubic-bezier(0.4,0,0.2,1)",
               pointerEvents: "none",
@@ -1100,7 +1102,7 @@ export default function Sidebar({
                 background: "transparent",
                 border: "none", borderRadius: 9999, padding: "4px 12px",
                 fontSize: 12, fontWeight: 500,
-                color: libraryFilter === t.key ? "#fff" : "rgba(255,255,255,0.6)",
+                color: libraryFilter === t.key ? "var(--island-text)" : "var(--island-muted)",
                 cursor: "pointer", whiteSpace: "nowrap",
                 position: "relative", zIndex: 1,
                 transition: "color 160ms ease",
@@ -1122,7 +1124,7 @@ export default function Sidebar({
             onClick={() => setShowSearch(s => !s)}
             style={{
               fontSize: 16,
-              color: showSearch || librarySearch ? "#fff" : "rgba(255,255,255,0.4)",
+              color: showSearch || librarySearch ? "var(--island-text)" : "var(--island-faint)",
               cursor: "pointer", transition: "color 0.15s",
             }}
           >
@@ -1136,11 +1138,11 @@ export default function Sidebar({
               onClick={openSortMenu}
               style={{
                 display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
-                fontSize: 11, color: "rgba(255,255,255,0.55)",
+                fontSize: 11, color: "var(--island-muted)",
                 userSelect: "none", transition: "color 0.15s",
               }}
-              onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-              onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.55)"}
+              onMouseEnter={e => e.currentTarget.style.color = "var(--island-text)"}
+              onMouseLeave={e => e.currentTarget.style.color = "var(--island-muted)"}
             >
               {currentSortLabel}
               <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 8 }} />
@@ -1154,14 +1156,14 @@ export default function Sidebar({
                 />
                 <div style={{
                   position: "fixed", top: sortMenuPos.top, right: sortMenuPos.right,
-                  background: "#282828", borderRadius: 8, zIndex: 999,
+                  background: "var(--island-menu)", borderRadius: 8, zIndex: 999,
                   padding: 8, width: 200,
-                  boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
+                  boxShadow: "var(--shadow-menu)",
                   transformOrigin: "top right",
                   animation: "menuIn 160ms cubic-bezier(0.2,0,0,1) both",
                 }}>
                   {/* Sort options */}
-                  <div style={{ padding: "4px 12px 8px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <div style={{ padding: "4px 12px 8px", fontSize: 10, fontWeight: 600, color: "var(--island-faint)", textTransform: "uppercase", letterSpacing: 0.8 }}>
                     Sắp xếp theo
                   </div>
                   {SORT_OPTIONS.map(opt => (
@@ -1172,10 +1174,10 @@ export default function Sidebar({
                         display: "flex", alignItems: "center", gap: 8,
                         padding: "8px 12px", borderRadius: 4, cursor: "pointer",
                         fontSize: 13,
-                        color: librarySort === opt.key ? C[400] : "rgba(255,255,255,0.8)",
+                        color: librarySort === opt.key ? C[400] : "var(--island-text)",
                         transition: "background 0.12s",
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--island-hover)"}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                     >
                       <span style={{ width: 14, textAlign: "center", flexShrink: 0, fontSize: 11 }}>
@@ -1186,24 +1188,24 @@ export default function Sidebar({
                   ))}
 
                   {/* Divider */}
-                  <div style={{ height: 0.5, background: "rgba(255,255,255,0.1)", margin: "8px 12px" }} />
+                  <div style={{ height: 0.5, background: "var(--island-border)", margin: "8px 12px" }} />
 
                   {/* View as */}
-                  <div style={{ padding: "4px 12px 6px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <div style={{ padding: "4px 12px 6px", fontSize: 10, fontWeight: 600, color: "var(--island-faint)", textTransform: "uppercase", letterSpacing: 0.8 }}>
                     Hiển thị dạng
                   </div>
                   {/* Segmented control */}
                   <div style={{
                     position: "relative", display: "flex",
                     margin: "0 12px 4px",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "rgba(252,249,245,0.05)",
                     borderRadius: 8, padding: 2,
                   }}>
                     {/* Sliding active indicator */}
                     <div style={{
                       position: "absolute", top: 2, left: 2, bottom: 2,
                       width: "calc((100% - 4px) / 4)",
-                      background: "rgba(255,255,255,0.14)",
+                      background: "var(--island-hover)",
                       borderRadius: 6,
                       transform: `translateX(${viewModeIdx * 100}%)`,
                       transition: "transform 200ms cubic-bezier(0.4,0,0.2,1)",
@@ -1218,7 +1220,7 @@ export default function Sidebar({
                           flex: 1, height: 30, borderRadius: 6,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           cursor: "pointer", position: "relative", zIndex: 1,
-                          color: libraryViewMode === m.key ? C[400] : "rgba(255,255,255,0.55)",
+                          color: libraryViewMode === m.key ? C[400] : "var(--island-muted)",
                           transition: "color 180ms ease",
                         }}
                       >
@@ -1247,9 +1249,9 @@ export default function Sidebar({
             placeholder="Tìm trong thư viện..."
             autoFocus={showSearch}
             style={{
-              width: "100%", background: "rgba(255,255,255,0.1)",
+              width: "100%", background: "rgba(252,249,245,0.08)",
               border: "none", borderRadius: 4, padding: "6px 10px",
-              color: "#fff", fontSize: 12, outline: "none", boxSizing: "border-box",
+              color: "var(--island-text)", fontSize: 12, outline: "none", boxSizing: "border-box",
             }}
           />
         </div>
@@ -1268,7 +1270,7 @@ export default function Sidebar({
         >
           {filteredPlaylists.length === 0 ? (
             <div style={{
-              padding: "20px 12px", fontSize: 12, color: "rgba(255,255,255,0.3)",
+              padding: "20px 12px", fontSize: 12, color: "var(--island-faint)",
               textAlign: "center", opacity: isOpen ? 1 : 0, transition: "opacity 0.15s",
             }}>
               {emptyText}
@@ -1324,7 +1326,7 @@ export default function Sidebar({
           {/* Promo card */}
           {libraryFilter === "Danh sách phát" && !librarySearch && (
             <div style={{
-              background: "rgba(255,255,255,0.06)", borderRadius: 8,
+              background: "rgba(252,249,245,0.06)", borderRadius: 8,
               padding: 16, margin: "10px 4px 4px",
               opacity: isOpen ? 1 : 0,
               transform: isOpen ? "translateY(0) scale(1)" : "translateY(8px) scale(0.98)",
@@ -1336,7 +1338,7 @@ export default function Sidebar({
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 5 }}>
                 Tạo danh sách phát đầu tiên
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 12, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: "var(--island-muted)", marginBottom: 12, lineHeight: 1.5 }}>
                 Rất dễ! Chúng tôi sẽ giúp bạn
               </div>
               <button
@@ -1355,21 +1357,21 @@ export default function Sidebar({
 
         {/* Footer */}
         <div style={{
-          padding: "10px 16px", borderTop: "0.5px solid rgba(255,255,255,0.08)", flexShrink: 0,
+          padding: "10px 16px", borderTop: "0.5px solid var(--island-border)", flexShrink: 0,
           opacity: isOpen ? 1 : 0,
           transition: isOpen ? "opacity 100ms ease 80ms" : "opacity 60ms ease 0ms",
           pointerEvents: isOpen ? "auto" : "none",
         }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 10px", marginBottom: 8 }}>
             {["Pháp lý", "Quyền riêng tư", "Cookie", "Hỗ trợ"].map(l => (
-              <span key={l} style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", cursor: "pointer" }}>
+              <span key={l} style={{ fontSize: 10, color: "var(--island-faint)", cursor: "pointer" }}>
                 {l}
               </span>
             ))}
           </div>
           <button style={{
-            background: "transparent", border: "1px solid rgba(255,255,255,0.3)",
-            borderRadius: 9999, padding: "5px 12px", fontSize: 11, color: "#ede5dd",
+            background: "transparent", border: "1px solid var(--island-border)",
+            borderRadius: 9999, padding: "5px 12px", fontSize: 11, color: "var(--island-text)",
             cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
           }}>
             <FontAwesomeIcon icon={faGlobe} style={{ fontSize: 11 }} />

@@ -153,19 +153,19 @@ export default function Player({
   const iconButton = (active = false) => ({
     width: 32, height: 32, borderRadius: 999, border: "none",
     background: "transparent",
-    color: active ? C[400] : "rgba(255,255,255,0.64)",
+    color: active ? C[400] : "var(--island-muted)",
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     cursor: "pointer", flexShrink: 0,
     transition: "background 80ms ease, color 80ms ease",
   });
 
   const hoverOn = (e, active = false) => {
-    e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-    e.currentTarget.style.color = active ? C[400] : "#fff";
+    e.currentTarget.style.background = "var(--island-hover)";
+    e.currentTarget.style.color = active ? C[400] : "var(--island-text)";
   };
   const hoverOff = (e, active = false) => {
     e.currentTarget.style.background = "transparent";
-    e.currentTarget.style.color = active ? C[400] : "rgba(255,255,255,0.64)";
+    e.currentTarget.style.color = active ? C[400] : "var(--island-muted)";
   };
 
   const showThumb = hovProgress || isDragging;
@@ -228,13 +228,13 @@ export default function Player({
         className="player-bar"
         style={{
           minHeight: 90, flexShrink: 0,
-          background: "#181818",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
+          background: "var(--island-bg)",
+          borderTop: "1px solid var(--island-border)",
           display: "grid",
           gridTemplateColumns: "minmax(230px,1fr) minmax(360px,1.45fr) minmax(220px,1fr)",
           alignItems: "center",
           padding: "10px 18px", gap: 14,
-          boxShadow: "0 -10px 28px rgba(0,0,0,0.32)",
+          boxShadow: "var(--island-shadow)",
           position: "relative", zIndex: 101,
         }}
       >
@@ -262,10 +262,10 @@ export default function Player({
           </div>
 
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#f4eee8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--island-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 3 }}>
               {s.title}
             </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.52)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ fontSize: 11, color: "var(--island-faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {s.artist}
             </div>
           </div>
@@ -276,12 +276,12 @@ export default function Player({
             onClick={() => setSaveOpen(p => !p)}
             style={{
               background: "transparent", border: "none", cursor: "pointer",
-              color: isSaved ? "#1ed760" : "rgba(255,255,255,0.55)",
+              color: isSaved ? "#1ed760" : "var(--island-muted)",
               flexShrink: 0, transition: "color 0.15s, transform 0.1s",
               display: "inline-flex", padding: 5,
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--island-text)"; e.currentTarget.style.transform = "scale(1.12)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--island-muted)"; e.currentTarget.style.transform = "scale(1)"; }}
             onMouseDown={e => { e.currentTarget.style.transform = "scale(0.92)"; }}
             onMouseUp={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
           >
@@ -341,7 +341,7 @@ export default function Player({
 
           {/* Progress bar — 16px hit area */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 520 }}>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", minWidth: 34, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: 10, color: "var(--island-faint)", minWidth: 34, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
               {mins}:{secs}
             </span>
             <div
@@ -354,7 +354,7 @@ export default function Player({
               <div style={{
                 position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)",
                 height: showThumb ? 6 : 4,
-                background: "rgba(255,255,255,0.16)", borderRadius: 999, overflow: "hidden",
+                background: "var(--island-rail)", borderRadius: 999, overflow: "hidden",
                 transition: "height 0.1s",
               }}>
                 <div style={{ width: `${pct}%`, height: "100%", background: C[500], borderRadius: 999, transition: isDragging ? "none" : "width 1s linear" }} />
@@ -368,7 +368,7 @@ export default function Player({
                 }} />
               )}
             </div>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.42)", minWidth: 34, fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: 10, color: "var(--island-faint)", minWidth: 34, fontVariantNumeric: "tabular-nums" }}>
               {s.duration}
             </span>
           </div>
@@ -442,12 +442,12 @@ export default function Player({
             <div style={{
               position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)",
               height: showVolThumb ? 6 : 4,
-              background: "rgba(255,255,255,0.16)", borderRadius: 999, overflow: "hidden",
+              background: "var(--island-rail)", borderRadius: 999, overflow: "hidden",
               transition: "height 0.1s ease",
             }}>
               <div style={{
                 width: `${volPct}%`, height: "100%",
-                background: muted ? "rgba(255,255,255,0.34)" : "rgba(255,255,255,0.72)",
+                background: muted ? "var(--island-faint)" : "var(--island-fill)",
                 borderRadius: 999,
                 transition: isVolDragging ? "none" : "width 160ms ease, background 140ms ease",
               }} />
