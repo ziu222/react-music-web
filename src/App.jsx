@@ -11,12 +11,14 @@ import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
 import PremiumModal from "./components/PremiumModal";
 import NavbarUserActions from "./components/NavbarUserActions";
+import SettingsModal from "./components/SettingsModal";
 import {
   loadSession, saveSession, clearSession,
   normalizeUser, applyEntitlement, saveEntitlement, isPremiumUser,
-  loadAudioQuality, saveAudioQuality,
   PLAN_PREMIUM,
 } from "./auth/session";
+import { loadSettings, saveSettings } from "./lib/settings";
+import { loadNotifications, saveNotifications, createNotification } from "./lib/notifications";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -56,7 +58,7 @@ export default function App() {
   const [authUser, setAuthUser] = useState(() => loadSession());
   const [authGate, setAuthGate] = useState(null);
   const [premiumOpen, setPremiumOpen] = useState(false);
-  const [audioQuality, setAudioQuality] = useState(() => loadAudioQuality());
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
@@ -115,6 +117,65 @@ export default function App() {
     else clearSession();
   }, [authUser]);
 
+  /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
+  const userKey = authUser?.email?.toLowerCase() ?? "guest";
+  const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
+  const [notifState, setNotifState] = useState(() => ({ key: userKey, value: loadNotifications(userKey) }));
+  const settings = settingsState.value;
+  const notifications = notifState.value;
+
+  // Đổi user → reset state theo key ngay trong render (React adjust-state-on-prop-change pattern)
+  if (settingsState.key !== userKey) {
+    setSettingsState({ key: userKey, value: loadSettings(userKey) });
+  }
+  if (notifState.key !== userKey) {
+    setNotifState({ key: userKey, value: loadNotifications(userKey) });
+  }
+
+  // Guard theo key để không ghi nhầm dữ liệu user cũ sang user mới lúc chuyển session
+  useEffect(() => {
+    if (settingsState.key === userKey) saveSettings(userKey, settingsState.value);
+  }, [settingsState, userKey]);
+
+  useEffect(() => {
+    if (notifState.key === userKey) saveNotifications(userKey, notifState.value);
+  }, [notifState, userKey]);
+
+  const updateSettings = (patch) => {
+    setSettingsState(s => ({ ...s, value: { ...s.value, ...patch } }));
+  };
+
+  const updateNotifyType = (type, enabled) => {
+    setSettingsState(s => ({
+      ...s,
+      value: { ...s.value, notifyTypes: { ...s.value.notifyTypes, [type]: enabled } },
+    }));
+  };
+
+  const pushNotification = (type, title, body) => {
+    if (settings.notifyTypes[type] === false) return;
+    setNotifState(s => ({ ...s, value: [createNotification(type, title, body), ...s.value].slice(0, 30) }));
+  };
+
+  const markNotificationRead = (id) => {
+    setNotifState(s => ({ ...s, value: s.value.map(n => n.id === id ? { ...n, read: true } : n) }));
+  };
+
+  const markAllNotificationsRead = () => {
+    setNotifState(s => ({ ...s, value: s.value.map(n => n.read ? n : { ...n, read: true }) }));
+  };
+
+  const visibleNotifications = useMemo(
+    () => notifications.filter(n => settings.notifyTypes[n.type] !== false),
+    [notifications, settings.notifyTypes]
+  );
+  const unreadCount = useMemo(
+    () => visibleNotifications.filter(n => !n.read).length,
+    [visibleNotifications]
+  );
+
+  const audioQuality = settings.audioQuality;
+
   const openAuth = (mode) => setAuthMode(mode);
 
   const handleAuth = (user) => {
@@ -138,6 +199,7 @@ export default function App() {
     setAuthGate(null);
     setAuthMode(null);
     setPremiumOpen(false);
+    setSettingsOpen(false);
     setCur(null);
     setPlaying(false);
     setProg(0);
@@ -149,14 +211,15 @@ export default function App() {
     if (!authUser) return;
     saveEntitlement(authUser.email, PLAN_PREMIUM);
     setAuthUser(prev => prev ? { ...prev, plan: PLAN_PREMIUM } : prev);
+    pushNotification(
+      "premium",
+      "Chào mừng đến Melodies Premium",
+      "Tải xuống, âm thanh chất lượng cao và nghe không quảng cáo đã được mở khóa."
+    );
   };
 
   const toggleAudioQuality = () => {
-    setAudioQuality(prev => {
-      const next = prev === "high" ? "normal" : "high";
-      saveAudioQuality(next);
-      return next;
-    });
+    updateSettings({ audioQuality: audioQuality === "high" ? "normal" : "high" });
   };
 
   /* ── In-app navigation history (back / forward) ── */
@@ -475,11 +538,15 @@ export default function App() {
   };
 
   const toggleFollowArtist = (artistName) => {
+    const isFollowing = followedArtists.has(artistName);
     setFollowedArtists(prev => {
       const next = new Set(prev);
       next.has(artistName) ? next.delete(artistName) : next.add(artistName);
       return next;
     });
+    if (!isFollowing) {
+      pushNotification("social", `Đang theo dõi ${artistName}`, "Nghệ sĩ đã được thêm vào thư viện của bạn.");
+    }
   };
 
   const toggleFollowArtistWithAuth = (artistName) => {
@@ -510,6 +577,7 @@ export default function App() {
     setSelectedPlaylistId(newPl.id);
     setSidebarOpen(true);
     openLibrary({ playlistId: newPl.id, libraryFilter: "Danh sách phát" });
+    pushNotification("library", "Đã tạo danh sách phát mới", "Danh sách phát mới đã có trong thư viện của bạn.");
   };
 
   const createPlaylistWithAuth = () => {
@@ -682,12 +750,19 @@ export default function App() {
         return;
       }
 
+      // Repeat do người dùng chủ động bật nên vẫn ưu tiên hơn autoplay tắt
+      if (repeatMode === "off" && !settings.autoplay) {
+        setPlaying(false);
+        setProg(0);
+        return;
+      }
+
       playNext({ allowWrap: repeatMode === "all" });
     };
 
     audio.addEventListener("ended", finishPlayback);
     return () => audio.removeEventListener("ended", finishPlayback);
-  }, [playNext, repeatMode]);
+  }, [playNext, repeatMode, settings.autoplay]);
 
   useEffect(() => {
     audioRef.current.volume = muted ? 0 : volume;
@@ -888,14 +963,24 @@ export default function App() {
             Hỗ trợ
           </span>
           <div style={{ width: 1, height: 20, background: BORDER, margin: "0 4px" }} />
-          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px" }}>
+          <span
+            onClick={() => setSettingsOpen(true)}
+            style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px", transition: "color 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+          >
             Cài đặt
           </span>
           <NavbarUserActions
             user={authUser}
             isPremium={isPremium}
             audioQuality={audioQuality}
+            notifications={visibleNotifications}
+            unreadCount={unreadCount}
+            onMarkRead={markNotificationRead}
+            onMarkAllRead={markAllNotificationsRead}
             onOpenPremium={() => setPremiumOpen(true)}
+            onOpenSettings={() => setSettingsOpen(true)}
             onToggleAudioQuality={toggleAudioQuality}
             onHome={() => { nav("home"); setSearch(""); }}
             onLogout={handleLogout}
@@ -1146,6 +1231,19 @@ export default function App() {
           isPremium={isPremium}
           onUpgrade={upgradeToPremium}
           onRequireAuth={() => setAuthGate({ reason: "premium", afterAuth: () => setPremiumOpen(true) })}
+        />
+      )}
+
+      {settingsOpen && (
+        <SettingsModal
+          user={authUser}
+          isPremium={isPremium}
+          settings={settings}
+          onUpdateSettings={updateSettings}
+          onUpdateNotifyType={updateNotifyType}
+          onClose={() => setSettingsOpen(false)}
+          onOpenPremium={() => setPremiumOpen(true)}
+          onRequestAuth={() => openAuth("login")}
         />
       )}
 

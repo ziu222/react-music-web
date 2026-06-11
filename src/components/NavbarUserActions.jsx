@@ -3,24 +3,7 @@ import { Bell, LogOut, Settings, UserRound } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBolt, faCrown, faLock } from "@fortawesome/free-solid-svg-icons";
 import { C, G, BORDER, TEXT } from "../constants/theme";
-
-const notifications = [
-  {
-    id: 1,
-    title: "Mix hằng ngày của bạn đã sẵn sàng",
-    body: "Gợi ý mới dựa trên những bài bạn vừa nghe.",
-  },
-  {
-    id: 2,
-    title: "Danh sách phát đã được lưu",
-    body: "Danh sách phát cá nhân hiện đã có trong Thư viện.",
-  },
-  {
-    id: 3,
-    title: "Nhạc mới dành cho bạn",
-    body: "Gợi ý US-UK và V-Pop vừa được cập nhật.",
-  },
-];
+import NotificationsPanel from "./NotificationsPanel";
 
 function FloatingPanel({ right = 0, children }) {
   return (
@@ -98,7 +81,12 @@ export default function NavbarUserActions({
   user,
   isPremium = false,
   audioQuality = "normal",
+  notifications = [],
+  unreadCount = 0,
+  onMarkRead,
+  onMarkAllRead,
   onOpenPremium,
+  onOpenSettings,
   onToggleAudioQuality,
   onHome,
   onLogout,
@@ -133,18 +121,31 @@ export default function NavbarUserActions({
         onClick={() => setOpenPanel(openPanel === "notifications" ? null : "notifications")}
       >
         <Bell size={17} strokeWidth={2.4} />
-        <span
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 7,
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: C[500],
-            boxShadow: "0 0 0 2px #141010",
-          }}
-        />
+        {unreadCount > 0 && (
+          <span
+            className="notif-badge"
+            style={{
+              position: "absolute",
+              top: -3,
+              right: -4,
+              minWidth: 16,
+              height: 16,
+              borderRadius: 9999,
+              padding: "0 4px",
+              background: C[500],
+              color: "#fff",
+              fontSize: 9.5,
+              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 0 2px #141010",
+              animation: "badgePop 180ms cubic-bezier(0.2,0,0,1) both",
+            }}
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </IconButton>
 
       <button
@@ -189,30 +190,11 @@ export default function NavbarUserActions({
       </button>
 
       {openPanel === "notifications" && (
-        <FloatingPanel right={76}>
-          <div style={{ padding: "8px 10px 10px" }}>
-            <div style={{ fontSize: 15, fontWeight: 900, color: TEXT.primary }}>Thông báo</div>
-            <div style={{ fontSize: 11, color: TEXT.secondary, marginTop: 3 }}>Hộp thông báo xem trước</div>
-          </div>
-          {notifications.map(item => (
-            <div
-              key={item.id}
-              style={{
-                display: "flex",
-                gap: 10,
-                padding: "10px",
-                borderRadius: 6,
-                background: item.id === 1 ? "rgba(255,255,255,0.08)" : "transparent",
-              }}
-            >
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: C[500], marginTop: 5, flexShrink: 0 }} />
-              <span style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: TEXT.primary, fontWeight: 800 }}>{item.title}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.52)", marginTop: 3, lineHeight: 1.35 }}>{item.body}</div>
-              </span>
-            </div>
-          ))}
-        </FloatingPanel>
+        <NotificationsPanel
+          notifications={notifications}
+          onMarkRead={onMarkRead}
+          onMarkAllRead={onMarkAllRead}
+        />
       )}
 
       {openPanel === "profile" && (
@@ -307,7 +289,7 @@ export default function NavbarUserActions({
 
           {[
             { key: "profile", icon: UserRound, label: "Hồ sơ", onClick: onHome },
-            { key: "settings", icon: Settings, label: "Cài đặt", onClick: onHome },
+            { key: "settings", icon: Settings, label: "Cài đặt", onClick: onOpenSettings },
             { key: "logout", icon: LogOut, label: "Đăng xuất", onClick: onLogout },
           ].map(item => {
             const Icon = item.icon;
