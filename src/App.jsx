@@ -329,6 +329,13 @@ export default function App() {
     if (page !== "artist") nav("artist");
   };
 
+  const openPlaylist = (pl) => {
+    if (!pl) return;
+    setLibraryFilter("Danh sách phát");
+    setSelectedPlaylistId(pl.id);
+    if (page !== "library") nav("library");
+  };
+
   const toggleFollowArtist = (artistName) => {
     setFollowedArtists(prev => {
       const next = new Set(prev);
@@ -838,6 +845,10 @@ export default function App() {
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
                   onAddToQueue={addToQueue}
+                  userPlaylists={visiblePlaylists}
+                  onOpenArtist={openArtist}
+                  onOpenAlbum={openAlbum}
+                  onOpenPlaylist={openPlaylist}
                 />
               )}
               {page === "library" && (
