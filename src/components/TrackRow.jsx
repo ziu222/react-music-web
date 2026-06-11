@@ -131,6 +131,8 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
       {/* Add to queue */}
       {onAddToQueue && (
         <button
+          type="button"
+          aria-label={`Add ${song.title} to queue`}
           onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
           title="Add to queue"
           style={{
