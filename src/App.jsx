@@ -352,6 +352,28 @@ export default function App() {
     requireAuth(() => toggleLike(id), { reason: "like", song });
   };
 
+  const toggleSongInPlaylist = useCallback((songId, playlistId) => {
+    setUserPlaylists(prev => prev.map(pl => {
+      if (pl.id !== playlistId) return pl;
+      const ids = pl.songIds ?? [];
+      return ids.includes(songId)
+        ? { ...pl, songIds: ids.filter(id => id !== songId) }
+        : { ...pl, songIds: [...ids, songId] };
+    }));
+  }, []);
+
+  const createPlaylistWithSong = useCallback((songId) => {
+    const newPl = {
+      id: `local-${Date.now()}`,
+      name: "Danh sách phát mới",
+      type: "playlist",
+      isPersonal: true,
+      bg: "linear-gradient(135deg,#334155,#64748b)",
+      songIds: [songId],
+    };
+    setUserPlaylists(prev => [...prev, newPl]);
+  }, []);
+
   const addToQueue = useCallback((song) => {
     setQueuedTrackIds(prev => [...prev, song.id]);
     clearTimeout(feedbackTimerRef.current);
@@ -785,6 +807,9 @@ export default function App() {
         recentSongs={recentSongs}
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
+        userPlaylists={userPlaylists}
+        onToggleSongInPlaylist={toggleSongInPlaylist}
+        onCreatePlaylistWithSong={createPlaylistWithSong}
       />
 
       {queueFeedback && (

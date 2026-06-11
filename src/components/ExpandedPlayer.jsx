@@ -4,6 +4,7 @@ import {
   Shuffle, SkipBack, SkipForward, Volume2, VolumeX,
 } from "lucide-react";
 import EqBars from "./EqBars";
+import SaveToPlaylistPopover from "./SaveToPlaylistPopover";
 import { C } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
@@ -19,6 +20,9 @@ export default function ExpandedPlayer({
   onPlayTrack,
   onOpenQueue,
   onOpenLyrics,
+  userPlaylists = [],
+  onToggleSongInPlaylist,
+  onCreatePlaylistWithSong,
 }) {
   const [hovProgress, setHovProgress] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -42,6 +46,8 @@ export default function ExpandedPlayer({
     return () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
   }, []);
 
+  const [saveOpen, setSaveOpen] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -52,6 +58,7 @@ export default function ExpandedPlayer({
   if (!s) return null;
 
   const liked = likedIds.has(s.id);
+  const isSaved = liked || userPlaylists.some(pl => typeof pl.id === "string" && pl.songIds?.includes(s.id));
   const cover = getSongImage(s);
   const pct = s.durationSecs > 0 ? Math.min(100, Math.max(0, (prog / s.durationSecs) * 100)) : 0;
   const volPct = muted ? 0 : Math.round(volume * 100);
@@ -99,6 +106,19 @@ export default function ExpandedPlayer({
   const ctrlRelease = (e) => { e.currentTarget.style.transform = "scale(1)"; };
 
   return (
+    <>
+      {saveOpen && isOpen && (
+        <SaveToPlaylistPopover
+          song={s}
+          likedIds={likedIds}
+          onToggleLike={onLike}
+          userPlaylists={userPlaylists}
+          onToggleSongInPlaylist={onToggleSongInPlaylist}
+          onCreatePlaylistWithSong={onCreatePlaylistWithSong}
+          onClose={() => setSaveOpen(false)}
+          align="center"
+        />
+      )}
     <div
       role="dialog"
       aria-modal={isOpen}
@@ -196,20 +216,20 @@ export default function ExpandedPlayer({
               </div>
               <button
                 type="button"
-                aria-label={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
-                onClick={() => onLike(s.id)}
+                aria-label={isSaved ? "Remove from Liked Songs" : "Save to Liked Songs"}
+                onClick={() => setSaveOpen(p => !p)}
                 style={{
                   background: "transparent", border: "none", cursor: "pointer",
-                  color: liked ? "#1ed760" : "rgba(255,255,255,0.55)",
+                  color: isSaved ? "#1ed760" : "rgba(255,255,255,0.55)",
                   flexShrink: 0, display: "inline-flex", padding: 6, marginLeft: 12,
                   transition: "color 0.15s, transform 0.12s",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = liked ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = liked ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+                onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
                 onMouseDown={e => { e.currentTarget.style.transform = "scale(0.92)"; }}
                 onMouseUp={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
               >
-                {liked ? <CircleCheck size={22} /> : <CirclePlus size={22} />}
+                {isSaved ? <CircleCheck size={22} /> : <CirclePlus size={22} />}
               </button>
             </div>
 
@@ -371,6 +391,7 @@ export default function ExpandedPlayer({
         </div>
       </div>
     </div>
+    </>
   );
 }
 
