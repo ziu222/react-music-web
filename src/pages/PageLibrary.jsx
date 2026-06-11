@@ -604,7 +604,8 @@ export default function PageLibrary({
             {/* Hero */}
             <div style={{
               padding: "40px 32px 28px",
-              background: `linear-gradient(180deg, ${activePl.bg.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1d1616"}33 0%, transparent 100%)`,
+              background: `linear-gradient(180deg, ${C[500]}12 0%, rgba(255,255,255,0.025) 48%, transparent 100%)`,
+              borderBottom: `1px solid ${BORDER}`,
               display: "flex", alignItems: "flex-end", gap: 24,
             }}>
               <PlaylistCover
