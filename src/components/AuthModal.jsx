@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
-import { C, TEXT } from "../constants/theme";
+import { C, G, TEXT } from "../constants/theme";
 import users from "../data/users";
 
 const SOCIAL_PROVIDERS = [
@@ -440,7 +440,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          background: `radial-gradient(circle at top left, ${C[500]}24, transparent 34%), radial-gradient(circle at bottom right, rgba(30,215,96,0.13), transparent 30%)`,
+          background: `radial-gradient(circle at top left, ${C[500]}24, transparent 34%), radial-gradient(circle at bottom right, ${G[500]}1f, transparent 30%)`,
         }} />
 
         <button
@@ -510,7 +510,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                 width: 86,
                 height: 86,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg,#1ed760,#f97316)",
+                background: `linear-gradient(135deg, ${C[500]}, ${G[400]})`,
                 color: "#0f0c0c",
                 display: "inline-flex",
                 alignItems: "center",
@@ -583,9 +583,9 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                 <div style={{
                   margin: "0 0 14px",
                   borderRadius: 8,
-                  background: "rgba(30,215,96,0.12)",
-                  border: "1px solid rgba(30,215,96,0.24)",
-                  color: "#86efac",
+                  background: `${C[500]}1f`,
+                  border: `1px solid ${C[500]}3d`,
+                  color: C[400],
                   fontSize: 12,
                   lineHeight: 1.45,
                   padding: "10px 12px",

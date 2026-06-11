@@ -1,4 +1,4 @@
-import { TEXT } from "../constants/theme";
+import { BG, BORDER, C, TEXT } from "../constants/theme";
 
 /**
  * Shared hero header for artist/album/playlist detail pages.
@@ -17,7 +17,8 @@ export default function EntityHeader({
   return (
     <div style={{
       padding: "40px 32px 28px",
-      background: `linear-gradient(180deg, ${accent}40 0%, transparent 100%)`,
+      background: `linear-gradient(180deg, ${C[500]}14 0%, rgba(255,255,255,0.025) 48%, transparent 100%)`,
+      borderBottom: `1px solid ${BORDER}`,
       display: "flex",
       alignItems: "flex-end",
       gap: 24,
@@ -28,8 +29,8 @@ export default function EntityHeader({
         flexShrink: 0,
         borderRadius: round ? "50%" : 8,
         overflow: "hidden",
-        background: "#241a1a",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+        background: BG.el,
+        boxShadow: `0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px ${accent}24`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

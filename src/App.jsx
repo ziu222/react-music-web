@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import songs from "./data/songs";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/Splash";
@@ -14,7 +16,7 @@ import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
 import logo from "./assets/logo.png";
-import { C, BG, TEXT, BORDER } from "./constants/theme";
+import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
 
 function fisherYates(arr) {
   const a = [...arr];
@@ -119,11 +121,102 @@ export default function App() {
     setQueuedTrackIds([]);
   };
 
-  const nav = (p) => {
-    if (loading || p === page) return;
+  /* ── In-app navigation history (back / forward) ── */
+  const [hist, setHist] = useState({ stack: [{ page: "home" }], index: 0 });
+  const canBack = hist.index > 0;
+  const canForward = hist.index < hist.stack.length - 1;
+
+  const pushEntry = useCallback((entry) => {
+    setHist(h => {
+      const last = h.stack[h.index];
+      if (
+        last &&
+        last.page === entry.page &&
+        last.artist === entry.artist &&
+        last.album === entry.album &&
+        last.playlistId === entry.playlistId &&
+        last.libraryFilter === entry.libraryFilter &&
+        last.query === entry.query
+      ) return h;
+      const stack = [...h.stack.slice(0, h.index + 1), entry];
+      return { stack, index: stack.length - 1 };
+    });
+  }, []);
+
+  const replaceEntry = useCallback((patch) => {
+    setHist(h => {
+      const stack = [...h.stack];
+      const current = stack[h.index] ?? { page };
+      stack[h.index] = { ...current, ...patch };
+      return { ...h, stack };
+    });
+  }, [page]);
+
+  const applyEntry = useCallback((entry) => {
+    if (entry.artist) setSelectedArtist(entry.artist);
+    if (entry.album) setSelectedAlbum(entry.album);
+    if (entry.page === "search") setSearch(entry.query ?? "");
+    if (entry.page !== "search" && entry.query === undefined) setSearch("");
+    if (entry.libraryFilter) setLibraryFilter(entry.libraryFilter);
+    if (entry.playlistId !== undefined) {
+      setSelectedPlaylistId(entry.playlistId);
+      if (!entry.libraryFilter) setLibraryFilter("Danh sách phát");
+    }
+    setPage(entry.page);
+  }, []);
+
+  // entry: extra route state (artist/album/playlistId) recorded in history
+  const nav = (p, entry) => {
+    if (loading || (p === page && !entry)) return;
+    pushEntry({ page: p, ...entry });
+    if (p === page) return; // same page, new entity — switch without loader
     setLoading(true);
     setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
   };
+
+  const openLibrary = (entry = {}) => {
+    const nextFilter = entry.libraryFilter ?? libraryFilter;
+    const nextPlaylistId = entry.playlistId ?? selectedPlaylistId;
+    setLibraryFilter(nextFilter);
+    if (entry.playlistId !== undefined) setSelectedPlaylistId(nextPlaylistId);
+    nav("library", { playlistId: nextPlaylistId, libraryFilter: nextFilter });
+  };
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    if (page !== "search") {
+      pushEntry({ page: "search", query: value });
+      setLoading(false);
+      setPage("search");
+      return;
+    }
+    replaceEntry({ page: "search", query: value });
+  };
+
+  // Back/forward restore instantly — no fake loader on history moves
+  const goBack = useCallback(() => {
+    if (loading || hist.index <= 0) return;
+    const idx = hist.index - 1;
+    applyEntry(hist.stack[idx]);
+    setHist(h => ({ ...h, index: idx }));
+  }, [loading, hist, applyEntry]);
+
+  const goForward = useCallback(() => {
+    if (loading || hist.index >= hist.stack.length - 1) return;
+    const idx = hist.index + 1;
+    applyEntry(hist.stack[idx]);
+    setHist(h => ({ ...h, index: idx }));
+  }, [loading, hist, applyEntry]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!e.altKey) return;
+      if (e.key === "ArrowLeft") { e.preventDefault(); goBack(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); goForward(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goBack, goForward]);
 
   const play = useCallback((s) => {
     setCur(s);
@@ -320,20 +413,18 @@ export default function App() {
   const openAlbum = (albumName) => {
     if (!albumName) return;
     setSelectedAlbum(albumName);
-    if (page !== "album") nav("album");
+    nav("album", { album: albumName });
   };
 
   const openArtist = (artistName) => {
     if (!artistName) return;
     setSelectedArtist(artistName);
-    if (page !== "artist") nav("artist");
+    nav("artist", { artist: artistName });
   };
 
   const openPlaylist = (pl) => {
     if (!pl) return;
-    setLibraryFilter("Danh sách phát");
-    setSelectedPlaylistId(pl.id);
-    if (page !== "library") nav("library");
+    openLibrary({ playlistId: pl.id, libraryFilter: "Danh sách phát" });
   };
 
   const toggleFollowArtist = (artistName) => {
@@ -366,12 +457,12 @@ export default function App() {
       name: "Danh sách phát mới",
       type: "playlist",
       isPersonal: true,
-      bg: "linear-gradient(135deg,#334155,#64748b)",
+      bg: GRADIENTS.hero,
     };
     setUserPlaylists(prev => [...prev, newPl]);
     setSelectedPlaylistId(newPl.id);
     setSidebarOpen(true);
-    setPage("library");
+    openLibrary({ playlistId: newPl.id, libraryFilter: "Danh sách phát" });
   };
 
   const createPlaylistWithAuth = () => {
@@ -426,7 +517,7 @@ export default function App() {
       name: "Danh sách phát mới",
       type: "playlist",
       isPersonal: true,
-      bg: "linear-gradient(135deg,#334155,#64748b)",
+      bg: GRADIENTS.hero,
       songIds: [songId],
     };
     setUserPlaylists(prev => [...prev, newPl]);
@@ -619,7 +710,7 @@ export default function App() {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            background: "#1f1713",
+            background: BG.card,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -640,45 +731,80 @@ export default function App() {
           />
         </div>
 
+        {/* Back / forward */}
+        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+          {[
+            { icon: faChevronLeft, label: "Quay lại", action: goBack, enabled: canBack },
+            { icon: faChevronRight, label: "Tiến tới", action: goForward, enabled: canForward },
+          ].map(btn => (
+            <button
+              key={btn.label}
+              type="button"
+              aria-label={btn.label}
+              title={`${btn.label} (Alt+${btn.label === "Quay lại" ? "←" : "→"})`}
+              disabled={!btn.enabled}
+              onClick={btn.action}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.07)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: btn.enabled ? "pointer" : "default",
+                color: btn.enabled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.25)",
+                transition: "color 0.15s, background 0.15s",
+              }}
+              onMouseEnter={e => { if (btn.enabled) e.currentTarget.style.background = "rgba(255,255,255,0.14)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
+            >
+              <FontAwesomeIcon icon={btn.icon} style={{ fontSize: 13 }} />
+            </button>
+          ))}
+        </div>
+
         {/* Home button */}
-        <div
+        <button
+          type="button"
+          aria-label="Trang chủ"
           onClick={() => { nav("home"); setSearch(""); }}
           style={{
             width: 40,
             height: 40,
             borderRadius: "50%",
+            border: "none",
             background: page === "home" ? `${C[500]}20` : "rgba(255,255,255,0.07)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            fontSize: 17,
             color: page === "home" ? C[400] : "rgba(255,255,255,0.7)",
             flexShrink: 0,
             transition: "all 0.15s",
           }}
         >
-          ⌂
-        </div>
+          <FontAwesomeIcon icon={faHouse} style={{ fontSize: 15 }} />
+        </button>
 
         {/* Search bar */}
         <div style={{ flex: 1, maxWidth: 440, position: "relative" }}>
-          <span
+          <FontAwesomeIcon
+            icon={faMagnifyingGlass}
             style={{
               position: "absolute",
               left: 14,
               top: "50%",
               transform: "translateY(-50%)",
-              fontSize: 13,
+              fontSize: 12,
               color: "rgba(255,255,255,0.4)",
               pointerEvents: "none",
             }}
-          >
-            ⌕
-          </span>
+          />
           <input
             value={search}
-            onChange={e => { setSearch(e.target.value); if (page !== "search") setPage("search"); }}
+            onChange={e => handleSearchChange(e.target.value)}
             placeholder="Bạn muốn phát nội dung gì?"
             style={{
               width: "100%",
@@ -766,14 +892,16 @@ export default function App() {
           onToggle={() => setSidebarOpen(p => !p)}
           likedIds={likedIds}
           list={list}
-          onNav={nav}
           userPlaylists={visiblePlaylists}
           albumPlaylists={albumPlaylists}
           isAuthed={Boolean(authUser)}
           selectedPlaylistId={selectedPlaylistId}
-          onSelectPlaylist={setSelectedPlaylistId}
+          onSelectPlaylist={(pl) => openLibrary({
+            playlistId: pl.id,
+            libraryFilter: pl.type === "album" ? "Album" : "Danh sách phát",
+          })}
           libraryFilter={libraryFilter}
-          onSetLibraryFilter={setLibraryFilter}
+          onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
           librarySearch={librarySearch}
           onSetLibrarySearch={setLibrarySearch}
           librarySort={librarySort}
@@ -832,6 +960,7 @@ export default function App() {
                   onLike={toggleLikeWithAuth}
                   onAddToQueue={addToQueue}
                   onOpenArtist={openArtist}
+                  onOpenAlbum={openAlbum}
                   isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
                   onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
                 />
@@ -862,9 +991,9 @@ export default function App() {
                   userPlaylists={visiblePlaylists}
                   albumPlaylists={albumPlaylists}
                   selectedPlaylistId={selectedPlaylistId}
-                  onSelectPlaylist={setSelectedPlaylistId}
+                  onSelectPlaylist={(playlistId) => openLibrary({ playlistId, libraryFilter: "Danh sách phát" })}
                   libraryFilter={libraryFilter}
-                  onSetLibraryFilter={setLibraryFilter}
+                  onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
                   onToggleSongInPlaylist={toggleSongInPlaylist}
                   followedArtists={followedArtists}
                   savedAlbums={savedAlbums}
@@ -954,7 +1083,7 @@ export default function App() {
       {!cur && !authUser && (
         <div
           style={{
-            background: `linear-gradient(90deg, ${C[700]}, #7c3aed)`,
+            background: `linear-gradient(90deg, ${C[700]}, ${C[500]}, ${G[500]})`,
             padding: "14px 24px",
             display: "flex",
             alignItems: "center",

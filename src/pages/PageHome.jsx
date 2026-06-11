@@ -8,11 +8,11 @@ const ARTIST_COLORS = [
   "linear-gradient(135deg,#ea580c,#f97316)",
   "linear-gradient(135deg,#d97706,#fbbf24)",
   "linear-gradient(135deg,#e11d48,#fb7185)",
-  "linear-gradient(135deg,#0369a1,#38bdf8)",
-  "linear-gradient(135deg,#7c3aed,#a78bfa)",
-  "linear-gradient(135deg,#166534,#4ade80)",
+  "linear-gradient(135deg,#7c2d12,#f97316)",
+  "linear-gradient(135deg,#1f1f1f,#7c2d12)",
+  "linear-gradient(135deg,#c2410c,#f59e0b)",
   "linear-gradient(135deg,#be185d,#fb7185)",
-  "linear-gradient(135deg,#0f766e,#34d399)",
+  "linear-gradient(135deg,#92400e,#fbbf24)",
 ];
 
 const US_UK_ARTISTS = new Set([

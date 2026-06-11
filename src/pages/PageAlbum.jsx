@@ -3,9 +3,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faCirclePlus, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import EntityHeader from "../components/EntityHeader";
 import TrackList from "../components/TrackList";
+import AlbumTile from "../components/AlbumTile";
 import { TEXT } from "../constants/theme";
-import { getSongImage } from "../data/media";
-import { getAlbum, formatTotalDuration } from "../data/derived";
+import { getSongImage, getPrimaryArtist } from "../data/media";
+import { getAlbum, deriveAlbums, formatTotalDuration } from "../data/derived";
 
 export default function PageAlbum({
   albumName,
@@ -16,10 +17,20 @@ export default function PageAlbum({
   onLike,
   onAddToQueue,
   onOpenArtist,
+  onOpenAlbum,
   isSaved,
   onToggleSave,
 }) {
   const album = useMemo(() => getAlbum(list, albumName), [list, albumName]);
+
+  const moreFromArtist = useMemo(() => {
+    if (!album) return [];
+    const artistSongs = list.filter(s => getPrimaryArtist(s.artist) === album.artist);
+    return deriveAlbums(artistSongs)
+      .filter(al => al.name !== album.name)
+      .sort((a, b) => b.totalPlays - a.totalPlays)
+      .slice(0, 10);
+  }, [list, album]);
 
   if (!album) {
     return (
@@ -116,6 +127,46 @@ export default function PageAlbum({
           showPlays
         />
       </div>
+
+      {/* More from this artist */}
+      {moreFromArtist.length > 0 && onOpenAlbum && (
+        <section style={{ padding: "40px 32px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.3 }}>
+              Thêm từ {album.artist}
+            </h2>
+            <button
+              type="button"
+              aria-label={`Mở trang nghệ sĩ ${album.artist}`}
+              onClick={() => onOpenArtist(album.artist)}
+              style={{
+                background: "none", border: "none", padding: 0,
+                fontSize: 12, fontWeight: 600, letterSpacing: 0.3,
+                color: TEXT.secondary, cursor: "pointer",
+                transition: "color 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.textDecoration = "underline"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; e.currentTarget.style.textDecoration = "none"; }}
+            >
+              Xem nghệ sĩ
+            </button>
+          </div>
+          <div
+            className="hscroll"
+            style={{
+              display: "flex", gap: 16, overflowX: "auto",
+              padding: "4px 0 8px",
+              scrollbarWidth: "none",
+              scrollSnapType: "x proximity",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {moreFromArtist.map(al => (
+              <AlbumTile key={al.name} album={al} onOpenAlbum={onOpenAlbum} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

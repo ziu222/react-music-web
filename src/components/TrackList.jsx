@@ -249,6 +249,7 @@ function Row({
           type="button"
           aria-label={`Thêm ${song.title} vào hàng đợi`}
           title="Thêm vào hàng đợi"
+          tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
           style={iconBtnStyle(hov, "rgba(255,255,255,0.55)")}
           onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
@@ -263,6 +264,7 @@ function Row({
         type="button"
         aria-label={liked ? `Bỏ thích ${song.title}` : `Thích ${song.title}`}
         title={liked ? "Bỏ thích" : "Thích"}
+        tabIndex={liked || hov ? 0 : -1}
         onClick={e => { e.stopPropagation(); onLike(song.id); }}
         style={iconBtnStyle(liked || hov, liked ? R[400] : "rgba(255,255,255,0.45)")}
         onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
@@ -277,6 +279,7 @@ function Row({
           type="button"
           aria-label={`Xóa ${song.title} khỏi danh sách phát`}
           title="Xóa khỏi danh sách phát"
+          tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onRemove(song); }}
           style={iconBtnStyle(hov, "rgba(255,255,255,0.55)")}
           onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}

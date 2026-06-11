@@ -1,4 +1,4 @@
-import { C, TEXT } from "../constants/theme";
+import { C, G, BG, TEXT, GRADIENTS } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
 const COPY = {
@@ -60,7 +60,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
           width: "min(980px, calc(100vw - 48px))",
           minHeight: 470,
           borderRadius: 8,
-          background: "linear-gradient(135deg,#29313a,#1f2328 58%,#171717)",
+          background: `linear-gradient(135deg, ${BG.el}, ${BG.card} 58%, ${BG.base})`,
           boxShadow: "rgba(0,0,0,0.72) 0px 28px 80px",
           border: "1px solid rgba(255,255,255,0.08)",
           display: "grid",
@@ -75,7 +75,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
           style={{
             position: "absolute",
             inset: 0,
-            background: `radial-gradient(circle at 78% 22%, ${C[500]}22, transparent 32%), radial-gradient(circle at 20% 90%, rgba(30,215,96,0.14), transparent 28%)`,
+            background: `radial-gradient(circle at 78% 22%, ${C[500]}24, transparent 32%), radial-gradient(circle at 20% 90%, ${G[500]}1f, transparent 28%)`,
             pointerEvents: "none",
           }}
         />
@@ -87,7 +87,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
               aspectRatio: "1 / 1",
               borderRadius: 8,
               overflow: "hidden",
-              background: song?.bg ?? gate.playlist?.bg ?? "linear-gradient(135deg,#334155,#64748b)",
+              background: song?.bg ?? gate.playlist?.bg ?? GRADIENTS.hero,
               boxShadow: "rgba(0,0,0,0.48) 0px 18px 48px",
               display: "flex",
               alignItems: "center",

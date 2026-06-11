@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlay, faPlus, faHeart } from "@fortawesome/free-solid-svg-icons";
 import EqBars from "./EqBars";
 import { C, R } from "../constants/theme";
 import { getSongImage } from "../data/media";
@@ -40,7 +42,11 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           fontVariantNumeric: "tabular-nums",
         }}
       >
-        {playing ? <EqBars size={14} /> : hov ? <span style={{ color: "#fff" }}>▶</span> : index + 1}
+        {playing
+          ? <EqBars size={14} />
+          : hov
+            ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "#fff" }} />
+            : index + 1}
       </span>
 
       {/* Thumbnail */}
@@ -133,46 +139,53 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
         <button
           type="button"
           aria-label={`Add ${song.title} to queue`}
+          tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
-          title="Add to queue"
+          title="Thêm vào hàng đợi"
           style={{
             background: "none",
             border: "none",
             cursor: "pointer",
-            fontSize: 16,
+            fontSize: 13,
             color: "rgba(255,255,255,0.5)",
             padding: "2px 4px",
             lineHeight: 1,
             flexShrink: 0,
             opacity: hov ? 1 : 0,
+            pointerEvents: hov ? "auto" : "none",
             transition: "opacity 0.15s, color 0.1s",
           }}
           onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
           onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
         >
-          ⊕
+          <FontAwesomeIcon icon={faPlus} />
         </button>
       )}
 
       {/* Like */}
       <button
+        type="button"
+        aria-label={liked ? `Bỏ thích ${song.title}` : `Thích ${song.title}`}
+        title={liked ? "Bỏ thích" : "Thích"}
+        tabIndex={liked || hov ? 0 : -1}
         onClick={e => { e.stopPropagation(); onLike(song.id); }}
         style={{
           background: "none",
           border: "none",
           cursor: "pointer",
-          fontSize: 15,
-          color: liked ? R[400] : "rgba(255,255,255,0)",
+          fontSize: 13,
+          color: liked ? R[400] : "rgba(255,255,255,0.45)",
           padding: "2px 4px",
-          transition: "color 0.15s, transform 0.1s",
+          transition: "color 0.15s, transform 0.1s, opacity 0.15s",
           lineHeight: 1,
           flexShrink: 0,
           opacity: liked || hov ? 1 : 0,
+          pointerEvents: liked || hov ? "auto" : "none",
         }}
         onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.2)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
       >
-        {liked ? "♥" : "♡"}
+        <FontAwesomeIcon icon={faHeart} />
       </button>
     </div>
   );

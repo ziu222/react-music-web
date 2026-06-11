@@ -2,12 +2,15 @@ import { useState, useMemo, useRef, useLayoutEffect, useEffect, useCallback } fr
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
+  faCheck,
+  faChevronDown,
   faCircleDown,
   faCircleMinus,
   faCircleXmark,
   faCode,
   faCopy,
   faFolder,
+  faGlobe,
   faHeart,
   faList,
   faListUl,
@@ -23,6 +26,7 @@ import {
   faThumbtack,
   faUserCircle,
   faUserPlus,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER } from "../constants/theme";
 import PlaylistCover from "./PlaylistCover";
@@ -52,10 +56,10 @@ const VIEW_MODES = [
 ];
 
 const CREATE_OPTIONS = [
-  { key: "playlist", icon: "♪", label: "Danh sách phát",       desc: "Tạo playlist với bài hát", disabled: false },
-  { key: "mixed",    icon: "⇄", label: "Danh sách kết hợp",  desc: "Kết hợp bài hát mượt mà",   badge: "Thử nghiệm", disabled: true },
-  { key: "blend",    icon: "♫", label: "Blend",           desc: "Kết hợp gu âm nhạc bạn bè", disabled: true },
-  { key: "folder",   icon: "⊞", label: "Folder",          desc: "Sắp xếp playlist của bạn",  disabled: true },
+  { key: "playlist", icon: faMusic, label: "Danh sách phát",       desc: "Tạo playlist với bài hát", disabled: false },
+  { key: "mixed",    icon: faListUl, label: "Danh sách kết hợp",  desc: "Kết hợp bài hát mượt mà",   badge: "Thử nghiệm", disabled: true },
+  { key: "blend",    icon: faUserPlus, label: "Blend",           desc: "Kết hợp gu âm nhạc bạn bè", disabled: true },
+  { key: "folder",   icon: faFolder, label: "Folder",          desc: "Sắp xếp playlist của bạn",  disabled: true },
 ];
 
 const CONTEXT_MENU_W = 298;
@@ -147,6 +151,7 @@ function PlayCircle({ visible, onClick, size = 34 }) {
     <button
       type="button"
       aria-label="Phát playlist"
+      tabIndex={visible ? 0 : -1}
       onClick={onClick}
       style={{
         position: "absolute",
@@ -512,7 +517,6 @@ function CardItem({ pl, coverSongs = [], isActive, onClick, onPlay, onContextMen
 /* ── Main Sidebar ─────────────────────────────────────────────── */
 export default function Sidebar({
   isOpen, onToggle,
-  onNav,
   likedIds,
   list = [],
   userPlaylists,
@@ -646,7 +650,7 @@ export default function Sidebar({
 
   const currentSortLabel = SORT_OPTIONS.find(s => s.key === librarySort)?.label ?? "Recents";
 
-  const selectAndNav = (id) => { setContextMenu(null); onSelectPlaylist(id); onNav("library"); };
+  const selectAndNav = (pl) => { setContextMenu(null); onSelectPlaylist(pl); };
   const openContextMenu = (e, pl) => {
     e.preventDefault();
     e.stopPropagation();
@@ -921,7 +925,7 @@ export default function Sidebar({
             coverSongs={getCoverSongs(pl)}
             tooltip={pl.type === "liked" ? "Bài hát đã thích" : pl.name}
             isActive={selectedPlaylistId === pl.id}
-            onClick={() => selectAndNav(pl.id)}
+            onClick={() => selectAndNav(pl)}
           />
         ))}
       </div>
@@ -974,7 +978,8 @@ export default function Sidebar({
               onMouseEnter={e => { if (!showCreateMenu) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
               onMouseLeave={e => { if (!showCreateMenu) e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
             >
-              {showCreateMenu ? "× Tạo" : "+ Tạo"}
+              <FontAwesomeIcon icon={showCreateMenu ? faXmark : faPlus} style={{ fontSize: 11 }} />
+              Tạo
             </div>
 
             {showCreateMenu && (
@@ -1007,7 +1012,9 @@ export default function Sidebar({
                       onMouseEnter={e => { if (!opt.disabled) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                     >
-                      <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{opt.icon}</span>
+                      <span style={{ width: 18, flexShrink: 0, marginTop: 1, textAlign: "center" }}>
+                        <FontAwesomeIcon icon={opt.icon} style={{ fontSize: 16 }} />
+                      </span>
                       <div>
                         <div style={{
                           display: "flex", alignItems: "center", gap: 6,
@@ -1016,7 +1023,7 @@ export default function Sidebar({
                           {opt.label}
                           {opt.badge && (
                             <span style={{
-                              background: "#2d4fe0", color: "#fff",
+                              background: C[600], color: "#fff",
                               fontSize: 9, fontWeight: 700, padding: "1px 5px",
                               borderRadius: 3, letterSpacing: 0.5,
                             }}>
@@ -1090,7 +1097,7 @@ export default function Sidebar({
               cursor: "pointer", transition: "color 0.15s",
             }}
           >
-            ⌕
+            <FontAwesomeIcon icon={faMagnifyingGlass} style={{ fontSize: 14 }} />
           </span>
 
           {/* Sort dropdown */}
@@ -1107,7 +1114,7 @@ export default function Sidebar({
               onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.55)"}
             >
               {currentSortLabel}
-              <span style={{ fontSize: 8 }}>▼</span>
+              <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 8 }} />
             </div>
 
             {showSortMenu && (
@@ -1143,7 +1150,7 @@ export default function Sidebar({
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                     >
                       <span style={{ width: 14, textAlign: "center", flexShrink: 0, fontSize: 11 }}>
-                        {librarySort === opt.key ? "✓" : ""}
+                        {librarySort === opt.key && <FontAwesomeIcon icon={faCheck} />}
                       </span>
                       {opt.label}
                     </div>
@@ -1244,7 +1251,7 @@ export default function Sidebar({
                   key={pl.id} pl={pl}
                   coverSongs={getCoverSongs(pl)}
                   isActive={selectedPlaylistId === pl.id}
-                  onClick={() => selectAndNav(pl.id)}
+                  onClick={() => selectAndNav(pl)}
                   onPlay={onPlayPlaylist}
                   onContextMenu={e => openContextMenu(e, pl)}
                 />
@@ -1257,7 +1264,7 @@ export default function Sidebar({
                   key={pl.id} pl={pl}
                   coverSongs={getCoverSongs(pl)}
                   isActive={selectedPlaylistId === pl.id}
-                  onClick={() => selectAndNav(pl.id)}
+                  onClick={() => selectAndNav(pl)}
                   onPlay={onPlayPlaylist}
                   onContextMenu={e => openContextMenu(e, pl)}
                 />
@@ -1268,7 +1275,7 @@ export default function Sidebar({
               <CompactRow
                 key={pl.id} pl={pl}
                 isActive={selectedPlaylistId === pl.id}
-                onClick={() => selectAndNav(pl.id)}
+                onClick={() => selectAndNav(pl)}
                 onContextMenu={e => openContextMenu(e, pl)}
               />
             ))
@@ -1279,7 +1286,7 @@ export default function Sidebar({
                 index={i}
                 coverSongs={getCoverSongs(pl)}
                 isActive={selectedPlaylistId === pl.id}
-                onClick={() => selectAndNav(pl.id)}
+                onClick={() => selectAndNav(pl)}
                 onContextMenu={e => openContextMenu(e, pl)}
               />
             ))
@@ -1336,7 +1343,8 @@ export default function Sidebar({
             borderRadius: 9999, padding: "5px 12px", fontSize: 11, color: "#ede5dd",
             cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
           }}>
-            ⊕ Tiếng Việt
+            <FontAwesomeIcon icon={faGlobe} style={{ fontSize: 11 }} />
+            Tiếng Việt
           </button>
         </div>
       </div>
