@@ -25,6 +25,7 @@ function fisherYates(arr) {
 
 export default function App() {
   const audioRef = useRef(new Audio());
+  const feedbackTimerRef = useRef(null);
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
   const [loading, setLoading] = useState(false);
@@ -46,6 +47,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
+  const [queueFeedback, setQueueFeedback] = useState(null);
   const [userPlaylists, setUserPlaylists] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("melodies_playlists") || "null");
@@ -67,6 +69,8 @@ export default function App() {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
     catch (err) { void err; }
   }, [userPlaylists]);
+
+  useEffect(() => () => { clearTimeout(feedbackTimerRef.current); }, []);
 
   const done = useCallback(() => setScreen("app"), []);
 
@@ -350,6 +354,9 @@ export default function App() {
 
   const addToQueue = useCallback((song) => {
     setQueuedTrackIds(prev => [...prev, song.id]);
+    clearTimeout(feedbackTimerRef.current);
+    setQueueFeedback(song.title);
+    feedbackTimerRef.current = setTimeout(() => setQueueFeedback(null), 2000);
   }, []);
 
   const removeFromQueue = useCallback((index) => {
@@ -736,6 +743,7 @@ export default function App() {
                   onPlay={playWithAuth}
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
+                  onAddToQueue={addToQueue}
                   userPlaylists={visiblePlaylists}
                   albumPlaylists={albumPlaylists}
                   selectedPlaylistId={selectedPlaylistId}
@@ -778,6 +786,30 @@ export default function App() {
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
       />
+
+      {queueFeedback && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: cur ? 104 : 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(28,28,28,0.96)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 6,
+            padding: "9px 18px",
+            fontSize: 13,
+            fontWeight: 500,
+            color: "#f4eee8",
+            zIndex: 200,
+            pointerEvents: "none",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Added to queue
+        </div>
+      )}
 
       <AuthGateModal
         gate={authGate}

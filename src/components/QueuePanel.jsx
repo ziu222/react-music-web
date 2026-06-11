@@ -128,6 +128,7 @@ export default function QueuePanel({
                   <p style={{ ...sectionLabel, margin: 0 }}>Queued</p>
                   <button
                     type="button"
+                    aria-label="Clear queue"
                     onClick={onClearQueue}
                     title="Clear queue"
                     style={{
@@ -240,19 +241,26 @@ function ActionButton({ label, children, onClick, disabled }) {
 function QueuedRow({ song, index, total, onPlay, onRemove, onMoveUp, onMoveDown }) {
   const cover = getSongImage(song);
   const [hov, setHov] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const showActions = hov || focused;
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onPlay}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onPlay(); }}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPlay(); }
+      }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
       style={{
         display: "flex", alignItems: "center", gap: 8,
         padding: "5px 4px", borderRadius: 6,
         cursor: "pointer",
-        background: hov ? "rgba(255,255,255,0.08)" : "transparent",
+        background: showActions ? "rgba(255,255,255,0.08)" : "transparent",
         transition: "background 80ms ease",
       }}
     >
@@ -276,7 +284,7 @@ function QueuedRow({ song, index, total, onPlay, onRemove, onMoveUp, onMoveDown 
         </div>
       </div>
 
-      {hov ? (
+      {showActions ? (
         <div style={{ display: "flex", alignItems: "center", gap: 0, flexShrink: 0 }}>
           <ActionButton label="Move up" onClick={onMoveUp} disabled={index === 0}>↑</ActionButton>
           <ActionButton label="Move down" onClick={onMoveDown} disabled={index === total - 1}>↓</ActionButton>
