@@ -174,6 +174,12 @@ export default function Player({
         onToggle={onToggle} onPrevious={onPrevious} onNext={onNext}
         onSeek={onSeek} onVolumeChange={onVolumeChange} onMuteToggle={onMuteToggle}
         onShuffleToggle={onShuffleToggle} onRepeatCycle={onRepeatCycle} onLike={onLike}
+        queuedTracks={queuedTracks}
+        upcomingTracks={upcomingTracks}
+        onPlayQueuedTrack={onPlayQueuedTrack}
+        onPlayTrack={onPlayTrack}
+        onOpenQueue={() => { setExpandOpen(false); setQueueOpen(true); }}
+        onOpenLyrics={() => { setExpandOpen(false); setLyricsOpen(true); }}
       />
       <LyricsPanel
         isOpen={lyricsOpen}

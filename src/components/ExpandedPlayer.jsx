@@ -13,6 +13,12 @@ export default function ExpandedPlayer({
   likedIds,
   onToggle, onPrevious, onNext, onSeek, onVolumeChange, onMuteToggle,
   onShuffleToggle, onRepeatCycle, onLike,
+  queuedTracks = [],
+  upcomingTracks = [],
+  onPlayQueuedTrack,
+  onPlayTrack,
+  onOpenQueue,
+  onOpenLyrics,
 }) {
   const [hovProgress, setHovProgress] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -64,6 +70,13 @@ export default function ExpandedPlayer({
   };
 
   const showThumb = hovProgress || isDragging;
+
+  const previewItems = (() => {
+    const queued = queuedTracks.slice(0, 3).map((song, i) => ({ song, type: "queued", queueIndex: i }));
+    if (queued.length >= 3) return queued;
+    const auto = upcomingTracks.slice(0, 3 - queued.length).map(song => ({ song, type: "auto" }));
+    return [...queued, ...auto];
+  })();
 
   const ctrlBtn = (active = false) => ({
     width: 36, height: 36, borderRadius: 999, border: "none",
@@ -125,17 +138,34 @@ export default function ExpandedPlayer({
           <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.72)", letterSpacing: "0.04em" }}>
             Now Playing
           </span>
-          <div style={{ width: 36 }} />
+          <div style={{ display: "flex", gap: 2 }}>
+            <button
+              type="button"
+              aria-label="Open lyrics panel"
+              onClick={onOpenLyrics}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.52)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.52)"; }}
+            >♪</button>
+            <button
+              type="button"
+              aria-label="Open queue panel"
+              onClick={onOpenQueue}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.52)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.52)"; }}
+            >≡</button>
+          </div>
         </div>
 
         {/* Main layout */}
         <div style={{
-          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "0 48px 32px", gap: 56, minHeight: 0,
+          flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center",
+          padding: "0 48px 32px", gap: 56, overflowY: "auto", minHeight: 0,
         }}>
           {/* ── Cover ── */}
           <div style={{
-            width: 260, height: 260, borderRadius: 12, overflow: "hidden", flexShrink: 0,
+            width: 260, height: 260, borderRadius: 12, overflow: "hidden", flexShrink: 0, marginTop: 16,
             background: s.bg, boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
             display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
           }}>
@@ -297,9 +327,88 @@ export default function ExpandedPlayer({
                 Lyrics not available for this track.
               </div>
             </div>
+
+            {/* Next Up preview */}
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 20, marginTop: 20, paddingBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.36)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Next Up
+                </div>
+                {onOpenQueue && (
+                  <button
+                    type="button"
+                    aria-label="Open full queue"
+                    onClick={onOpenQueue}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.36)", padding: "2px 4px", borderRadius: 3, transition: "color 80ms ease" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.36)"; }}
+                  >
+                    See all →
+                  </button>
+                )}
+              </div>
+              {previewItems.length === 0 ? (
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.26)", fontStyle: "italic" }}>
+                  No upcoming tracks
+                </div>
+              ) : (
+                previewItems.map((item, i) => (
+                  <ExpandedQueueRow
+                    key={`preview-${item.song.id}-${i}`}
+                    song={item.song}
+                    onPlay={() => {
+                      if (item.type === "queued") onPlayQueuedTrack?.(item.song, item.queueIndex);
+                      else onPlayTrack?.(item.song);
+                    }}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ExpandedQueueRow({ song, onPlay }) {
+  const cover = getSongImage(song);
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Play ${song.title}`}
+      onClick={onPlay}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPlay(); } }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "5px 4px", borderRadius: 6,
+        cursor: "pointer",
+        background: hov ? "rgba(255,255,255,0.08)" : "transparent",
+        transition: "background 80ms ease",
+      }}
+    >
+      <div style={{
+        width: 36, height: 36, borderRadius: 4, flexShrink: 0,
+        background: song.bg, overflow: "hidden",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {cover && <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#f4eee8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {song.title}
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {song.artist}
+        </div>
+      </div>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.36)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+        {song.duration}
+      </span>
     </div>
   );
 }
