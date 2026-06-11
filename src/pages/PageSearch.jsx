@@ -150,6 +150,7 @@ function AlbumResult({ album, onOpenAlbum, onPlay }) {
       aria-label={`Mở album ${album.name}`}
       onClick={() => onOpenAlbum(album.name)}
       onKeyDown={e => {
+        if (e.target !== e.currentTarget) return; // ignore keys on the nested play button
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onOpenAlbum(album.name);

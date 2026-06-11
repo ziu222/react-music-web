@@ -116,6 +116,7 @@ function Row({
       onMouseLeave={() => setHov(false)}
       onClick={() => onPlay(song)}
       onKeyDown={e => {
+        if (e.target !== e.currentTarget) return; // ignore keys on nested buttons
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onPlay(song);

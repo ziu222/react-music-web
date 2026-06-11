@@ -67,6 +67,21 @@ body {
   from { opacity: 0; transform: scale(0.95) translateY(-10px); }
   to   { opacity: 1; transform: scale(1)    translateY(0);     }
 }
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+.save-popover {
+  animation: popoverIn 160ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+/* Centered variant keeps the -50%/-50% translate through the animation */
+@keyframes popoverInCenter {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
+}
+.save-popover.is-centered {
+  animation-name: popoverInCenter;
+}
 @keyframes eq1 { 0% { height: 4px; } 100% { height: 14px; } }
 @keyframes eq2 { 0% { height: 4px; } 100% { height: 20px; } }
 @keyframes eq3 { 0% { height: 4px; } 100% { height: 10px; } }
@@ -237,5 +252,8 @@ body {
   .hs-arrow,
   .card-play-btn {
     transition: none !important;
+  }
+  .save-popover {
+    animation: none !important;
   }
 }
