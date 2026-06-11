@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  Heart,
+  CircleCheck,
+  CirclePlus,
   ListMusic,
   Maximize2,
   Mic2,
@@ -18,9 +19,10 @@ import {
 } from "lucide-react";
 import EqBars from "./EqBars";
 import QueuePanel from "./QueuePanel";
+import SaveToPlaylistPopover from "./SaveToPlaylistPopover";
 import LyricsPanel from "./LyricsPanel";
 import ExpandedPlayer from "./ExpandedPlayer";
-import { C, R } from "../constants/theme";
+import { C } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
 export default function Player({
@@ -50,6 +52,9 @@ export default function Player({
   recentSongs = [],
   likedIds,
   onLike,
+  userPlaylists = [],
+  onToggleSongInPlaylist,
+  onCreatePlaylistWithSong,
 }) {
   const [hovProgress, setHovProgress] = useState(false);
   const [hovVolume, setHovVolume] = useState(false);
@@ -59,6 +64,7 @@ export default function Player({
   const [queueOpen, setQueueOpen] = useState(false);
   const [lyricsOpen, setLyricsOpen] = useState(false);
   const [expandOpen, setExpandOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
   const [connectFlash, setConnectFlash] = useState(false);
   const connectTimerRef = useRef(null);
 
@@ -106,6 +112,7 @@ export default function Player({
   if (!s) return null;
 
   const liked = likedIds.has(s.id);
+  const isSaved = liked || userPlaylists.some(pl => typeof pl.id === "string" && pl.songIds?.includes(s.id));
   const cover = getSongImage(s);
   const pct = s.durationSecs > 0 ? Math.min(100, Math.max(0, (prog / s.durationSecs) * 100)) : 0;
   const volPct = muted ? 0 : Math.round(volume * 100);
@@ -174,7 +181,28 @@ export default function Player({
         onToggle={onToggle} onPrevious={onPrevious} onNext={onNext}
         onSeek={onSeek} onVolumeChange={onVolumeChange} onMuteToggle={onMuteToggle}
         onShuffleToggle={onShuffleToggle} onRepeatCycle={onRepeatCycle} onLike={onLike}
+        queuedTracks={queuedTracks}
+        upcomingTracks={upcomingTracks}
+        onPlayQueuedTrack={onPlayQueuedTrack}
+        onPlayTrack={onPlayTrack}
+        onOpenQueue={() => { setExpandOpen(false); setQueueOpen(true); }}
+        onOpenLyrics={() => { setExpandOpen(false); setLyricsOpen(true); }}
+        userPlaylists={userPlaylists}
+        onToggleSongInPlaylist={onToggleSongInPlaylist}
+        onCreatePlaylistWithSong={onCreatePlaylistWithSong}
       />
+      {saveOpen && s && (
+        <SaveToPlaylistPopover
+          song={s}
+          likedIds={likedIds}
+          onToggleLike={onLike}
+          userPlaylists={userPlaylists}
+          onToggleSongInPlaylist={onToggleSongInPlaylist}
+          onCreatePlaylistWithSong={onCreatePlaylistWithSong}
+          onClose={() => setSaveOpen(false)}
+          align="bottom-left"
+        />
+      )}
       <LyricsPanel
         isOpen={lyricsOpen}
         onClose={() => setLyricsOpen(false)}
@@ -243,18 +271,21 @@ export default function Player({
           </div>
 
           <button
-            type="button" aria-label={liked ? "Unlike song" : "Like song"}
-            onClick={() => onLike(s.id)}
+            type="button"
+            aria-label={isSaved ? "Remove from Liked Songs" : "Save to Liked Songs"}
+            onClick={() => setSaveOpen(p => !p)}
             style={{
               background: "transparent", border: "none", cursor: "pointer",
-              color: liked ? R[400] : "rgba(255,255,255,0.34)",
+              color: isSaved ? "#1ed760" : "rgba(255,255,255,0.55)",
               flexShrink: 0, transition: "color 0.15s, transform 0.1s",
               display: "inline-flex", padding: 5,
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseDown={e => { e.currentTarget.style.transform = "scale(0.92)"; }}
+            onMouseUp={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
           >
-            <Heart size={18} fill={liked ? R[400] : "none"} />
+            {isSaved ? <CircleCheck size={18} /> : <CirclePlus size={18} />}
           </button>
         </div>
 

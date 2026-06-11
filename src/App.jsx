@@ -11,6 +11,8 @@ import NavbarUserActions from "./components/NavbarUserActions";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
+import PageArtist from "./pages/PageArtist";
+import PageAlbum from "./pages/PageAlbum";
 import logo from "./assets/logo.png";
 import { C, BG, TEXT, BORDER } from "./constants/theme";
 
@@ -60,6 +62,16 @@ export default function App() {
     } catch { return playlistsSeed; }
   });
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(1);
+  const [selectedArtist, setSelectedArtist] = useState(null);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
+  const [followedArtists, setFollowedArtists] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("melodies_followed_artists") || "[]")); }
+    catch { return new Set(); }
+  });
+  const [savedAlbums, setSavedAlbums] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("melodies_saved_albums") || "[]")); }
+    catch { return new Set(); }
+  });
   const [libraryFilter, setLibraryFilter] = useState("Danh sách phát");
   const [librarySearch, setLibrarySearch] = useState("");
   const [librarySort, setLibrarySort] = useState("recent");
@@ -69,6 +81,16 @@ export default function App() {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
     catch (err) { void err; }
   }, [userPlaylists]);
+
+  useEffect(() => {
+    try { localStorage.setItem("melodies_followed_artists", JSON.stringify([...followedArtists])); }
+    catch (err) { void err; }
+  }, [followedArtists]);
+
+  useEffect(() => {
+    try { localStorage.setItem("melodies_saved_albums", JSON.stringify([...savedAlbums])); }
+    catch (err) { void err; }
+  }, [savedAlbums]);
 
   useEffect(() => () => { clearTimeout(feedbackTimerRef.current); }, []);
 
@@ -296,10 +318,46 @@ export default function App() {
   };
 
   const openAlbum = (albumName) => {
-    setLibraryFilter("Album");
-    setSelectedPlaylistId(`album:${albumName}`);
-    setSidebarOpen(true);
-    nav("library");
+    if (!albumName) return;
+    setSelectedAlbum(albumName);
+    if (page !== "album") nav("album");
+  };
+
+  const openArtist = (artistName) => {
+    if (!artistName) return;
+    setSelectedArtist(artistName);
+    if (page !== "artist") nav("artist");
+  };
+
+  const openPlaylist = (pl) => {
+    if (!pl) return;
+    setLibraryFilter("Danh sách phát");
+    setSelectedPlaylistId(pl.id);
+    if (page !== "library") nav("library");
+  };
+
+  const toggleFollowArtist = (artistName) => {
+    setFollowedArtists(prev => {
+      const next = new Set(prev);
+      next.has(artistName) ? next.delete(artistName) : next.add(artistName);
+      return next;
+    });
+  };
+
+  const toggleFollowArtistWithAuth = (artistName) => {
+    requireAuth(() => toggleFollowArtist(artistName), { reason: "follow", entityName: artistName });
+  };
+
+  const toggleSaveAlbum = (albumName) => {
+    setSavedAlbums(prev => {
+      const next = new Set(prev);
+      next.has(albumName) ? next.delete(albumName) : next.add(albumName);
+      return next;
+    });
+  };
+
+  const toggleSaveAlbumWithAuth = (albumName) => {
+    requireAuth(() => toggleSaveAlbum(albumName), { reason: "saveAlbum", entityName: albumName });
   };
 
   const createPlaylist = () => {
@@ -351,6 +409,28 @@ export default function App() {
     const song = list.find(s => s.id === id);
     requireAuth(() => toggleLike(id), { reason: "like", song });
   };
+
+  const toggleSongInPlaylist = useCallback((songId, playlistId) => {
+    setUserPlaylists(prev => prev.map(pl => {
+      if (pl.id !== playlistId) return pl;
+      const ids = pl.songIds ?? [];
+      return ids.includes(songId)
+        ? { ...pl, songIds: ids.filter(id => id !== songId) }
+        : { ...pl, songIds: [...ids, songId] };
+    }));
+  }, []);
+
+  const createPlaylistWithSong = useCallback((songId) => {
+    const newPl = {
+      id: `local-${Date.now()}`,
+      name: "Danh sách phát mới",
+      type: "playlist",
+      isPersonal: true,
+      bg: "linear-gradient(135deg,#334155,#64748b)",
+      songIds: [songId],
+    };
+    setUserPlaylists(prev => [...prev, newPl]);
+  }, []);
 
   const addToQueue = useCallback((song) => {
     setQueuedTrackIds(prev => [...prev, song.id]);
@@ -711,7 +791,9 @@ export default function App() {
         {/* Main content */}
         <div style={{ flex: 1, overflowY: "auto", background: BG.base }}>
           {loading ? (
-            <Loader text={`Đang tải ${page}...`} />
+            <Loader text={`Đang tải ${
+              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album" }[page] ?? page
+            }...`} />
           ) : (
             <>
               {page === "home" && (
@@ -723,6 +805,35 @@ export default function App() {
                   onLike={toggleLikeWithAuth}
                   recentIds={recentIds}
                   onOpenAlbum={openAlbum}
+                  onOpenArtist={openArtist}
+                />
+              )}
+              {page === "artist" && (
+                <PageArtist
+                  artistName={selectedArtist}
+                  list={list}
+                  cur={cur}
+                  onPlay={playWithAuth}
+                  likedIds={likedIds}
+                  onLike={toggleLikeWithAuth}
+                  onAddToQueue={addToQueue}
+                  onOpenAlbum={openAlbum}
+                  isFollowed={selectedArtist ? followedArtists.has(selectedArtist) : false}
+                  onToggleFollow={() => toggleFollowArtistWithAuth(selectedArtist)}
+                />
+              )}
+              {page === "album" && (
+                <PageAlbum
+                  albumName={selectedAlbum}
+                  list={list}
+                  cur={cur}
+                  onPlay={playWithAuth}
+                  likedIds={likedIds}
+                  onLike={toggleLikeWithAuth}
+                  onAddToQueue={addToQueue}
+                  onOpenArtist={openArtist}
+                  isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
+                  onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
                 />
               )}
               {page === "search" && (
@@ -734,6 +845,10 @@ export default function App() {
                   likedIds={likedIds}
                   onLike={toggleLikeWithAuth}
                   onAddToQueue={addToQueue}
+                  userPlaylists={visiblePlaylists}
+                  onOpenArtist={openArtist}
+                  onOpenAlbum={openAlbum}
+                  onOpenPlaylist={openPlaylist}
                 />
               )}
               {page === "library" && (
@@ -785,6 +900,9 @@ export default function App() {
         recentSongs={recentSongs}
         likedIds={likedIds}
         onLike={toggleLikeWithAuth}
+        userPlaylists={userPlaylists}
+        onToggleSongInPlaylist={toggleSongInPlaylist}
+        onCreatePlaylistWithSong={createPlaylistWithSong}
       />
 
       {queueFeedback && (

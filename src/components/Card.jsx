@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import EqBars from "./EqBars";
 import { C } from "../constants/theme";
 import { getSongImage } from "../data/media";
@@ -10,9 +12,18 @@ export default function Card({ song, cur, onPlay, width }) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Phát ${song.title} – ${song.artist}`}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={() => onPlay(song)}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPlay(song);
+        }
+      }}
       style={{
         flexShrink: 0,
         width: width || "100%",
@@ -20,7 +31,7 @@ export default function Card({ song, cur, onPlay, width }) {
         borderRadius: 10,
         padding: 14,
         cursor: "pointer",
-        transition: "background 0.2s ease, box-shadow 0.2s ease",
+        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
         boxShadow: hov ? "rgba(0,0,0,0.4) 0px 8px 20px" : "rgba(0,0,0,0.2) 0px 2px 8px",
         scrollSnapAlign: "start",
       }}
@@ -54,6 +65,7 @@ export default function Card({ song, cur, onPlay, width }) {
           />
         )}
         <div
+          className="card-play-btn"
           style={{
             position: "absolute",
             bottom: 8,
@@ -65,17 +77,31 @@ export default function Card({ song, cur, onPlay, width }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 16,
             color: "#fff",
             boxShadow: "0 6px 20px rgba(0,0,0,0.5)",
-            opacity: hov ? 1 : 0,
-            transform: hov ? "translateY(0) scale(1)" : "translateY(6px) scale(0.9)",
-            transition: "opacity 0.2s ease, transform 0.2s ease",
+            opacity: hov || playing ? 1 : 0,
+            transform: hov || playing ? "translateY(0) scale(1)" : "translateY(8px) scale(0.85)",
+            pointerEvents: "none",
           }}
         >
-          {playing ? "⏸" : "▶"}
+          <FontAwesomeIcon
+            icon={playing ? faPause : faPlay}
+            style={{ fontSize: 14, marginLeft: playing ? 0 : 2 }}
+          />
         </div>
-        {!hov && playing && <EqBars size={20} />}
+        {!hov && playing && (
+          <div style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            padding: "5px 7px",
+            borderRadius: 6,
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(4px)",
+          }}>
+            <EqBars size={16} />
+          </div>
+        )}
         {!cover && !hov && !playing && (
           <span style={{ fontSize: 22, color: "rgba(255,255,255,0.4)", userSelect: "none" }}>♪</span>
         )}

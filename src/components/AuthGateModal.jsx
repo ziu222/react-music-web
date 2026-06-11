@@ -17,6 +17,16 @@ const COPY = {
     body: "Đăng nhập để tạo, chỉnh sửa và giữ danh sách phát cá nhân trong thanh bên.",
     primary: "Đăng ký miễn phí",
   },
+  follow: {
+    title: "Theo dõi nghệ sĩ yêu thích",
+    body: "Đăng nhập để theo dõi nghệ sĩ và xem họ trong thư viện Melodies của bạn.",
+    primary: "Đăng ký miễn phí",
+  },
+  saveAlbum: {
+    title: "Lưu album vào thư viện",
+    body: "Đăng nhập để lưu album và nghe lại bất cứ lúc nào từ thư viện của bạn.",
+    primary: "Đăng ký miễn phí",
+  },
 };
 
 export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
@@ -25,7 +35,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
   const copy = COPY[gate.reason] ?? COPY.play;
   const song = gate.song;
   const cover = song ? getSongImage(song) : null;
-  const title = song?.title ?? gate.playlist?.name ?? "Melodies";
+  const title = song?.title ?? gate.playlist?.name ?? gate.entityName ?? "Melodies";
   const artist = song?.artist ?? "Xem trước danh sách phát";
 
   return (
