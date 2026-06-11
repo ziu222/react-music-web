@@ -32,6 +32,7 @@ export default function Player({
   shuffle,
   repeatMode,
   upcomingTracks = [],
+  queuedTracks = [],
   onToggle,
   onPrevious,
   onNext,
@@ -42,6 +43,10 @@ export default function Player({
   onRepeatCycle,
   onPlayTrack,
   onPlayRecent,
+  onPlayQueuedTrack,
+  onRemoveFromQueue,
+  onMoveQueueItem,
+  onClearQueue,
   recentSongs = [],
   likedIds,
   onLike,
@@ -184,6 +189,11 @@ export default function Player({
         shuffle={shuffle}
         recentTracks={recentSongs}
         onPlayRecent={onPlayRecent}
+        queuedTracks={queuedTracks}
+        onPlayQueuedTrack={onPlayQueuedTrack}
+        onRemoveFromQueue={onRemoveFromQueue}
+        onMoveQueueItem={onMoveQueueItem}
+        onClearQueue={onClearQueue}
       />
 
       <div

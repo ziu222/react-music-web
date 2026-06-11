@@ -59,7 +59,7 @@ function GenrePill({ genre, active, onClick }) {
   );
 }
 
-export default function PageSearch({ list, query, cur, onPlay, likedIds, onLike }) {
+export default function PageSearch({ list, query, cur, onPlay, likedIds, onLike, onAddToQueue }) {
   const [genre, setGenre] = useState(null);
 
   const results = useMemo(() => {
@@ -154,6 +154,7 @@ export default function PageSearch({ list, query, cur, onPlay, likedIds, onLike 
                 onPlay={onPlay}
                 likedIds={likedIds}
                 onLike={onLike}
+                onAddToQueue={onAddToQueue}
               />
             ))
           )}
