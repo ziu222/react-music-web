@@ -138,7 +138,7 @@ export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRe
           border: `1px solid ${BORDER}`,
           borderRadius: 12,
           padding: "30px 32px 28px",
-          boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
+          boxShadow: "var(--shadow-modal)",
           animation: "authModalIn 190ms cubic-bezier(0.2,0,0,1)",
           scrollbarWidth: "thin",
           scrollbarColor: "rgba(255,255,255,0.22) transparent",

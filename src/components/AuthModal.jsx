@@ -174,7 +174,7 @@ function TermsModal({ onClose }) {
           background: BG.card,
           border: "1px solid var(--border)",
           borderRadius: 12,
-          boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
+          boxShadow: "var(--shadow-modal)",
           animation: "authModalIn 190ms cubic-bezier(0.2,0,0,1)",
         }}
       >
@@ -429,7 +429,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
           border: "1px solid var(--border)",
           borderRadius: 12,
           padding: "28px 34px 24px",
-          boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
+          boxShadow: "var(--shadow-modal)",
           animation: "authModalIn 190ms cubic-bezier(0.2,0,0,1)",
           overflowY: "auto",
           scrollbarWidth: "thin",

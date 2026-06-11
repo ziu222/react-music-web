@@ -31,7 +31,7 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
         borderRadius: 8,
         background: BG.menu,
         border: `1px solid ${BORDER}`,
-        boxShadow: "rgba(0,0,0,0.65) 0px 18px 48px",
+        boxShadow: "var(--shadow-menu)",
         zIndex: 1200,
         animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
       }}

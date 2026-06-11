@@ -40,39 +40,48 @@
   --overlay-1: rgba(255, 255, 255, 0.07);
   --overlay-2: rgba(255, 255, 255, 0.12);
   --border: rgba(255, 255, 255, 0.08);
+  --shadow-modal: rgba(0, 0, 0, 0.72) 0px 24px 64px;
+  --shadow-menu: rgba(0, 0, 0, 0.65) 0px 18px 48px;
   color-scheme: dark;
 }
 
+/* Light palette theo Stitch design system "Warm Melodic Hybrid":
+ * nền paper warm off-white, container phân tầng tonal, text nâu ấm
+ * thay vì đen gắt, overlay ấm rgba(26,22,20,x). */
 [data-theme="light"] {
-  --bg-base: #f3efe9;
-  --bg-card: #faf7f2;
-  --bg-el: #eae4dc;
+  --bg-base: #fcf9f5;
+  --bg-card: #f6f3ef;
+  --bg-el: #f0ede9;
   --bg-menu: #ffffff;
-  --text-primary: #2b2118;
-  --text-secondary: rgba(43, 33, 24, 0.6);
-  --text-tertiary: rgba(43, 33, 24, 0.42);
-  --text-strong: rgba(24, 17, 10, 0.92);
-  --text-mid: rgba(43, 33, 24, 0.72);
-  --overlay-1: rgba(24, 17, 10, 0.06);
-  --overlay-2: rgba(24, 17, 10, 0.1);
-  --border: rgba(24, 17, 10, 0.12);
+  --text-primary: #1c1c1a;
+  --text-secondary: #584237;
+  --text-tertiary: #8c7164;
+  --text-strong: #141210;
+  --text-mid: #41332a;
+  --overlay-1: rgba(26, 22, 20, 0.05);
+  --overlay-2: rgba(26, 22, 20, 0.1);
+  --border: rgba(26, 22, 20, 0.12);
+  --shadow-modal: rgba(26, 22, 20, 0.18) 0px 18px 48px;
+  --shadow-menu: rgba(26, 22, 20, 0.14) 0px 12px 32px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: light) {
   [data-theme="system"] {
-    --bg-base: #f3efe9;
-    --bg-card: #faf7f2;
-    --bg-el: #eae4dc;
+    --bg-base: #fcf9f5;
+    --bg-card: #f6f3ef;
+    --bg-el: #f0ede9;
     --bg-menu: #ffffff;
-    --text-primary: #2b2118;
-    --text-secondary: rgba(43, 33, 24, 0.6);
-    --text-tertiary: rgba(43, 33, 24, 0.42);
-    --text-strong: rgba(24, 17, 10, 0.92);
-    --text-mid: rgba(43, 33, 24, 0.72);
-    --overlay-1: rgba(24, 17, 10, 0.06);
-    --overlay-2: rgba(24, 17, 10, 0.1);
-    --border: rgba(24, 17, 10, 0.12);
+    --text-primary: #1c1c1a;
+    --text-secondary: #584237;
+    --text-tertiary: #8c7164;
+    --text-strong: #141210;
+    --text-mid: #41332a;
+    --overlay-1: rgba(26, 22, 20, 0.05);
+    --overlay-2: rgba(26, 22, 20, 0.1);
+    --border: rgba(26, 22, 20, 0.12);
+    --shadow-modal: rgba(26, 22, 20, 0.18) 0px 18px 48px;
+    --shadow-menu: rgba(26, 22, 20, 0.14) 0px 12px 32px;
     color-scheme: light;
   }
 }

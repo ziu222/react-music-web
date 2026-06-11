@@ -791,7 +791,7 @@ export default function PageLibrary({
                             padding: 8,
                             borderRadius: 8,
                             background: BG.menu,
-                            boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
+                            boxShadow: "var(--shadow-menu)",
                             zIndex: 999,
                             transformOrigin: "top right",
                             animation: "menuIn 160ms cubic-bezier(0.2,0,0,1) both",

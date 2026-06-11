@@ -224,7 +224,7 @@ export default function SettingsModal({
           background: BG.card,
           border: `1px solid ${BORDER}`,
           borderRadius: 12,
-          boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
+          boxShadow: "var(--shadow-modal)",
           animation: "authModalIn 190ms cubic-bezier(0.2,0,0,1)",
           overflow: "hidden",
         }}
