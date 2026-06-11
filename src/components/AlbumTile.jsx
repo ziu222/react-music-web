@@ -30,8 +30,10 @@ export default function AlbumTile({ album, onOpenAlbum }) {
         padding: 12,
         borderRadius: 8,
         scrollSnapAlign: "start",
-        background: hov ? "var(--overlay-2)" : "var(--overlay-1)",
-        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
+        background: hov ? "var(--bg-el)" : "var(--bg-card)",
+        border: "1px solid var(--border)",
+        boxShadow: hov ? "var(--shadow-card-hover)" : "var(--shadow-card)",
+        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
         cursor: "pointer",
       }}
     >
@@ -39,7 +41,7 @@ export default function AlbumTile({ album, onOpenAlbum }) {
         width: 136, height: 136, borderRadius: 6,
         background: album.representative.bg ?? "rgba(255,255,255,0.08)",
         overflow: "hidden", marginBottom: 10,
-        boxShadow: "rgba(0,0,0,0.4) 0px 8px 24px",
+        boxShadow: "var(--shadow-cover)",
       }}>
         {cover && (
           <img src={cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />

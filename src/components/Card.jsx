@@ -27,12 +27,13 @@ export default function Card({ song, cur, onPlay, width }) {
       style={{
         flexShrink: 0,
         width: width || "100%",
-        background: hov ? "#2a1f1f" : "#1d1616",
+        background: hov ? "var(--bg-el)" : "var(--bg-card)",
+        border: "1px solid var(--border)",
         borderRadius: 10,
         padding: 14,
         cursor: "pointer",
-        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
-        boxShadow: hov ? "rgba(0,0,0,0.4) 0px 8px 20px" : "rgba(0,0,0,0.2) 0px 2px 8px",
+        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), border-color 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
+        boxShadow: hov ? "var(--shadow-card-hover)" : "var(--shadow-card)",
         scrollSnapAlign: "start",
       }}
     >
@@ -49,7 +50,7 @@ export default function Card({ song, cur, onPlay, width }) {
           justifyContent: "center",
           position: "relative",
           overflow: "hidden",
-          boxShadow: "rgba(0,0,0,0.4) 0px 8px 24px",
+          boxShadow: "var(--shadow-cover)",
         }}
       >
         {cover && (

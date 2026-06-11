@@ -127,6 +127,11 @@ export default function App() {
   const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
   const notifications = notifState.value;
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = settings.themeMode;
+    return () => { delete document.documentElement.dataset.theme; };
+  }, [settings.themeMode]);
+
   // Đổi user → reset state theo key ngay trong render (React adjust-state-on-prop-change pattern)
   if (settingsState.key !== userKey) {
     setSettingsState({ key: userKey, value: loadSettings(userKey) });

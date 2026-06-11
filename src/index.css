@@ -27,7 +27,8 @@
  * Light là foundation: shell, modal, menu, content. Sidebar/player
  * giữ dark island có chủ đích (giống player tối của Spotify).
  */
-:root {
+:root,
+[data-theme="dark"] {
   --bg-base: #0f0c0c;
   --bg-card: #181818;
   --bg-el: #1f1f1f;
@@ -40,6 +41,10 @@
   --overlay-1: rgba(255, 255, 255, 0.07);
   --overlay-2: rgba(255, 255, 255, 0.12);
   --border: rgba(255, 255, 255, 0.08);
+  --shadow-card: rgba(0, 0, 0, 0.28) 0px 8px 24px;
+  --shadow-card-hover: rgba(0, 0, 0, 0.38) 0px 12px 30px;
+  --shadow-cover: rgba(0, 0, 0, 0.4) 0px 8px 24px;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.18);
   --shadow-modal: rgba(0, 0, 0, 0.72) 0px 24px 64px;
   --shadow-menu: rgba(0, 0, 0, 0.65) 0px 18px 48px;
   color-scheme: dark;
@@ -48,6 +53,7 @@
 /* Light palette theo Stitch design system "Warm Melodic Hybrid":
  * nền paper warm off-white, container phân tầng tonal, text nâu ấm
  * thay vì đen gắt, overlay ấm rgba(26,22,20,x). */
+:root[data-theme="light"],
 [data-theme="light"] {
   --bg-base: #fcf9f5;
   --bg-card: #f6f3ef;
@@ -61,12 +67,17 @@
   --overlay-1: rgba(26, 22, 20, 0.05);
   --overlay-2: rgba(26, 22, 20, 0.1);
   --border: rgba(26, 22, 20, 0.12);
+  --shadow-card: rgba(26, 22, 20, 0.08) 0px 5px 18px;
+  --shadow-card-hover: rgba(26, 22, 20, 0.14) 0px 10px 26px;
+  --shadow-cover: rgba(26, 22, 20, 0.16) 0px 8px 20px;
+  --scrollbar-thumb: rgba(88, 66, 55, 0.28);
   --shadow-modal: rgba(26, 22, 20, 0.18) 0px 18px 48px;
   --shadow-menu: rgba(26, 22, 20, 0.14) 0px 12px 32px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: light) {
+  :root[data-theme="system"],
   [data-theme="system"] {
     --bg-base: #fcf9f5;
     --bg-card: #f6f3ef;
@@ -80,6 +91,10 @@
     --overlay-1: rgba(26, 22, 20, 0.05);
     --overlay-2: rgba(26, 22, 20, 0.1);
     --border: rgba(26, 22, 20, 0.12);
+    --shadow-card: rgba(26, 22, 20, 0.08) 0px 5px 18px;
+    --shadow-card-hover: rgba(26, 22, 20, 0.14) 0px 10px 26px;
+    --shadow-cover: rgba(26, 22, 20, 0.16) 0px 8px 20px;
+    --scrollbar-thumb: rgba(88, 66, 55, 0.28);
     --shadow-modal: rgba(26, 22, 20, 0.18) 0px 18px 48px;
     --shadow-menu: rgba(26, 22, 20, 0.14) 0px 12px 32px;
     color-scheme: light;
@@ -88,13 +103,13 @@
 
 body {
   font-family: var(--font-sans);
-  background: #0f0c0c;
-  color: #ede5dd;
+  background: var(--bg-base);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
 
 /* Sidebar playlist list scrollbar */
 .sidebar-list-scroll {
@@ -102,7 +117,7 @@ body {
   scrollbar-color: transparent transparent;
 }
 .sidebar-list-scroll:hover {
-  scrollbar-color: rgba(255,255,255,.22) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 .sidebar-list-scroll::-webkit-scrollbar {
   width: 8px;
@@ -112,7 +127,7 @@ body {
   border-radius: 999px;
 }
 .sidebar-list-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,.22);
+  background: var(--scrollbar-thumb);
 }
 .sidebar-list-scroll:not(.is-open)::-webkit-scrollbar {
   display: none;
