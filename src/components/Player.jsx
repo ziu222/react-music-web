@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  Heart,
+  CircleCheck,
+  CirclePlus,
   ListMusic,
   Maximize2,
   Mic2,
@@ -20,7 +21,7 @@ import EqBars from "./EqBars";
 import QueuePanel from "./QueuePanel";
 import LyricsPanel from "./LyricsPanel";
 import ExpandedPlayer from "./ExpandedPlayer";
-import { C, R } from "../constants/theme";
+import { C } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
 export default function Player({
@@ -249,18 +250,21 @@ export default function Player({
           </div>
 
           <button
-            type="button" aria-label={liked ? "Unlike song" : "Like song"}
+            type="button"
+            aria-label={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
             onClick={() => onLike(s.id)}
             style={{
               background: "transparent", border: "none", cursor: "pointer",
-              color: liked ? R[400] : "rgba(255,255,255,0.34)",
+              color: liked ? "#1ed760" : "rgba(255,255,255,0.55)",
               flexShrink: 0, transition: "color 0.15s, transform 0.1s",
               display: "inline-flex", padding: 5,
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = liked ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = liked ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseDown={e => { e.currentTarget.style.transform = "scale(0.92)"; }}
+            onMouseUp={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
           >
-            <Heart size={18} fill={liked ? R[400] : "none"} />
+            {liked ? <CircleCheck size={18} /> : <CirclePlus size={18} />}
           </button>
         </div>
 

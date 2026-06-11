@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  ChevronDown, Heart, Pause, Play, Repeat, Repeat1,
+  ChevronDown, CircleCheck, CirclePlus, Pause, Play, Repeat, Repeat1,
   Shuffle, SkipBack, SkipForward, Volume2, VolumeX,
 } from "lucide-react";
 import EqBars from "./EqBars";
-import { C, R } from "../constants/theme";
+import { C } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
 export default function ExpandedPlayer({
@@ -195,18 +195,21 @@ export default function ExpandedPlayer({
                 </div>
               </div>
               <button
-                type="button" aria-label={liked ? "Unlike" : "Like"}
+                type="button"
+                aria-label={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
                 onClick={() => onLike(s.id)}
                 style={{
                   background: "transparent", border: "none", cursor: "pointer",
-                  color: liked ? R[400] : "rgba(255,255,255,0.38)",
+                  color: liked ? "#1ed760" : "rgba(255,255,255,0.55)",
                   flexShrink: 0, display: "inline-flex", padding: 6, marginLeft: 12,
                   transition: "color 0.15s, transform 0.12s",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+                onMouseEnter={e => { e.currentTarget.style.color = liked ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = liked ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+                onMouseDown={e => { e.currentTarget.style.transform = "scale(0.92)"; }}
+                onMouseUp={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
               >
-                <Heart size={22} fill={liked ? R[400] : "none"} />
+                {liked ? <CircleCheck size={22} /> : <CirclePlus size={22} />}
               </button>
             </div>
 
