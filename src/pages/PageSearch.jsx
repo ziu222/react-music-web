@@ -187,6 +187,7 @@ function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
         type="button"
         aria-label={`Phát ${title}`}
         className="card-play-btn"
+        tabIndex={hov ? 0 : -1}
         onClick={e => { e.stopPropagation(); onPlay(playTarget); }}
         style={{
           position: "absolute", right: 18, bottom: 18,
@@ -304,6 +305,7 @@ function AlbumResult({ album, onOpenAlbum, onPlay }) {
           type="button"
           aria-label={`Phát album ${album.name}`}
           className="card-play-btn"
+          tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onPlay(album.songs[0]); }}
           style={{
             position: "absolute", right: 6, bottom: 6,

@@ -134,19 +134,33 @@ export default function App() {
         last.page === entry.page &&
         last.artist === entry.artist &&
         last.album === entry.album &&
-        last.playlistId === entry.playlistId
+        last.playlistId === entry.playlistId &&
+        last.libraryFilter === entry.libraryFilter &&
+        last.query === entry.query
       ) return h;
       const stack = [...h.stack.slice(0, h.index + 1), entry];
       return { stack, index: stack.length - 1 };
     });
   }, []);
 
+  const replaceEntry = useCallback((patch) => {
+    setHist(h => {
+      const stack = [...h.stack];
+      const current = stack[h.index] ?? { page };
+      stack[h.index] = { ...current, ...patch };
+      return { ...h, stack };
+    });
+  }, [page]);
+
   const applyEntry = useCallback((entry) => {
     if (entry.artist) setSelectedArtist(entry.artist);
     if (entry.album) setSelectedAlbum(entry.album);
+    if (entry.page === "search") setSearch(entry.query ?? "");
+    if (entry.page !== "search" && entry.query === undefined) setSearch("");
+    if (entry.libraryFilter) setLibraryFilter(entry.libraryFilter);
     if (entry.playlistId !== undefined) {
       setSelectedPlaylistId(entry.playlistId);
-      setLibraryFilter("Danh sách phát");
+      if (!entry.libraryFilter) setLibraryFilter("Danh sách phát");
     }
     setPage(entry.page);
   }, []);
@@ -158,6 +172,25 @@ export default function App() {
     if (p === page) return; // same page, new entity — switch without loader
     setLoading(true);
     setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
+  };
+
+  const openLibrary = (entry = {}) => {
+    const nextFilter = entry.libraryFilter ?? libraryFilter;
+    const nextPlaylistId = entry.playlistId ?? selectedPlaylistId;
+    setLibraryFilter(nextFilter);
+    if (entry.playlistId !== undefined) setSelectedPlaylistId(nextPlaylistId);
+    nav("library", { playlistId: nextPlaylistId, libraryFilter: nextFilter });
+  };
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    if (page !== "search") {
+      pushEntry({ page: "search", query: value });
+      setLoading(false);
+      setPage("search");
+      return;
+    }
+    replaceEntry({ page: "search", query: value });
   };
 
   // Back/forward restore instantly — no fake loader on history moves
@@ -391,9 +424,7 @@ export default function App() {
 
   const openPlaylist = (pl) => {
     if (!pl) return;
-    setLibraryFilter("Danh sách phát");
-    setSelectedPlaylistId(pl.id);
-    nav("library", { playlistId: pl.id });
+    openLibrary({ playlistId: pl.id, libraryFilter: "Danh sách phát" });
   };
 
   const toggleFollowArtist = (artistName) => {
@@ -431,8 +462,7 @@ export default function App() {
     setUserPlaylists(prev => [...prev, newPl]);
     setSelectedPlaylistId(newPl.id);
     setSidebarOpen(true);
-    pushEntry({ page: "library", playlistId: newPl.id });
-    setPage("library");
+    openLibrary({ playlistId: newPl.id, libraryFilter: "Danh sách phát" });
   };
 
   const createPlaylistWithAuth = () => {
@@ -774,7 +804,7 @@ export default function App() {
           />
           <input
             value={search}
-            onChange={e => { setSearch(e.target.value); if (page !== "search") setPage("search"); }}
+            onChange={e => handleSearchChange(e.target.value)}
             placeholder="Bạn muốn phát nội dung gì?"
             style={{
               width: "100%",
@@ -862,14 +892,16 @@ export default function App() {
           onToggle={() => setSidebarOpen(p => !p)}
           likedIds={likedIds}
           list={list}
-          onNav={nav}
           userPlaylists={visiblePlaylists}
           albumPlaylists={albumPlaylists}
           isAuthed={Boolean(authUser)}
           selectedPlaylistId={selectedPlaylistId}
-          onSelectPlaylist={setSelectedPlaylistId}
+          onSelectPlaylist={(pl) => openLibrary({
+            playlistId: pl.id,
+            libraryFilter: pl.type === "album" ? "Album" : "Danh sách phát",
+          })}
           libraryFilter={libraryFilter}
-          onSetLibraryFilter={setLibraryFilter}
+          onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
           librarySearch={librarySearch}
           onSetLibrarySearch={setLibrarySearch}
           librarySort={librarySort}
@@ -959,9 +991,9 @@ export default function App() {
                   userPlaylists={visiblePlaylists}
                   albumPlaylists={albumPlaylists}
                   selectedPlaylistId={selectedPlaylistId}
-                  onSelectPlaylist={setSelectedPlaylistId}
+                  onSelectPlaylist={(playlistId) => openLibrary({ playlistId, libraryFilter: "Danh sách phát" })}
                   libraryFilter={libraryFilter}
-                  onSetLibraryFilter={setLibraryFilter}
+                  onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
                   onToggleSongInPlaylist={toggleSongInPlaylist}
                   followedArtists={followedArtists}
                   savedAlbums={savedAlbums}

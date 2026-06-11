@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { C, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
@@ -117,6 +117,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
         type="button"
         aria-label={liked ? `Bỏ thích ${song.title}` : `Thích ${song.title}`}
         title={liked ? "Bỏ thích" : "Thích"}
+        tabIndex={liked || hov ? 0 : -1}
         onClick={e => { e.stopPropagation(); onLike(song.id); }}
         style={{
           background: "none",
@@ -138,6 +139,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
         <button
           type="button"
           aria-label={`Add ${song.title} to queue`}
+          tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
           style={{
             background: "none",
@@ -161,6 +163,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
           type="button"
           aria-label={`Xóa ${song.title} khỏi danh sách phát`}
           title="Xóa khỏi danh sách phát"
+          tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onRemove(song); }}
           style={{
             background: "none",
@@ -673,7 +676,7 @@ export default function PageLibrary({
               {displaySongs.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "60px 0", color: TEXT.secondary }}>
                   <div style={{ fontSize: 36, marginBottom: 14, opacity: 0.35 }}>
-                    {activePl.type === "liked" ? "♡" : "♪"}
+                    <FontAwesomeIcon icon={activePl.type === "liked" ? faHeart : faMusic} />
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>
                     {activePl.type === "liked"
@@ -684,7 +687,7 @@ export default function PageLibrary({
                   </div>
                   <div style={{ fontSize: 13, color: TEXT.tertiary }}>
                     {activePl.type === "liked"
-                      ? "Nhấn ♡ để thêm bài hát yêu thích vào đây"
+                      ? "Nhấn nút thích để thêm bài hát yêu thích vào đây"
                       : activePl.type === "recent"
                       ? "Phát một bài hát và nó sẽ xuất hiện ở đây"
                       : "Hãy thêm bài hát vào danh sách này"}

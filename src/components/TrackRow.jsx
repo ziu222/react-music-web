@@ -139,6 +139,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
         <button
           type="button"
           aria-label={`Add ${song.title} to queue`}
+          tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
           title="Thêm vào hàng đợi"
           style={{
@@ -166,6 +167,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
         type="button"
         aria-label={liked ? `Bỏ thích ${song.title}` : `Thích ${song.title}`}
         title={liked ? "Bỏ thích" : "Thích"}
+        tabIndex={liked || hov ? 0 : -1}
         onClick={e => { e.stopPropagation(); onLike(song.id); }}
         style={{
           background: "none",
