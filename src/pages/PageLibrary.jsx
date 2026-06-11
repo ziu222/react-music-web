@@ -1,9 +1,17 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { C, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
+import { deriveArtists } from "../data/derived";
 import PlaylistCover from "../components/PlaylistCover";
 
 const FILTER_TABS = ["Danh sách phát", "Album", "Nghệ sĩ"];
+
+const RECENT_PL = {
+  id: "__recent__",
+  name: "Nghe gần đây",
+  type: "recent",
+  bg: "linear-gradient(135deg,#0f766e,#34d399)",
+};
 const TRACK_SORT_OPTIONS = [
   { key: "custom", label: "Thứ tự tùy chỉnh" },
   { key: "title", label: "Tiêu đề" },
@@ -145,20 +153,29 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
 }
 
 /* ── PlaylistCard ─────────────────────────────────────────────── */
-function PlaylistCard({ pl, likedCount, coverSongs = [], isActive, onClick }) {
+function PlaylistCard({ pl, likedCount, metaText, coverSongs = [], isActive, onClick }) {
   const [hov, setHov] = useState(false);
-  const meta =
+  const meta = metaText ?? (
     pl.type === "liked"
       ? `${likedCount} bài hát`
       : typeof pl.id === "string"
       ? "0 bài hát"
       : pl.songIds?.length
       ? `${pl.songIds.length} bài hát`
-      : "Danh sách phát";
+      : "Danh sách phát");
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Mở ${pl.type === "liked" ? "Bài hát đã thích" : pl.name}`}
       onClick={onClick}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -197,6 +214,63 @@ function PlaylistCard({ pl, likedCount, coverSongs = [], isActive, onClick }) {
   );
 }
 
+/* ── Followed artist row (left list, Artists tab) ─────────────── */
+function ArtistRow({ artist, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Mở trang nghệ sĩ ${artist.name}`}
+      onClick={onClick}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "8px 10px",
+        borderRadius: 8,
+        cursor: "pointer",
+        background: hov ? "rgba(255,255,255,0.06)" : "transparent",
+        transition: "background 0.15s",
+      }}
+    >
+      <div style={{
+        width: 56, height: 56, borderRadius: "50%",
+        flexShrink: 0, overflow: "hidden",
+        background: artist.topSong?.bg ?? "#241a1a",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 18, color: "rgba(255,255,255,0.85)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+      }}>
+        {artist.image ? (
+          <img src={artist.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        ) : (
+          artist.name[0]
+        )}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          fontSize: 14, fontWeight: 500, color: TEXT.primary,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {artist.name}
+        </div>
+        <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 2 }}>
+          Nghệ sĩ · {artist.songs.length} bài hát
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Page ─────────────────────────────────────────────────────── */
 export default function PageLibrary({
   list, cur, onPlay, likedIds, onLike,
@@ -207,6 +281,11 @@ export default function PageLibrary({
   onSelectPlaylist,
   libraryFilter = "Danh sách phát",
   onSetLibraryFilter,
+  followedArtists = new Set(),
+  savedAlbums = new Set(),
+  recentIds = [],
+  onOpenArtist,
+  onOpenAlbum,
 }) {
   const [trackSort, setTrackSort] = useState("custom");
   const [trackQuery, setTrackQuery] = useState("");
@@ -215,7 +294,25 @@ export default function PageLibrary({
   const sortBtnRef = useRef(null);
   const [sortMenuPos, setSortMenuPos] = useState({ top: 0, right: 0 });
 
-  const libraryItems = libraryFilter === "Album" ? albumPlaylists : userPlaylists;
+  /* Playlists tab gets a pinned read-only "Recently played" entry */
+  const playlistItems = useMemo(() => {
+    const arr = [...userPlaylists];
+    arr.splice(Math.min(1, arr.length), 0, RECENT_PL);
+    return arr;
+  }, [userPlaylists]);
+
+  /* Albums tab prefers saved albums; falls back to all derived albums */
+  const shownAlbums = useMemo(() => {
+    if (savedAlbums.size === 0) return albumPlaylists;
+    return albumPlaylists.filter(al => savedAlbums.has(al.name));
+  }, [albumPlaylists, savedAlbums]);
+
+  const followedArtistObjs = useMemo(
+    () => deriveArtists(list).filter(a => followedArtists.has(a.name)),
+    [list, followedArtists]
+  );
+
+  const libraryItems = libraryFilter === "Album" ? shownAlbums : playlistItems;
 
   const activePl =
     libraryItems.find(pl => pl.id === selectedPlaylistId) ??
@@ -230,6 +327,9 @@ export default function PageLibrary({
     if (pl.type === "liked") {
       return Array.from(likedIds).slice(0, 4).map(id => songMap.get(id)).filter(Boolean);
     }
+    if (pl.type === "recent") {
+      return recentIds.slice(0, 4).map(id => songMap.get(id)).filter(Boolean);
+    }
     if (!pl.songIds?.length) return [];
     return pl.songIds.slice(0, 4).map(id => songMap.get(id)).filter(Boolean);
   };
@@ -237,12 +337,14 @@ export default function PageLibrary({
   const displaySongs = useMemo(() => {
     if (!activePl) return [];
     if (activePl.type === "liked") return likedSongs;
-    if (isLocalCreated) return [];
+    if (activePl.type === "recent") {
+      return recentIds.map(id => songMap.get(id)).filter(Boolean);
+    }
     if (activePl.songIds?.length) {
       return activePl.songIds.map(id => songMap.get(id)).filter(Boolean);
     }
     return [];
-  }, [activePl, likedSongs, isLocalCreated, songMap]);
+  }, [activePl, likedSongs, recentIds, songMap]);
 
   const visibleSongs = useMemo(() => {
     const q = trackQuery.trim().toLowerCase();
@@ -287,8 +389,8 @@ export default function PageLibrary({
   }, [showTrackSortMenu]);
 
   /* filtered playlist list for left panel */
-  const shownPlaylists = libraryFilter === "Album" ? albumPlaylists :
-    libraryFilter === "Danh sách phát" ? userPlaylists : [];
+  const shownPlaylists = libraryFilter === "Album" ? shownAlbums :
+    libraryFilter === "Danh sách phát" ? playlistItems : [];
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", display: "flex", height: "100%" }}>
@@ -332,15 +434,29 @@ export default function PageLibrary({
           </div>
         </div>
 
-        {/* Playlist scroll */}
+        {/* Library list scroll */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0 10px 16px" }}>
-          {shownPlaylists.length === 0 ? (
-            <div style={{ padding: "32px 12px", textAlign: "center", color: TEXT.secondary, fontSize: 13 }}>
-              {libraryFilter === "Album"
-                ? "Chưa có album nào"
-                : libraryFilter === "Nghệ sĩ"
-                ? "Chưa theo dõi nghệ sĩ nào"
-                : "Thư viện trống"}
+          {libraryFilter === "Nghệ sĩ" ? (
+            followedArtistObjs.length === 0 ? (
+              <div style={{ padding: "32px 12px", textAlign: "center", color: TEXT.secondary, fontSize: 13, lineHeight: 1.6 }}>
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>Chưa theo dõi nghệ sĩ nào</div>
+                Tìm một nghệ sĩ và nhấn "Theo dõi" để họ xuất hiện ở đây.
+              </div>
+            ) : (
+              followedArtistObjs.map(a => (
+                <ArtistRow key={a.name} artist={a} onClick={() => onOpenArtist?.(a.name)} />
+              ))
+            )
+          ) : shownPlaylists.length === 0 ? (
+            <div style={{ padding: "32px 12px", textAlign: "center", color: TEXT.secondary, fontSize: 13, lineHeight: 1.6 }}>
+              {libraryFilter === "Album" ? (
+                <>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Chưa lưu album nào</div>
+                  Mở một album và nhấn lưu để album xuất hiện ở đây.
+                </>
+              ) : (
+                "Thư viện trống"
+              )}
             </div>
           ) : (
             shownPlaylists.map(pl => (
@@ -348,18 +464,102 @@ export default function PageLibrary({
                 key={pl.id}
                 pl={pl}
                 likedCount={likedIds.size}
+                metaText={
+                  pl.type === "recent"
+                    ? `${recentIds.length} bài hát gần đây`
+                    : pl.type === "album"
+                    ? `Album · ${pl.artist}`
+                    : undefined
+                }
                 coverSongs={getCoverSongs(pl)}
                 isActive={activePl?.id === pl.id}
-                onClick={() => onSelectPlaylist?.(pl.id)}
+                onClick={() =>
+                  pl.type === "album"
+                    ? onOpenAlbum?.(pl.name)
+                    : onSelectPlaylist?.(pl.id)
+                }
               />
             ))
           )}
         </div>
       </div>
 
-      {/* ── Right: playlist detail ── */}
+      {/* ── Right: playlist detail / followed artists ── */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        {activePl ? (
+        {libraryFilter === "Nghệ sĩ" ? (
+          <div style={{ padding: "40px 32px 80px" }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.3, marginBottom: 20 }}>
+              Nghệ sĩ đang theo dõi
+            </h2>
+            {followedArtistObjs.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: TEXT.secondary }}>
+                <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>
+                  Bạn chưa theo dõi nghệ sĩ nào
+                </div>
+                <div style={{ fontSize: 13, color: TEXT.tertiary }}>
+                  Mở trang nghệ sĩ và nhấn "Theo dõi" — họ sẽ xuất hiện ở đây.
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                gap: 14,
+              }}>
+                {followedArtistObjs.map(a => (
+                  <div
+                    key={a.name}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Mở trang nghệ sĩ ${a.name}`}
+                    onClick={() => onOpenArtist?.(a.name)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onOpenArtist?.(a.name);
+                      }
+                    }}
+                    style={{
+                      padding: 14,
+                      borderRadius: 8,
+                      textAlign: "center",
+                      background: "rgba(255,255,255,0.03)",
+                      cursor: "pointer",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                  >
+                    <div style={{
+                      width: 110, height: 110, borderRadius: "50%",
+                      margin: "0 auto 10px",
+                      background: a.topSong?.bg ?? "#241a1a",
+                      overflow: "hidden",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 30, color: "rgba(255,255,255,0.85)",
+                      boxShadow: "rgba(0,0,0,0.4) 0px 6px 18px",
+                    }}>
+                      {a.image ? (
+                        <img src={a.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      ) : (
+                        a.name[0]
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: 13, fontWeight: 600, color: TEXT.primary,
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {a.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: TEXT.secondary, marginTop: 3 }}>
+                      {a.songs.length} bài hát
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : activePl ? (
           <>
             {/* Hero */}
             <div style={{
@@ -382,7 +582,7 @@ export default function PageLibrary({
                   fontSize: 11, textTransform: "uppercase",
                   letterSpacing: 1.2, color: TEXT.secondary, marginBottom: 8,
                 }}>
-                  Danh sách phát
+                  {activePl.type === "album" ? "Album" : "Danh sách phát"}
                 </div>
                 <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: -0.5, marginBottom: 10 }}>
                   {activePl.type === "liked" ? "Bài hát đã thích" : activePl.name}
@@ -416,6 +616,8 @@ export default function PageLibrary({
               <span style={{ fontSize: 13, color: TEXT.secondary }}>
                 {activePl.type === "liked" && likedIds.size === 0
                   ? "Bạn chưa thích bài hát nào"
+                  : activePl.type === "recent" && displaySongs.length === 0
+                  ? "Chưa có bài hát nào được phát gần đây"
                   : isLocalCreated && displaySongs.length === 0
                   ? "Danh sách phát trống"
                   : "Phát tất cả"}
@@ -432,11 +634,15 @@ export default function PageLibrary({
                   <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>
                     {activePl.type === "liked"
                       ? "Chưa có bài hát nào"
+                      : activePl.type === "recent"
+                      ? "Chưa nghe bài nào gần đây"
                       : "Danh sách phát trống"}
                   </div>
                   <div style={{ fontSize: 13, color: TEXT.tertiary }}>
                     {activePl.type === "liked"
                       ? "Nhấn ♡ để thêm bài hát yêu thích vào đây"
+                      : activePl.type === "recent"
+                      ? "Phát một bài hát và nó sẽ xuất hiện ở đây"
                       : "Hãy thêm bài hát vào danh sách này"}
                   </div>
                 </div>

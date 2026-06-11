@@ -865,6 +865,11 @@ export default function App() {
                   onSelectPlaylist={setSelectedPlaylistId}
                   libraryFilter={libraryFilter}
                   onSetLibraryFilter={setLibraryFilter}
+                  followedArtists={followedArtists}
+                  savedAlbums={savedAlbums}
+                  recentIds={recentIds}
+                  onOpenArtist={openArtist}
+                  onOpenAlbum={openAlbum}
                 />
               )}
             </>
