@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { C, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
@@ -25,7 +27,7 @@ function dateLabel(song) {
   return song.dateAdded ?? "Feb 23, 2022";
 }
 
-function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQueue }) {
+function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQueue, onRemove, gridCols }) {
   const [hov, setHov] = useState(false);
   const playing = cur?.id === song.id;
   const liked = likedIds.has(song.id);
@@ -38,7 +40,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
       onClick={() => onPlay(song)}
       style={{
         display: "grid",
-        gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px 34px",
+        gridTemplateColumns: gridCols,
         alignItems: "center",
         gap: 12,
         minHeight: 52,
@@ -148,6 +150,29 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
           ⊕
         </button>
       ) : <span />}
+      {onRemove && (
+        <button
+          type="button"
+          aria-label={`Xóa ${song.title} khỏi danh sách phát`}
+          title="Xóa khỏi danh sách phát"
+          onClick={e => { e.stopPropagation(); onRemove(song); }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "rgba(255,255,255,0.5)",
+            fontSize: 14,
+            lineHeight: 1,
+            opacity: hov ? 1 : 0,
+            pointerEvents: hov ? "auto" : "none",
+            transition: "opacity 0.15s, color 0.1s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+        >
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
+      )}
     </div>
   );
 }
@@ -281,6 +306,7 @@ export default function PageLibrary({
   onSelectPlaylist,
   libraryFilter = "Danh sách phát",
   onSetLibraryFilter,
+  onToggleSongInPlaylist,
   followedArtists = new Set(),
   savedAlbums = new Set(),
   recentIds = [],
@@ -321,6 +347,11 @@ export default function PageLibrary({
 
   const likedSongs = list.filter(s => likedIds.has(s.id));
   const isLocalCreated = Boolean(activePl?.isPersonal);
+  /* Only the user's own local playlists allow removing/reordering tracks.
+     Seeded playlists, albums, Liked Songs and Recently Played are read-only
+     (Liked Songs is edited by unliking, Recently Played by listening). */
+  const canEditTracks = isLocalCreated && Boolean(onToggleSongInPlaylist);
+  const trackGridCols = `36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px 34px${canEditTracks ? " 34px" : ""}`;
   const songMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
 
   const getCoverSongs = (pl) => {
@@ -588,6 +619,11 @@ export default function PageLibrary({
                   {activePl.type === "liked" ? "Bài hát đã thích" : activePl.name}
                 </div>
                 <div style={{ fontSize: 13, color: TEXT.secondary }}>
+                  {isLocalCreated
+                    ? "Danh sách của bạn · "
+                    : activePl.type !== "liked" && activePl.type !== "recent" && typeof activePl.id === "number"
+                    ? "Danh sách hệ thống · "
+                    : ""}
                   {displaySongs.length} bài hát
                 </div>
               </div>
@@ -790,7 +826,7 @@ export default function PageLibrary({
 
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: "36px minmax(210px,2fr) minmax(150px,1fr) 118px 54px 34px 34px",
+                    gridTemplateColumns: trackGridCols,
                     gap: 12,
                     alignItems: "center",
                     minHeight: 34,
@@ -808,6 +844,7 @@ export default function PageLibrary({
                     <span style={{ textAlign: "right" }}>Time</span>
                     <span />
                     <span />
+                    {canEditTracks && <span />}
                   </div>
 
                   {visibleSongs.length === 0 ? (
@@ -825,6 +862,10 @@ export default function PageLibrary({
                         likedIds={likedIds}
                         onLike={onLike}
                         onAddToQueue={onAddToQueue}
+                        gridCols={trackGridCols}
+                        onRemove={canEditTracks
+                          ? (s) => onToggleSongInPlaylist(s.id, activePl.id)
+                          : undefined}
                       />
                     ))
                   )}

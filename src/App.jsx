@@ -865,6 +865,7 @@ export default function App() {
                   onSelectPlaylist={setSelectedPlaylistId}
                   libraryFilter={libraryFilter}
                   onSetLibraryFilter={setLibraryFilter}
+                  onToggleSongInPlaylist={toggleSongInPlaylist}
                   followedArtists={followedArtists}
                   savedAlbums={savedAlbums}
                   recentIds={recentIds}
