@@ -115,7 +115,7 @@ function SectionHeader({ title }) {
         style={{
           fontSize: 12,
           fontWeight: 600,
-          color: hov ? "#ede5dd" : "rgba(255,255,255,0.5)",
+          color: hov ? "var(--text-primary)" : "var(--text-secondary)",
           textDecoration: hov ? "underline" : "none",
           cursor: "pointer",
           letterSpacing: 0.3,
@@ -155,7 +155,7 @@ function QuickTile({ song, cur, onPlay }) {
         height: 56,
         borderRadius: 6,
         overflow: "hidden",
-        background: hov ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.07)",
+        background: hov ? "var(--overlay-2)" : "var(--overlay-1)",
         transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
         cursor: "pointer",
       }}
@@ -244,7 +244,7 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
         scrollSnapAlign: "start",
         padding: 12,
         borderRadius: 8,
-        background: hov ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+        background: hov ? "var(--overlay-2)" : "var(--overlay-1)",
         transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
         boxShadow: hov
           ? "rgba(0,0,0,0.4) 0px 8px 20px"
@@ -308,7 +308,7 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
         {album.album}
       </div>
       <div style={{
-        fontSize: 11, color: "rgba(255,255,255,0.45)",
+        fontSize: 11, color: "var(--text-tertiary)",
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
       }}>
         {album.artist} · Album
@@ -343,7 +343,7 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
         padding: 12,
         borderRadius: 8,
         textAlign: "center",
-        background: hov ? "rgba(255,255,255,0.07)" : "transparent",
+        background: hov ? "var(--overlay-1)" : "transparent",
         transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
         cursor: "pointer",
         scrollSnapAlign: "start",
@@ -355,7 +355,7 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
           margin: "0 auto",
           background: artist.bg,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 40, fontWeight: 500, color: "rgba(255,255,255,0.9)",
+          fontSize: 40, fontWeight: 500, color: "var(--text-strong)",
           overflow: "hidden",
           boxShadow: "rgba(0,0,0,0.4) 0px 8px 24px",
         }}>
@@ -395,7 +395,7 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
       }}>
         {artist.name}
       </div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+      <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 3 }}>
         Nghệ sĩ
       </div>
     </div>

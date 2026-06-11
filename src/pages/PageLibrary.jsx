@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic } from "@fortawesome/free-solid-svg-icons";
-import { C, TEXT, BORDER } from "../constants/theme";
+import { C, BG, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
 import PlaylistCover from "../components/PlaylistCover";
@@ -47,18 +47,18 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
         padding: "0 10px",
         borderRadius: 6,
         cursor: "pointer",
-        background: playing ? `${C[500]}12` : hov ? "rgba(255,255,255,0.06)" : "transparent",
+        background: playing ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
         transition: "background 0.15s",
       }}
     >
       <div style={{
         fontSize: 12,
-        color: playing ? C[400] : "rgba(255,255,255,0.45)",
+        color: playing ? C[400] : "var(--text-tertiary)",
         textAlign: "center",
         fontVariantNumeric: "tabular-nums",
       }}>
         {hov && !playing
-          ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "#fff" }} />
+          ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
           : index + 1}
       </div>
 
@@ -123,7 +123,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: liked ? "#fb7185" : "rgba(255,255,255,0.45)",
+          color: liked ? "#fb7185" : "var(--text-tertiary)",
           opacity: liked || hov ? 1 : 0,
           pointerEvents: liked || hov ? "auto" : "none",
           fontSize: 13,
@@ -145,15 +145,15 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "rgba(255,255,255,0.5)",
+            color: "var(--text-secondary)",
             fontSize: 13,
             lineHeight: 1,
             opacity: hov ? 1 : 0,
             pointerEvents: hov ? "auto" : "none",
             transition: "opacity 0.15s, color 0.1s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; }}
         >
           <FontAwesomeIcon icon={faPlus} />
         </button>
@@ -169,15 +169,15 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "rgba(255,255,255,0.5)",
+            color: "var(--text-secondary)",
             fontSize: 14,
             lineHeight: 1,
             opacity: hov ? 1 : 0,
             pointerEvents: hov ? "auto" : "none",
             transition: "opacity 0.15s, color 0.1s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; }}
         >
           <FontAwesomeIcon icon={faXmark} />
         </button>
@@ -220,9 +220,9 @@ function PlaylistCard({ pl, likedCount, metaText, coverSongs = [], isActive, onC
         borderRadius: 8,
         cursor: "pointer",
         background: isActive
-          ? "rgba(255,255,255,0.1)"
+          ? "var(--overlay-2)"
           : hov
-          ? "rgba(255,255,255,0.06)"
+          ? "var(--overlay-1)"
           : "transparent",
         transition: "background 0.15s",
       }}
@@ -272,7 +272,7 @@ function ArtistRow({ artist, onClick }) {
         padding: "8px 10px",
         borderRadius: 8,
         cursor: "pointer",
-        background: hov ? "rgba(255,255,255,0.06)" : "transparent",
+        background: hov ? "var(--overlay-1)" : "transparent",
         transition: "background 0.15s",
       }}
     >
@@ -458,7 +458,7 @@ export default function PageLibrary({
                 onClick={() => onSetLibraryFilter?.(t)}
                 style={{
                   flexShrink: 0,
-                  background: libraryFilter === t ? C[500] : "rgba(255,255,255,0.08)",
+                  background: libraryFilter === t ? C[500] : "var(--overlay-1)",
                   border: "none",
                   borderRadius: 9999,
                   padding: "5px 14px",
@@ -563,12 +563,12 @@ export default function PageLibrary({
                       padding: 14,
                       borderRadius: 8,
                       textAlign: "center",
-                      background: "rgba(255,255,255,0.03)",
+                      background: "var(--overlay-1)",
                       cursor: "pointer",
                       transition: "background 0.2s",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "var(--overlay-1)"; }}
                   >
                     <div style={{
                       width: 110, height: 110, borderRadius: "50%",
@@ -719,7 +719,7 @@ export default function PageLibrary({
                           height: 32,
                           borderRadius: "50%",
                           border: "none",
-                          background: showTrackSearch || trackQuery ? "rgba(255,255,255,0.12)" : "transparent",
+                          background: showTrackSearch || trackQuery ? "var(--overlay-2)" : "transparent",
                           color: showTrackSearch || trackQuery ? "#fff" : TEXT.secondary,
                           cursor: "pointer",
                           transition: "background 0.15s, color 0.15s",
@@ -741,7 +741,7 @@ export default function PageLibrary({
                           autoFocus={showTrackSearch}
                           style={{
                             width: 260,
-                            background: "rgba(255,255,255,0.1)",
+                            background: "var(--overlay-2)",
                             border: "none",
                             borderRadius: 4,
                             padding: "7px 10px",
@@ -790,7 +790,7 @@ export default function PageLibrary({
                             width: 190,
                             padding: 8,
                             borderRadius: 8,
-                            background: "#282828",
+                            background: BG.menu,
                             boxShadow: "rgba(0,0,0,0.6) 0px 16px 48px",
                             zIndex: 999,
                             transformOrigin: "top right",
@@ -800,7 +800,7 @@ export default function PageLibrary({
                               padding: "4px 12px 8px",
                               fontSize: 10,
                               fontWeight: 700,
-                              color: "rgba(255,255,255,0.35)",
+                              color: "var(--text-tertiary)",
                               textTransform: "uppercase",
                               letterSpacing: 0.8,
                             }}>
@@ -810,7 +810,7 @@ export default function PageLibrary({
                               <div
                                 key={opt.key}
                                 onClick={() => { setTrackSort(opt.key); setShowTrackSortMenu(false); }}
-                                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; }}
                                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                                 style={{
                                   display: "flex",
@@ -820,7 +820,7 @@ export default function PageLibrary({
                                   borderRadius: 4,
                                   cursor: "pointer",
                                   fontSize: 13,
-                                  color: trackSort === opt.key ? C[400] : "rgba(255,255,255,0.85)",
+                                  color: trackSort === opt.key ? C[400] : "var(--text-strong)",
                                   transition: "background 0.12s",
                                 }}
                               >

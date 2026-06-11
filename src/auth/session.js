@@ -9,7 +9,6 @@
 
 const SESSION_KEY = "melodies_session";
 const ENTITLEMENT_KEY = "melodies_entitlements";
-const QUALITY_KEY = "melodies_audio_quality";
 
 export const PLAN_FREE = "free";
 export const PLAN_PREMIUM = "premium";
@@ -83,14 +82,4 @@ export function applyEntitlement(user) {
   if (!user?.email) return user;
   const owned = loadEntitlements()[user.email.toLowerCase()];
   return owned === PLAN_PREMIUM ? { ...user, plan: PLAN_PREMIUM } : user;
-}
-
-/* ── Audio quality (mock, premium-only) ── */
-export function loadAudioQuality() {
-  return localStorage.getItem(QUALITY_KEY) === "high" ? "high" : "normal";
-}
-
-export function saveAudioQuality(quality) {
-  try { localStorage.setItem(QUALITY_KEY, quality === "high" ? "high" : "normal"); }
-  catch (err) { void err; }
 }

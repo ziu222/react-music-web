@@ -112,7 +112,7 @@ export default function Card({ song, cur, onPlay, width }) {
         style={{
           fontSize: 13,
           fontWeight: 600,
-          color: playing ? C[400] : "#ede5dd",
+          color: playing ? C[400] : "var(--text-primary)",
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",
@@ -127,7 +127,7 @@ export default function Card({ song, cur, onPlay, width }) {
       <div
         style={{
           fontSize: 11,
-          color: "rgba(255,255,255,0.5)",
+          color: "var(--text-secondary)",
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",

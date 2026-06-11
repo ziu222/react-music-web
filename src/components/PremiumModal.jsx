@@ -10,7 +10,7 @@ import {
   faRectangleAd,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, G, BG, TEXT } from "../constants/theme";
+import { C, G, BG, BORDER, TEXT } from "../constants/theme";
 
 const FREE_FEATURES = [
   { icon: faHeadphones, label: "Nghe toàn bộ danh mục nhạc" },
@@ -34,7 +34,7 @@ function FeatureRow({ icon, label, muted, delay }) {
         gap: 10,
         fontSize: 12.5,
         fontWeight: 500,
-        color: muted ? TEXT.secondary : "rgba(255,255,255,0.86)",
+        color: muted ? TEXT.secondary : TEXT.strong,
         animation: `slideUp 0.26s ease ${delay}ms both`,
       }}
     >
@@ -47,8 +47,8 @@ function FeatureRow({ icon, label, muted, delay }) {
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          background: muted ? "rgba(255,255,255,0.07)" : `${C[500]}26`,
-          color: muted ? "rgba(255,255,255,0.45)" : C[400],
+          background: muted ? "var(--overlay-1)" : `${C[500]}26`,
+          color: muted ? "var(--text-tertiary)" : C[400],
         }}
       >
         <FontAwesomeIcon icon={icon} style={{ fontSize: 10 }} />
@@ -71,7 +71,7 @@ function PlanBadge({ children, premium }) {
         fontWeight: 800,
         letterSpacing: 0.4,
         textTransform: "uppercase",
-        background: premium ? `linear-gradient(90deg, ${C[600]}, ${G[500]})` : "rgba(255,255,255,0.08)",
+        background: premium ? `linear-gradient(90deg, ${C[600]}, ${G[500]})` : "var(--overlay-1)",
         color: premium ? "#fff" : TEXT.secondary,
       }}
     >
@@ -135,7 +135,7 @@ export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRe
           maxHeight: "calc(100vh - 40px)",
           overflowY: "auto",
           background: BG.card,
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: `1px solid ${BORDER}`,
           borderRadius: 12,
           padding: "30px 32px 28px",
           boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
@@ -166,18 +166,18 @@ export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRe
             height: 32,
             borderRadius: "50%",
             border: "none",
-            background: "rgba(255,255,255,0.07)",
+            background: "var(--overlay-1)",
             color: TEXT.secondary,
             cursor: "pointer",
             transition: "color 0.15s, background 0.15s",
           }}
           onMouseEnter={e => {
             e.currentTarget.style.color = TEXT.primary;
-            e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+            e.currentTarget.style.background = "var(--overlay-2)";
           }}
           onMouseLeave={e => {
             e.currentTarget.style.color = TEXT.secondary;
-            e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+            e.currentTarget.style.background = "var(--overlay-1)";
           }}
         >
           <FontAwesomeIcon icon={faXmark} style={{ fontSize: 14 }} />
@@ -256,8 +256,8 @@ export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRe
                 <div
                   style={{
                     ...cardBase,
-                    background: "rgba(255,255,255,0.045)",
-                    border: "1px solid rgba(255,255,255,0.09)",
+                    background: "var(--overlay-1)",
+                    border: `1px solid ${BORDER}`,
                     animation: "slideUp 0.24s ease both",
                   }}
                 >
@@ -312,7 +312,7 @@ export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRe
                       height: 46,
                       border: "none",
                       borderRadius: 9999,
-                      background: isPremium ? "rgba(255,255,255,0.1)" : C[500],
+                      background: isPremium ? "var(--overlay-2)" : C[500],
                       color: isPremium ? TEXT.secondary : "#fff",
                       fontSize: 14,
                       fontWeight: 800,

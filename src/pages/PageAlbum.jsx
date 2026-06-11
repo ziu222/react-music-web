@@ -60,7 +60,7 @@ export default function PageAlbum({
               onClick={() => onOpenArtist(album.artist)}
               style={{
                 background: "none", border: "none", padding: 0,
-                fontSize: 13, fontWeight: 600, color: "#fff",
+                fontSize: 13, fontWeight: 600, color: "var(--text-primary)",
                 cursor: "pointer", transition: "color 0.15s",
               }}
               onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
@@ -103,12 +103,12 @@ export default function PageAlbum({
           onClick={onToggleSave}
           style={{
             background: "transparent", border: "none", cursor: "pointer",
-            color: isSaved ? "#1ed760" : "rgba(255,255,255,0.55)",
+            color: isSaved ? "#1ed760" : "var(--text-secondary)",
             display: "inline-flex", padding: 6,
             transition: "color 0.15s, transform 0.1s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.1)"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+          onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--text-primary)"; e.currentTarget.style.transform = "scale(1.1)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--text-secondary)"; e.currentTarget.style.transform = "scale(1)"; }}
         >
           <FontAwesomeIcon icon={isSaved ? faCircleCheck : faCirclePlus} style={{ fontSize: 26 }} />
         </button>
@@ -145,8 +145,8 @@ export default function PageAlbum({
                 color: TEXT.secondary, cursor: "pointer",
                 transition: "color 0.15s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.textDecoration = "underline"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; e.currentTarget.style.textDecoration = "none"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.textDecoration = "underline"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.textDecoration = "none"; }}
             >
               Xem nghệ sĩ
             </button>

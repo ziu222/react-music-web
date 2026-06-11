@@ -22,6 +22,61 @@
   padding: 0;
 }
 
+/* ── Theme variables ───────────────────────────────────────────────
+ * Dark là mặc định. data-theme đặt trên root app theo Settings.
+ * Light là foundation: shell, modal, menu, content. Sidebar/player
+ * giữ dark island có chủ đích (giống player tối của Spotify).
+ */
+:root {
+  --bg-base: #0f0c0c;
+  --bg-card: #181818;
+  --bg-el: #1f1f1f;
+  --bg-menu: #282828;
+  --text-primary: #ede5dd;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --text-tertiary: rgba(255, 255, 255, 0.3);
+  --text-strong: rgba(255, 255, 255, 0.92);
+  --text-mid: rgba(255, 255, 255, 0.7);
+  --overlay-1: rgba(255, 255, 255, 0.07);
+  --overlay-2: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg-base: #f3efe9;
+  --bg-card: #faf7f2;
+  --bg-el: #eae4dc;
+  --bg-menu: #ffffff;
+  --text-primary: #2b2118;
+  --text-secondary: rgba(43, 33, 24, 0.6);
+  --text-tertiary: rgba(43, 33, 24, 0.42);
+  --text-strong: rgba(24, 17, 10, 0.92);
+  --text-mid: rgba(43, 33, 24, 0.72);
+  --overlay-1: rgba(24, 17, 10, 0.06);
+  --overlay-2: rgba(24, 17, 10, 0.1);
+  --border: rgba(24, 17, 10, 0.12);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    --bg-base: #f3efe9;
+    --bg-card: #faf7f2;
+    --bg-el: #eae4dc;
+    --bg-menu: #ffffff;
+    --text-primary: #2b2118;
+    --text-secondary: rgba(43, 33, 24, 0.6);
+    --text-tertiary: rgba(43, 33, 24, 0.42);
+    --text-strong: rgba(24, 17, 10, 0.92);
+    --text-mid: rgba(43, 33, 24, 0.72);
+    --overlay-1: rgba(24, 17, 10, 0.06);
+    --overlay-2: rgba(24, 17, 10, 0.1);
+    --border: rgba(24, 17, 10, 0.12);
+    color-scheme: light;
+  }
+}
+
 body {
   font-family: var(--font-sans);
   background: #0f0c0c;

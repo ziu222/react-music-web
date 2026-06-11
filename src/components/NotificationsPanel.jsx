@@ -7,11 +7,11 @@ import {
   faMusic,
   faUserGroup,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, G, R, TEXT } from "../constants/theme";
+import { C, G, R, BG, BORDER, TEXT } from "../constants/theme";
 import { formatNotificationTime } from "../lib/notifications";
 
 const TYPE_META = {
-  system: { icon: faCircleInfo, color: "rgba(255,255,255,0.6)" },
+  system: { icon: faCircleInfo, color: "var(--text-secondary)" },
   library: { icon: faMusic, color: C[400] },
   premium: { icon: faCrown, color: G[400] },
   social: { icon: faUserGroup, color: R[400] },
@@ -29,8 +29,8 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
         width: 332,
         padding: 8,
         borderRadius: 8,
-        background: "#282828",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: BG.menu,
+        border: `1px solid ${BORDER}`,
         boxShadow: "rgba(0,0,0,0.65) 0px 18px 48px",
         zIndex: 1200,
         animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
@@ -42,7 +42,7 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
           alignItems: "center",
           justifyContent: "space-between",
           padding: "8px 10px 10px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: `1px solid ${BORDER}`,
           marginBottom: 6,
         }}
       >
@@ -62,7 +62,7 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
             style={{
               border: "none",
               borderRadius: 9999,
-              background: "rgba(255,255,255,0.07)",
+              background: "var(--overlay-1)",
               color: TEXT.secondary,
               cursor: "pointer",
               display: "inline-flex",
@@ -75,11 +75,11 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
               transition: "background 0.15s, color 0.15s",
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+              e.currentTarget.style.background = "var(--overlay-2)";
               e.currentTarget.style.color = TEXT.primary;
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+              e.currentTarget.style.background = "var(--overlay-1)";
               e.currentTarget.style.color = TEXT.secondary;
             }}
           >
@@ -117,11 +117,11 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
                   padding: 10,
                   borderRadius: 6,
                   cursor: item.read ? "default" : "pointer",
-                  background: item.read ? "transparent" : "rgba(255,255,255,0.07)",
+                  background: item.read ? "transparent" : "var(--overlay-1)",
                   transition: "background 0.18s",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = item.read ? "transparent" : "rgba(255,255,255,0.07)"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = item.read ? "transparent" : "var(--overlay-1)"; }}
               >
                 <span
                   style={{
@@ -132,7 +132,7 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: "rgba(255,255,255,0.06)",
+                    background: "var(--overlay-1)",
                     color: meta.color,
                   }}
                 >
@@ -168,7 +168,7 @@ export default function NotificationsPanel({ notifications, onMarkRead, onMarkAl
                       />
                     )}
                   </span>
-                  <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.52)", marginTop: 3, lineHeight: 1.35 }}>
+                  <span style={{ display: "block", fontSize: 11, color: TEXT.secondary, marginTop: 3, lineHeight: 1.35 }}>
                     {item.body}
                   </span>
                   <span style={{ display: "block", fontSize: 10, color: TEXT.tertiary, marginTop: 4 }}>

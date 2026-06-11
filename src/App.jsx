@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import songs from "./data/songs";
@@ -9,15 +9,17 @@ import Player from "./components/Player";
 import Sidebar from "./components/Sidebar";
 import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
-import PremiumModal from "./components/PremiumModal";
 import NavbarUserActions from "./components/NavbarUserActions";
-import SettingsModal from "./components/SettingsModal";
+
+// Modal ít dùng — tách chunk để giảm bundle chính
+const PremiumModal = lazy(() => import("./components/PremiumModal"));
+const SettingsModal = lazy(() => import("./components/SettingsModal"));
 import {
   loadSession, saveSession, clearSession,
   normalizeUser, applyEntitlement, saveEntitlement, isPremiumUser,
   PLAN_PREMIUM,
 } from "./auth/session";
-import { loadSettings, saveSettings } from "./lib/settings";
+import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/settings";
 import { loadNotifications, saveNotifications, createNotification } from "./lib/notifications";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -121,7 +123,8 @@ export default function App() {
   const userKey = authUser?.email?.toLowerCase() ?? "guest";
   const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
   const [notifState, setNotifState] = useState(() => ({ key: userKey, value: loadNotifications(userKey) }));
-  const settings = settingsState.value;
+  // High quality chỉ hợp lệ khi premium — guest/free luôn thấy normal dù stored là high
+  const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
   const notifications = notifState.value;
 
   // Đổi user → reset state theo key ngay trong render (React adjust-state-on-prop-change pattern)
@@ -803,6 +806,7 @@ export default function App() {
 
   return (
     <div
+      data-theme={settings.themeMode}
       style={{
         height: "100vh",
         display: "flex",
@@ -871,16 +875,16 @@ export default function App() {
                 height: 32,
                 borderRadius: "50%",
                 border: "none",
-                background: "rgba(255,255,255,0.07)",
+                background: "var(--overlay-1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: btn.enabled ? "pointer" : "default",
-                color: btn.enabled ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.25)",
+                color: btn.enabled ? "var(--text-strong)" : "var(--text-tertiary)",
                 transition: "color 0.15s, background 0.15s",
               }}
-              onMouseEnter={e => { if (btn.enabled) e.currentTarget.style.background = "rgba(255,255,255,0.14)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
+              onMouseEnter={e => { if (btn.enabled) e.currentTarget.style.background = "var(--overlay-2)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--overlay-1)"; }}
             >
               <FontAwesomeIcon icon={btn.icon} style={{ fontSize: 13 }} />
             </button>
@@ -897,12 +901,12 @@ export default function App() {
             height: 40,
             borderRadius: "50%",
             border: "none",
-            background: page === "home" ? `${C[500]}20` : "rgba(255,255,255,0.07)",
+            background: page === "home" ? `${C[500]}20` : "var(--overlay-1)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            color: page === "home" ? C[400] : "rgba(255,255,255,0.7)",
+            color: page === "home" ? C[400] : "var(--text-mid)",
             flexShrink: 0,
             transition: "all 0.15s",
           }}
@@ -920,7 +924,7 @@ export default function App() {
               top: "50%",
               transform: "translateY(-50%)",
               fontSize: 12,
-              color: "rgba(255,255,255,0.4)",
+              color: "var(--text-tertiary)",
               pointerEvents: "none",
             }}
           />
@@ -930,18 +934,18 @@ export default function App() {
             placeholder="Bạn muốn phát nội dung gì?"
             style={{
               width: "100%",
-              background: "#1f1f1f",
+              background: BG.el,
               border: "none",
               borderRadius: 500,
               padding: "9px 16px 9px 40px",
               color: TEXT.primary,
               fontSize: 13,
               outline: "none",
-              boxShadow: "rgb(18,18,18) 0px 1px 0px, rgb(80,80,80) 0px 0px 0px 1px inset",
+              boxShadow: "var(--border) 0px 0px 0px 1px inset",
               transition: "box-shadow 0.15s",
             }}
-            onFocus={e => { e.target.style.boxShadow = `rgb(18,18,18) 0px 1px 0px, ${C[500]} 0px 0px 0px 1.5px inset`; }}
-            onBlur={e => { e.target.style.boxShadow = "rgb(18,18,18) 0px 1px 0px, rgb(80,80,80) 0px 0px 0px 1px inset"; }}
+            onFocus={e => { e.target.style.boxShadow = `${C[500]} 0px 0px 0px 1.5px inset`; }}
+            onBlur={e => { e.target.style.boxShadow = "var(--border) 0px 0px 0px 1px inset"; }}
           />
         </div>
 
@@ -950,24 +954,24 @@ export default function App() {
           {!isPremium && (
             <span
               onClick={() => setPremiumOpen(true)}
-              style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px", fontWeight: 500, transition: "color 0.15s" }}
+              style={{ fontSize: 13, color: "var(--text-mid)", cursor: "pointer", padding: "0 6px", fontWeight: 500, transition: "color 0.15s" }}
               onMouseEnter={e => { e.currentTarget.style.color = C[400]; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-mid)"; }}
             >
               Premium
             </span>
           )}
           <span
-            style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px", fontWeight: 500 }}
+            style={{ fontSize: 13, color: "var(--text-mid)", cursor: "pointer", padding: "0 6px", fontWeight: 500 }}
           >
             Hỗ trợ
           </span>
           <div style={{ width: 1, height: 20, background: BORDER, margin: "0 4px" }} />
           <span
             onClick={() => setSettingsOpen(true)}
-            style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: "0 6px", transition: "color 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+            style={{ fontSize: 13, color: "var(--text-mid)", cursor: "pointer", padding: "0 6px", transition: "color 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--text-mid)"; }}
           >
             Cài đặt
           </span>
@@ -991,7 +995,7 @@ export default function App() {
             style={{
               display: authUser ? "none" : "inline-block",
               background: "transparent",
-              border: `1.5px solid rgba(255,255,255,0.5)`,
+              border: `1.5px solid var(--text-secondary)`,
               borderRadius: 9999,
               padding: "6px 16px",
               fontSize: 13,
@@ -1000,8 +1004,8 @@ export default function App() {
               fontWeight: 500,
               transition: "all 0.15s",
             }}
-            onMouseEnter={e => { e.target.style.borderColor = "#fff"; e.target.style.transform = "scale(1.02)"; }}
-            onMouseLeave={e => { e.target.style.borderColor = "rgba(255,255,255,0.5)"; e.target.style.transform = "scale(1)"; }}
+            onMouseEnter={e => { e.target.style.borderColor = "var(--text-primary)"; e.target.style.transform = "scale(1.02)"; }}
+            onMouseLeave={e => { e.target.style.borderColor = "var(--text-secondary)"; e.target.style.transform = "scale(1)"; }}
           >
             Đăng ký
           </button>
@@ -1010,12 +1014,12 @@ export default function App() {
             onClick={() => openAuth("login")}
             style={{
               display: authUser ? "none" : "inline-block",
-              background: "#fff",
+              background: "var(--text-primary)",
               border: "none",
               borderRadius: 9999,
               padding: "7px 18px",
               fontSize: 13,
-              color: "#141010",
+              color: "var(--bg-base)",
               cursor: "pointer",
               fontWeight: 500,
               transition: "transform 0.15s",
@@ -1225,26 +1229,30 @@ export default function App() {
       )}
 
       {premiumOpen && (
-        <PremiumModal
-          onClose={() => setPremiumOpen(false)}
-          user={authUser}
-          isPremium={isPremium}
-          onUpgrade={upgradeToPremium}
-          onRequireAuth={() => setAuthGate({ reason: "premium", afterAuth: () => setPremiumOpen(true) })}
-        />
+        <Suspense fallback={null}>
+          <PremiumModal
+            onClose={() => setPremiumOpen(false)}
+            user={authUser}
+            isPremium={isPremium}
+            onUpgrade={upgradeToPremium}
+            onRequireAuth={() => setAuthGate({ reason: "premium", afterAuth: () => setPremiumOpen(true) })}
+          />
+        </Suspense>
       )}
 
       {settingsOpen && (
-        <SettingsModal
-          user={authUser}
-          isPremium={isPremium}
-          settings={settings}
-          onUpdateSettings={updateSettings}
-          onUpdateNotifyType={updateNotifyType}
-          onClose={() => setSettingsOpen(false)}
-          onOpenPremium={() => setPremiumOpen(true)}
-          onRequestAuth={() => openAuth("login")}
-        />
+        <Suspense fallback={null}>
+          <SettingsModal
+            user={authUser}
+            isPremium={isPremium}
+            settings={settings}
+            onUpdateSettings={updateSettings}
+            onUpdateNotifyType={updateNotifyType}
+            onClose={() => setSettingsOpen(false)}
+            onOpenPremium={() => setPremiumOpen(true)}
+            onRequestAuth={() => openAuth("login")}
+          />
+        </Suspense>
       )}
 
       {/* ── Bottom promo banner: guest → đăng ký, free → nâng cấp, premium → ẩn ── */}

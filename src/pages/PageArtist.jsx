@@ -85,7 +85,7 @@ export default function PageArtist({
           onClick={onToggleFollow}
           style={{
             background: "transparent",
-            border: `1.5px solid ${isFollowed ? "#1ed760" : "rgba(255,255,255,0.35)"}`,
+            border: `1.5px solid ${isFollowed ? "#1ed760" : "var(--text-tertiary)"}`,
             borderRadius: 9999,
             padding: "7px 18px",
             fontSize: 12.5,
@@ -95,8 +95,8 @@ export default function PageArtist({
             letterSpacing: 0.3,
             transition: "border-color 0.15s, color 0.15s, transform 0.1s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = isFollowed ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.03)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = isFollowed ? "#1ed760" : "rgba(255,255,255,0.35)"; e.currentTarget.style.transform = "scale(1)"; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = isFollowed ? "#1ed760" : "var(--text-primary)"; e.currentTarget.style.transform = "scale(1.03)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = isFollowed ? "#1ed760" : "var(--text-tertiary)"; e.currentTarget.style.transform = "scale(1)"; }}
         >
           {isFollowed ? "Đang theo dõi" : "Theo dõi"}
         </button>
@@ -177,7 +177,7 @@ export default function PageArtist({
                 transition: "color 0.15s",
               }}
               onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; }}
             >
               {showAllSongs ? "Thu gọn" : `Xem thêm (${artist.songs.length - 10})`}
             </button>

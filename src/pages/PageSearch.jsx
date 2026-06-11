@@ -41,7 +41,7 @@ function GenrePill({ genre, active, onClick }) {
         display: "flex",
         alignItems: "flex-end",
         paddingBottom: 10,
-        background: active ? genre.bg : "rgba(255,255,255,0.07)",
+        background: active ? genre.bg : "var(--overlay-1)",
         cursor: "pointer",
         transition: "opacity 0.15s, transform 0.15s",
         minWidth: 140,
@@ -53,7 +53,7 @@ function GenrePill({ genre, active, onClick }) {
       onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
       onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
     >
-      <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", letterSpacing: -0.2 }}>
+      <span style={{ fontSize: 14, fontWeight: 600, color: active ? "#fff" : "var(--text-primary)", letterSpacing: -0.2 }}>
         {genre.label}
       </span>
       <span
@@ -142,7 +142,7 @@ function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
         position: "relative",
         padding: 20,
         borderRadius: 8,
-        background: hov ? "rgba(255,255,255,0.09)" : "rgba(255,255,255,0.04)",
+        background: hov ? "var(--overlay-2)" : "var(--overlay-1)",
         transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
         cursor: "pointer",
         minHeight: 200,
@@ -165,7 +165,7 @@ function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
         )}
       </div>
       <div style={{
-        fontSize: 24, fontWeight: 700, color: "#fff", letterSpacing: -0.3,
+        fontSize: 24, fontWeight: 700, color: "var(--text-primary)", letterSpacing: -0.3,
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         marginBottom: 8,
       }}>
@@ -176,7 +176,7 @@ function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
         fontSize: 12,
         fontWeight: 600,
         color: TEXT.primary,
-        background: "rgba(0,0,0,0.4)",
+        background: "var(--overlay-2)",
         borderRadius: 9999,
         padding: "5px 12px",
       }}>
@@ -230,7 +230,7 @@ function ArtistResult({ artist, onOpenArtist }) {
         padding: 12,
         borderRadius: 8,
         textAlign: "center",
-        background: hov ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.03)",
+        background: hov ? "var(--overlay-2)" : "var(--overlay-1)",
         transition: "background 0.2s",
         cursor: "pointer",
       }}
@@ -285,7 +285,7 @@ function AlbumResult({ album, onOpenAlbum, onPlay }) {
         width: 150,
         padding: 12,
         borderRadius: 8,
-        background: hov ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+        background: hov ? "var(--overlay-2)" : "var(--overlay-1)",
         transition: "background 0.2s",
         cursor: "pointer",
       }}
@@ -363,7 +363,7 @@ function PlaylistResult({ pl, coverSongs, meta, onOpen }) {
         padding: "8px 10px",
         borderRadius: 8,
         cursor: "pointer",
-        background: hov ? "rgba(255,255,255,0.06)" : "transparent",
+        background: hov ? "var(--overlay-1)" : "transparent",
         transition: "background 0.15s",
       }}
     >

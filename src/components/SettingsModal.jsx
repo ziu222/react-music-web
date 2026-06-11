@@ -9,7 +9,7 @@ import {
   faUser,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, G, BG, TEXT } from "../constants/theme";
+import { C, G, BG, BORDER, TEXT } from "../constants/theme";
 import { NOTIFICATION_TYPES } from "../lib/notifications";
 
 const TABS = [
@@ -46,7 +46,7 @@ function ToggleSwitch({ on, disabled, onToggle }) {
         border: "none",
         padding: 2,
         flexShrink: 0,
-        background: on ? C[500] : "rgba(255,255,255,0.16)",
+        background: on ? C[500] : "var(--overlay-2)",
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.45 : 1,
         transition: "background 0.18s",
@@ -59,6 +59,7 @@ function ToggleSwitch({ on, disabled, onToggle }) {
           height: 18,
           borderRadius: "50%",
           background: "#fff",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
           transform: on ? "translateX(16px)" : "translateX(0)",
           transition: "transform 0.18s cubic-bezier(0.2,0,0,1)",
         }}
@@ -75,7 +76,7 @@ function SettingRow({ title, desc, badge, children }) {
         alignItems: "center",
         gap: 14,
         padding: "13px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: `1px solid ${BORDER}`,
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -125,7 +126,7 @@ function ComingSoonTag() {
         fontWeight: 800,
         letterSpacing: 0.4,
         textTransform: "uppercase",
-        background: "rgba(255,255,255,0.08)",
+        background: "var(--overlay-1)",
         color: TEXT.secondary,
       }}
     >
@@ -140,7 +141,7 @@ function Segmented({ options, value, onChange, lockedKeys = [], onLockedClick })
       style={{
         display: "flex",
         borderRadius: 9999,
-        background: "rgba(255,255,255,0.06)",
+        background: "var(--overlay-1)",
         padding: 3,
         flexShrink: 0,
       }}
@@ -221,7 +222,7 @@ export default function SettingsModal({
           maxHeight: "min(620px, calc(100vh - 40px))",
           display: "flex",
           background: BG.card,
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: `1px solid ${BORDER}`,
           borderRadius: 12,
           boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
           animation: "authModalIn 190ms cubic-bezier(0.2,0,0,1)",
@@ -234,8 +235,8 @@ export default function SettingsModal({
             width: 178,
             flexShrink: 0,
             padding: "18px 10px",
-            borderRight: "1px solid rgba(255,255,255,0.07)",
-            background: "rgba(255,255,255,0.02)",
+            borderRight: `1px solid ${BORDER}`,
+            background: "var(--overlay-1)",
             display: "flex",
             flexDirection: "column",
             gap: 2,
@@ -255,7 +256,7 @@ export default function SettingsModal({
                   height: 36,
                   border: "none",
                   borderRadius: 6,
-                  background: active ? "rgba(255,255,255,0.1)" : "transparent",
+                  background: active ? "var(--overlay-2)" : "transparent",
                   color: active ? TEXT.primary : TEXT.secondary,
                   cursor: "pointer",
                   display: "flex",
@@ -267,8 +268,8 @@ export default function SettingsModal({
                   textAlign: "left",
                   transition: "background 0.15s, color 0.15s",
                 }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = active ? "rgba(255,255,255,0.1)" : "transparent"; }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--overlay-1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = active ? "var(--overlay-2)" : "transparent"; }}
               >
                 <FontAwesomeIcon icon={t.icon} style={{ fontSize: 13, width: 16, color: active ? C[400] : "inherit" }} />
                 {t.label}
@@ -299,18 +300,18 @@ export default function SettingsModal({
                 height: 30,
                 borderRadius: "50%",
                 border: "none",
-                background: "rgba(255,255,255,0.07)",
+                background: "var(--overlay-1)",
                 color: TEXT.secondary,
                 cursor: "pointer",
                 transition: "color 0.15s, background 0.15s",
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.color = TEXT.primary;
-                e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+                e.currentTarget.style.background = "var(--overlay-2)";
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.color = TEXT.secondary;
-                e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+                e.currentTarget.style.background = "var(--overlay-1)";
               }}
             >
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 13 }} />
@@ -337,7 +338,7 @@ export default function SettingsModal({
                       alignItems: "center",
                       gap: 14,
                       padding: "14px 0",
-                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      borderBottom: `1px solid ${BORDER}`,
                     }}
                   >
                     <span
@@ -475,7 +476,7 @@ export default function SettingsModal({
               <>
                 <SettingRow
                   title="Chế độ giao diện"
-                  desc="Melodies hiện tối ưu cho nền tối. Tùy chọn được lưu làm nền tảng cho giao diện sáng sau này."
+                  desc="Áp dụng cho khung ứng dụng, trang nội dung, modal và menu. Hệ thống theo cài đặt thiết bị của bạn."
                 >
                   <Segmented
                     options={THEME_OPTIONS}
@@ -483,7 +484,7 @@ export default function SettingsModal({
                     onChange={mode => onUpdateSettings({ themeMode: mode })}
                   />
                 </SettingRow>
-                {settings.themeMode === "light" && (
+                {settings.themeMode !== "dark" && (
                   <div
                     style={{
                       marginTop: 12,
@@ -496,7 +497,7 @@ export default function SettingsModal({
                       padding: "10px 12px",
                     }}
                   >
-                    Giao diện sáng đang được phát triển — bản xem trước vẫn hiển thị nền tối theo thiết kế hiện tại.
+                    Giao diện sáng ở mức nền tảng: thanh thư viện và trình phát giữ nền tối để đồng nhất trải nghiệm nghe nhạc.
                   </div>
                 )}
               </>

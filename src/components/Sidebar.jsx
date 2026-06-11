@@ -28,7 +28,7 @@ import {
   faUserPlus,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, BORDER } from "../constants/theme";
+import { C } from "../constants/theme";
 import PlaylistCover from "./PlaylistCover";
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -1355,7 +1355,7 @@ export default function Sidebar({
 
         {/* Footer */}
         <div style={{
-          padding: "10px 16px", borderTop: `0.5px solid ${BORDER}`, flexShrink: 0,
+          padding: "10px 16px", borderTop: "0.5px solid rgba(255,255,255,0.08)", flexShrink: 0,
           opacity: isOpen ? 1 : 0,
           transition: isOpen ? "opacity 100ms ease 80ms" : "opacity 60ms ease 0ms",
           pointerEvents: isOpen ? "auto" : "none",

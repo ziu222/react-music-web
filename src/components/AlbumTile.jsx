@@ -30,7 +30,7 @@ export default function AlbumTile({ album, onOpenAlbum }) {
         padding: 12,
         borderRadius: 8,
         scrollSnapAlign: "start",
-        background: hov ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+        background: hov ? "var(--overlay-2)" : "var(--overlay-1)",
         transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
         cursor: "pointer",
       }}

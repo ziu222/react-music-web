@@ -17,12 +17,12 @@ export default function Loader({ text }) {
           width: 24,
           height: 24,
           borderRadius: "50%",
-          border: `2.5px solid rgba(255,255,255,0.08)`,
+          border: "2.5px solid var(--border)",
           borderTopColor: C[500],
           animation: "spin 0.8s linear infinite",
         }}
       />
-      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>{text}</span>
+      <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{text}</span>
     </div>
   );
 }

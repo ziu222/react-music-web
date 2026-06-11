@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
-import { C, G, TEXT } from "../constants/theme";
+import { C, G, BG, TEXT } from "../constants/theme";
 import users from "../data/users";
 
 const SOCIAL_PROVIDERS = [
@@ -32,8 +32,8 @@ function Field({ label, type = "text", value, onChange, error, placeholder, auto
         style={{
           width: "100%",
           height: 44,
-          background: "rgba(255,255,255,0.07)",
-          border: `1.5px solid ${error ? "#ef4444" : "rgba(255,255,255,0.12)"}`,
+          background: "var(--overlay-1)",
+          border: `1.5px solid ${error ? "#ef4444" : "var(--overlay-2)"}`,
           borderRadius: 6,
           padding: "0 14px",
           color: TEXT.primary,
@@ -44,11 +44,11 @@ function Field({ label, type = "text", value, onChange, error, placeholder, auto
         }}
         onFocus={e => {
           e.target.style.borderColor = error ? "#ef4444" : C[500];
-          e.target.style.background = "rgba(255,255,255,0.09)";
+          e.target.style.background = "var(--overlay-2)";
         }}
         onBlur={e => {
-          e.target.style.borderColor = error ? "#ef4444" : "rgba(255,255,255,0.12)";
-          e.target.style.background = "rgba(255,255,255,0.07)";
+          e.target.style.borderColor = error ? "#ef4444" : "var(--overlay-2)";
+          e.target.style.background = "var(--overlay-1)";
         }}
       />
       {error && (
@@ -74,8 +74,8 @@ function SocialButton({ provider, onClick }) {
         width: "100%",
         height: 42,
         borderRadius: 9999,
-        border: "1px solid rgba(255,255,255,0.16)",
-        background: "rgba(255,255,255,0.045)",
+        border: "1px solid var(--border)",
+        background: "var(--overlay-1)",
         color: TEXT.primary,
         cursor: "pointer",
         display: "flex",
@@ -87,13 +87,13 @@ function SocialButton({ provider, onClick }) {
         transition: "background 0.15s, border-color 0.15s, transform 0.15s",
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.28)";
+        e.currentTarget.style.background = "var(--overlay-2)";
+        e.currentTarget.style.borderColor = "var(--text-tertiary)";
         e.currentTarget.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.045)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)";
+        e.currentTarget.style.background = "var(--overlay-1)";
+        e.currentTarget.style.borderColor = "var(--border)";
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
@@ -131,9 +131,9 @@ function AuthDivider({ label }) {
       textTransform: "uppercase",
       letterSpacing: 0.5,
     }}>
-      <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+      <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
       {label}
-      <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+      <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
     </div>
   );
 }
@@ -171,8 +171,8 @@ function TermsModal({ onClose }) {
           maxWidth: 520,
           maxHeight: "min(680px, 88vh)",
           overflow: "hidden",
-          background: "#1b1818",
-          border: "1px solid rgba(255,255,255,0.1)",
+          background: BG.card,
+          border: "1px solid var(--border)",
           borderRadius: 12,
           boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
           animation: "authModalIn 190ms cubic-bezier(0.2,0,0,1)",
@@ -183,7 +183,7 @@ function TermsModal({ onClose }) {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "18px 20px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "1px solid var(--border)",
         }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: TEXT.primary }}>Điều khoản dịch vụ</div>
@@ -198,7 +198,7 @@ function TermsModal({ onClose }) {
               height: 32,
               borderRadius: "50%",
               border: "none",
-              background: "rgba(255,255,255,0.08)",
+              background: "var(--overlay-1)",
               color: TEXT.primary,
               cursor: "pointer",
               fontSize: 18,
@@ -237,7 +237,7 @@ function TermsModal({ onClose }) {
           justifyContent: "flex-end",
           gap: 10,
           padding: "14px 20px 18px",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderTop: "1px solid var(--border)",
         }}>
           <button
             type="button"
@@ -425,8 +425,8 @@ export default function AuthModal({ mode, onClose, onAuth }) {
           width: "100%",
           maxWidth: flow === "success" ? 450 : 430,
           maxHeight: "calc(100vh - 32px)",
-          background: "#181818",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: BG.card,
+          border: "1px solid var(--border)",
           borderRadius: 12,
           padding: "28px 34px 24px",
           boxShadow: "rgba(0,0,0,0.72) 0px 24px 64px",
@@ -452,7 +452,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
             top: 14,
             right: 16,
             zIndex: 1,
-            background: "rgba(255,255,255,0.07)",
+            background: "var(--overlay-1)",
             border: "none",
             color: TEXT.secondary,
             fontSize: 20,
@@ -464,11 +464,11 @@ export default function AuthModal({ mode, onClose, onAuth }) {
           }}
           onMouseEnter={e => {
             e.currentTarget.style.color = TEXT.primary;
-            e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+            e.currentTarget.style.background = "var(--overlay-2)";
           }}
           onMouseLeave={e => {
             e.currentTarget.style.color = TEXT.secondary;
-            e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+            e.currentTarget.style.background = "var(--overlay-1)";
           }}
         >
           ×
@@ -534,8 +534,8 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                     style={{
                       minHeight: 62,
                       borderRadius: 8,
-                      background: "rgba(255,255,255,0.055)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "var(--overlay-1)",
+                      border: "1px solid var(--border)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -633,7 +633,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
               <div style={{
                 display: "flex",
                 borderRadius: 9999,
-                background: "rgba(255,255,255,0.05)",
+                background: "var(--overlay-1)",
                 padding: 3,
                 marginBottom: 18,
               }}>
@@ -818,7 +818,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                         cursor: "pointer",
                         textDecoration: "underline",
                         textUnderlineOffset: 2,
-                        textDecorationColor: "rgba(255,255,255,0.28)",
+                        textDecorationColor: "var(--text-tertiary)",
                       }}
                     >
                       Tạo tài khoản
@@ -838,7 +838,7 @@ export default function AuthModal({ mode, onClose, onAuth }) {
                         cursor: "pointer",
                         textDecoration: "underline",
                         textUnderlineOffset: 2,
-                        textDecorationColor: "rgba(255,255,255,0.28)",
+                        textDecorationColor: "var(--text-tertiary)",
                       }}
                     >
                       Đăng nhập

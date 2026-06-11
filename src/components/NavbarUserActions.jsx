@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, LogOut, Settings, UserRound } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBolt, faCrown, faLock } from "@fortawesome/free-solid-svg-icons";
-import { C, G, BORDER, TEXT } from "../constants/theme";
+import { C, G, BG, BORDER, TEXT } from "../constants/theme";
 import NotificationsPanel from "./NotificationsPanel";
 
 function FloatingPanel({ right = 0, children }) {
@@ -15,8 +15,8 @@ function FloatingPanel({ right = 0, children }) {
         width: 318,
         padding: 8,
         borderRadius: 8,
-        background: "#282828",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: BG.menu,
+        border: `1px solid ${BORDER}`,
         boxShadow: "rgba(0,0,0,0.65) 0px 18px 48px",
         zIndex: 1200,
         animation: "menuIn 150ms cubic-bezier(0.2,0,0,1) both",
@@ -37,9 +37,9 @@ function IconButton({ label, active, children, onClick }) {
         width: 36,
         height: 36,
         borderRadius: "50%",
-        border: `1px solid ${active ? "rgba(249,115,22,0.42)" : "rgba(255,255,255,0.08)"}`,
-        background: active ? `${C[500]}24` : "rgba(255,255,255,0.07)",
-        color: active ? C[400] : "rgba(255,255,255,0.74)",
+        border: `1px solid ${active ? "rgba(249,115,22,0.42)" : "var(--border)"}`,
+        background: active ? `${C[500]}24` : "var(--overlay-1)",
+        color: active ? C[400] : "var(--text-mid)",
         cursor: "pointer",
         display: "inline-flex",
         alignItems: "center",
@@ -67,8 +67,8 @@ function PlanChip({ premium }) {
         letterSpacing: 0.5,
         textTransform: "uppercase",
         flexShrink: 0,
-        background: premium ? `linear-gradient(90deg, ${C[600]}, ${G[500]})` : "rgba(255,255,255,0.1)",
-        color: premium ? "#fff" : "rgba(255,255,255,0.6)",
+        background: premium ? `linear-gradient(90deg, ${C[600]}, ${G[500]})` : "var(--overlay-2)",
+        color: premium ? "#fff" : "var(--text-secondary)",
       }}
     >
       {premium && <FontAwesomeIcon icon={faCrown} style={{ fontSize: 8 }} />}
@@ -139,7 +139,7 @@ export default function NavbarUserActions({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 0 2px #141010",
+              boxShadow: "0 0 0 2px var(--bg-base)",
               animation: "badgePop 180ms cubic-bezier(0.2,0,0,1) both",
             }}
           >
@@ -157,8 +157,8 @@ export default function NavbarUserActions({
           minWidth: 36,
           borderRadius: 9999,
           border: `1px solid ${openPanel === "profile" ? "rgba(249,115,22,0.42)" : BORDER}`,
-          background: openPanel === "profile" ? `${C[500]}24` : "rgba(255,255,255,0.07)",
-          color: "#fff",
+          background: openPanel === "profile" ? `${C[500]}24` : "var(--overlay-1)",
+          color: TEXT.primary,
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
@@ -199,7 +199,7 @@ export default function NavbarUserActions({
 
       {openPanel === "profile" && (
         <FloatingPanel right={0}>
-          <div style={{ padding: "10px", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 6 }}>
+          <div style={{ padding: "10px", borderBottom: `1px solid ${BORDER}`, marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ fontSize: 13, color: TEXT.primary, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {user.name || "Người nghe Melodies"}
@@ -265,7 +265,7 @@ export default function NavbarUserActions({
               fontWeight: 800,
               textAlign: "left",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
           >
             <FontAwesomeIcon icon={faBolt} style={{ fontSize: 13, width: 15, color: isPremium && audioQuality === "high" ? C[400] : "inherit" }} />
@@ -307,7 +307,7 @@ export default function NavbarUserActions({
                   border: "none",
                   borderRadius: 5,
                   background: "transparent",
-                  color: item.key === "logout" ? "#fecaca" : TEXT.primary,
+                  color: item.key === "logout" ? "#f43f5e" : TEXT.primary,
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -317,7 +317,7 @@ export default function NavbarUserActions({
                   fontWeight: 800,
                   textAlign: "left",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={15} />

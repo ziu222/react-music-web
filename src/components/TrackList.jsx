@@ -131,14 +131,14 @@ function Row({
         padding: "0 10px",
         borderRadius: 6,
         cursor: "pointer",
-        background: playing ? `${C[500]}12` : hov ? "rgba(255,255,255,0.06)" : "transparent",
+        background: playing ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
         transition: "background 0.15s",
       }}
     >
       {/* # / play / eq */}
       <div style={{
         fontSize: 12,
-        color: playing ? C[400] : "rgba(255,255,255,0.45)",
+        color: playing ? C[400] : "var(--text-tertiary)",
         textAlign: "center",
         display: "flex",
         alignItems: "center",
@@ -148,7 +148,7 @@ function Row({
         {playing
           ? <EqBars size={14} />
           : hov
-            ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "#fff" }} />
+            ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
             : index + 1}
       </div>
 
@@ -186,8 +186,8 @@ function Row({
                 maxWidth: "100%", display: "block", textAlign: "left",
                 transition: "color 0.15s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.textDecoration = "underline"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; e.currentTarget.style.textDecoration = "none"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.textDecoration = "underline"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.textDecoration = "none"; }}
             >
               {song.artist}
             </button>
@@ -215,8 +215,8 @@ function Row({
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               textAlign: "left", transition: "color 0.15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.textDecoration = "underline"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; e.currentTarget.style.textDecoration = "none"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.textDecoration = "underline"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.textDecoration = "none"; }}
           >
             {song.album}
           </button>
@@ -251,9 +251,9 @@ function Row({
           title="Thêm vào hàng đợi"
           tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onAddToQueue(song); }}
-          style={iconBtnStyle(hov, "rgba(255,255,255,0.55)")}
-          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}
+          style={iconBtnStyle(hov, "var(--text-secondary)")}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; }}
         >
           <FontAwesomeIcon icon={faPlus} />
         </button>
@@ -266,7 +266,7 @@ function Row({
         title={liked ? "Bỏ thích" : "Thích"}
         tabIndex={liked || hov ? 0 : -1}
         onClick={e => { e.stopPropagation(); onLike(song.id); }}
-        style={iconBtnStyle(liked || hov, liked ? R[400] : "rgba(255,255,255,0.45)")}
+        style={iconBtnStyle(liked || hov, liked ? R[400] : "var(--text-tertiary)")}
         onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
       >
@@ -281,9 +281,9 @@ function Row({
           title="Xóa khỏi danh sách phát"
           tabIndex={hov ? 0 : -1}
           onClick={e => { e.stopPropagation(); onRemove(song); }}
-          style={iconBtnStyle(hov, "rgba(255,255,255,0.55)")}
-          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}
+          style={iconBtnStyle(hov, "var(--text-secondary)")}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; }}
         >
           <FontAwesomeIcon icon={faXmark} />
         </button>

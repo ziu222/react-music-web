@@ -4,7 +4,6 @@
  */
 
 const STORE_KEY = "melodies_user_settings";
-const LEGACY_QUALITY_KEY = "melodies_audio_quality";
 
 export const DEFAULT_SETTINGS = {
   audioQuality: "normal",   // normal | high (high gate premium)
@@ -29,20 +28,20 @@ function readStore() {
   }
 }
 
-function legacyAudioQuality() {
-  try { return localStorage.getItem(LEGACY_QUALITY_KEY) === "high" ? "high" : null; }
-  catch { return null; }
-}
-
 export function loadSettings(userKey) {
   const stored = readStore()[userKey];
-  const legacyQuality = legacyAudioQuality();
   return {
     ...DEFAULT_SETTINGS,
-    ...(legacyQuality ? { audioQuality: legacyQuality } : null),
     ...(stored ?? null),
     notifyTypes: { ...DEFAULT_SETTINGS.notifyTypes, ...(stored?.notifyTypes ?? null) },
   };
+}
+
+/* High quality là quyền lợi premium — ép về normal khi user không còn quyền.
+ * Giá trị stored giữ nguyên để nâng cấp xong preference cũ quay lại. */
+export function normalizeSettingsForEntitlement(settings, isPremium) {
+  if (isPremium || settings.audioQuality !== "high") return settings;
+  return { ...settings, audioQuality: "normal" };
 }
 
 export function saveSettings(userKey, settings) {

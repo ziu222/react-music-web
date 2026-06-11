@@ -1,4 +1,4 @@
-import { C, G, BG, TEXT, GRADIENTS } from "../constants/theme";
+import { C, G, GRADIENTS } from "../constants/theme";
 import { getSongImage } from "../data/media";
 
 const COPY = {
@@ -70,7 +70,8 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
           width: "min(980px, calc(100vw - 48px))",
           minHeight: 470,
           borderRadius: 8,
-          background: `linear-gradient(135deg, ${BG.el}, ${BG.card} 58%, ${BG.base})`,
+          // Gate hero giữ dark island bất kể theme — chữ trắng literal bên dưới
+          background: "linear-gradient(135deg, #1f1f1f, #181818 58%, #0f0c0c)",
           boxShadow: "rgba(0,0,0,0.72) 0px 28px 80px",
           border: "1px solid rgba(255,255,255,0.08)",
           display: "grid",
@@ -124,7 +125,7 @@ export default function AuthGateModal({ gate, onClose, onLogin, onRegister }) {
                 background: "linear-gradient(transparent, rgba(0,0,0,0.72))",
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 800, color: TEXT.primary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {title}
               </div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.64)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
