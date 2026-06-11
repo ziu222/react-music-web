@@ -17,9 +17,9 @@ export const R = {
 };
 
 export const BG = {
-  base: "#141010",
-  card: "#1d1616",
-  el: "#241a1a",
+  base: "#0f0c0c",
+  card: "#181818",
+  el: "#1f1f1f",
 };
 
 export const TEXT = {
@@ -28,7 +28,7 @@ export const TEXT = {
   tertiary: "rgba(255,255,255,0.3)",
 };
 
-export const BORDER = "rgba(255,255,255,0.06)";
+export const BORDER = "rgba(255,255,255,0.08)";
 
 export const GRADIENTS = {
   hero: `linear-gradient(135deg, #7c2d12, #c2410c, #f97316)`,

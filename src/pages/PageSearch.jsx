@@ -10,15 +10,15 @@ import { deriveArtists, deriveAlbums } from "../data/derived";
 const GENRES = [
   { label: "Tất cả", value: "__all__", bg: "linear-gradient(135deg,#f97316,#fbbf24)" },
   { label: "V-Pop", value: "V-Pop", bg: "linear-gradient(135deg,#e11d48,#fb7185)" },
-  { label: "Pop", value: "Pop", bg: "linear-gradient(135deg,#2563eb,#60a5fa)" },
-  { label: "Ballad", value: "Ballad", bg: "linear-gradient(135deg,#7c3aed,#a78bfa)" },
-  { label: "R&B", value: "R&B", bg: "linear-gradient(135deg,#0369a1,#38bdf8)" },
+  { label: "Pop", value: "Pop", bg: "linear-gradient(135deg,#ea580c,#fb923c)" },
+  { label: "Ballad", value: "Ballad", bg: "linear-gradient(135deg,#7c2d12,#f97316)" },
+  { label: "R&B", value: "R&B", bg: "linear-gradient(135deg,#d97706,#fbbf24)" },
   { label: "Hip-hop", value: "Hip-hop", bg: "linear-gradient(135deg,#92400e,#fbbf24)" },
-  { label: "Dance", value: "Dance", bg: "linear-gradient(135deg,#7c3aed,#c084fc)" },
-  { label: "EDM", value: "EDM", bg: "linear-gradient(135deg,#0f766e,#34d399)" },
-  { label: "Rock", value: "Rock", bg: "linear-gradient(135deg,#334155,#94a3b8)" },
+  { label: "Dance", value: "Dance", bg: "linear-gradient(135deg,#be123c,#fb7185)" },
+  { label: "EDM", value: "EDM", bg: "linear-gradient(135deg,#c2410c,#f59e0b)" },
+  { label: "Rock", value: "Rock", bg: "linear-gradient(135deg,#1f1f1f,#7c2d12)" },
   { label: "Funk", value: "Funk", bg: "linear-gradient(135deg,#be123c,#fb7185)" },
-  { label: "Indie", value: "Indie", bg: "linear-gradient(135deg,#166534,#4ade80)" },
+  { label: "Indie", value: "Indie", bg: "linear-gradient(135deg,#7c2d12,#d97706)" },
 ];
 
 function GenrePill({ genre, active, onClick }) {

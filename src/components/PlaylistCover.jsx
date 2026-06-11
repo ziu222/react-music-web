@@ -1,4 +1,5 @@
 import { getSongImage } from "../data/media";
+import { GRADIENTS } from "../constants/theme";
 
 /**
  * Playlist cover that renders a 2×2 song collage when ≥2 songs have covers,
@@ -8,7 +9,7 @@ import { getSongImage } from "../data/media";
  */
 export default function PlaylistCover({ pl, songs = [], style = {} }) {
   const covers = songs.slice(0, 4).map(s => getSongImage(s)).filter(Boolean);
-  const base = pl.type === "liked" ? "linear-gradient(135deg,#4c1d95,#7c3aed)" : (pl.bg ?? "#282828");
+  const base = pl.type === "liked" ? GRADIENTS.rose : (pl.bg ?? "#282828");
   const wrapStyle = { flexShrink: 0, overflow: "hidden", ...style };
 
   if (covers.length >= 2) {

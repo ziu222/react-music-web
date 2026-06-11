@@ -12,7 +12,7 @@ const RECENT_PL = {
   id: "__recent__",
   name: "Nghe gần đây",
   type: "recent",
-  bg: "linear-gradient(135deg,#0f766e,#34d399)",
+  bg: "linear-gradient(135deg,#7c2d12,#f97316)",
 };
 const TRACK_SORT_OPTIONS = [
   { key: "custom", label: "Thứ tự tùy chỉnh" },

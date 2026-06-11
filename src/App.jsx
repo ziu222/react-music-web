@@ -16,7 +16,7 @@ import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
 import logo from "./assets/logo.png";
-import { C, BG, TEXT, BORDER } from "./constants/theme";
+import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
 
 function fisherYates(arr) {
   const a = [...arr];
@@ -457,7 +457,7 @@ export default function App() {
       name: "Danh sách phát mới",
       type: "playlist",
       isPersonal: true,
-      bg: "linear-gradient(135deg,#334155,#64748b)",
+      bg: GRADIENTS.hero,
     };
     setUserPlaylists(prev => [...prev, newPl]);
     setSelectedPlaylistId(newPl.id);
@@ -517,7 +517,7 @@ export default function App() {
       name: "Danh sách phát mới",
       type: "playlist",
       isPersonal: true,
-      bg: "linear-gradient(135deg,#334155,#64748b)",
+      bg: GRADIENTS.hero,
       songIds: [songId],
     };
     setUserPlaylists(prev => [...prev, newPl]);
@@ -710,7 +710,7 @@ export default function App() {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            background: "#1f1713",
+            background: BG.card,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1083,7 +1083,7 @@ export default function App() {
       {!cur && !authUser && (
         <div
           style={{
-            background: `linear-gradient(90deg, ${C[700]}, #7c3aed)`,
+            background: `linear-gradient(90deg, ${C[700]}, ${C[500]}, ${G[500]})`,
             padding: "14px 24px",
             display: "flex",
             alignItems: "center",

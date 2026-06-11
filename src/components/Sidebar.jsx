@@ -1023,7 +1023,7 @@ export default function Sidebar({
                           {opt.label}
                           {opt.badge && (
                             <span style={{
-                              background: "#2d4fe0", color: "#fff",
+                              background: C[600], color: "#fff",
                               fontSize: 9, fontWeight: 700, padding: "1px 5px",
                               borderRadius: 3, letterSpacing: 0.5,
                             }}>
