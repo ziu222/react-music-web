@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Plus, Check } from "lucide-react";
 
 export default function SaveToPlaylistPopover({
   song,
@@ -31,8 +32,8 @@ export default function SaveToPlaylistPopover({
   }, [onClose]);
 
   const popoverStyle = align === "center"
-    ? { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
-    : { bottom: 96, left: 20 };
+    ? { top: "50%", left: "50%", transform: "translate(-50%, -50%)", transformOrigin: "center" }
+    : { bottom: 96, left: 20, transformOrigin: "bottom left" };
 
   return (
     <>
@@ -45,6 +46,7 @@ export default function SaveToPlaylistPopover({
         role="dialog"
         aria-modal="true"
         aria-label="Add to playlist"
+        className={`save-popover${align === "center" ? " is-centered" : ""}`}
         style={{
           position: "fixed",
           ...popoverStyle,
@@ -112,6 +114,19 @@ export default function SaveToPlaylistPopover({
               onClick={() => onToggleLike(song.id)}
               ariaLabel={liked ? "Remove from Liked Songs" : "Add to Liked Songs"}
             />
+          )}
+
+          {filtered.length > 0 && (
+            <div style={{
+              padding: "10px 16px 4px",
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+              color: "rgba(255,255,255,0.35)",
+            }}>
+              Your playlists
+            </div>
           )}
 
           {filtered.map(pl => {
@@ -190,13 +205,10 @@ function PopoverRow({ label, sublabel, checked, onClick, ariaLabel, isNew }) {
       <span style={{
         width: 18, height: 18, flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: isNew ? 16 : 13,
         color: isNew ? "rgba(255,255,255,0.6)" : checked ? "#1ed760" : "transparent",
-        fontWeight: 700,
-        lineHeight: 1,
         transition: "color 80ms ease",
       }}>
-        {isNew ? "＋" : "✓"}
+        {isNew ? <Plus size={15} /> : <Check size={14} strokeWidth={3} />}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{

@@ -272,7 +272,7 @@ export default function Player({
 
           <button
             type="button"
-            aria-label={isSaved ? "Remove from Liked Songs" : "Save to Liked Songs"}
+            aria-label={isSaved ? "Edit saved playlists" : "Add to playlist"}
             onClick={() => setSaveOpen(p => !p)}
             style={{
               background: "transparent", border: "none", cursor: "pointer",
