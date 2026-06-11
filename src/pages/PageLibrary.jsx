@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { C, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
@@ -57,7 +57,9 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
         textAlign: "center",
         fontVariantNumeric: "tabular-nums",
       }}>
-        {hov && !playing ? "▶" : index + 1}
+        {hov && !playing
+          ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "#fff" }} />
+          : index + 1}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
@@ -113,21 +115,24 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
       </div>
       <button
         type="button"
+        aria-label={liked ? `Bỏ thích ${song.title}` : `Thích ${song.title}`}
+        title={liked ? "Bỏ thích" : "Thích"}
         onClick={e => { e.stopPropagation(); onLike(song.id); }}
         style={{
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: liked ? "#fb7185" : "rgba(255,255,255,0)",
+          color: liked ? "#fb7185" : "rgba(255,255,255,0.45)",
           opacity: liked || hov ? 1 : 0,
-          fontSize: 15,
+          pointerEvents: liked || hov ? "auto" : "none",
+          fontSize: 13,
           lineHeight: 1,
           transition: "opacity 0.15s, color 0.15s, transform 0.1s",
         }}
         onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
       >
-        {liked ? "♥" : "♡"}
+        <FontAwesomeIcon icon={faHeart} />
       </button>
       {onAddToQueue ? (
         <button
@@ -139,15 +144,16 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
             border: "none",
             cursor: "pointer",
             color: "rgba(255,255,255,0.5)",
-            fontSize: 15,
+            fontSize: 13,
             lineHeight: 1,
             opacity: hov ? 1 : 0,
+            pointerEvents: hov ? "auto" : "none",
             transition: "opacity 0.15s, color 0.1s",
           }}
           onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
           onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
         >
-          ⊕
+          <FontAwesomeIcon icon={faPlus} />
         </button>
       ) : <span />}
       {onRemove && (
@@ -632,13 +638,15 @@ export default function PageLibrary({
             {/* Play button row */}
             <div style={{ padding: "16px 32px 12px", display: "flex", alignItems: "center", gap: 16 }}>
               <button
+                type="button"
+                aria-label="Phát tất cả"
                 onClick={() => displaySongs[0] && onPlay(displaySongs[0])}
                 disabled={displaySongs.length === 0}
                 style={{
                   width: 52, height: 52, borderRadius: "50%",
                   background: C[500], border: "none",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 18, color: "#fff",
+                  color: "#fff",
                   cursor: displaySongs.length === 0 ? "default" : "pointer",
                   opacity: displaySongs.length === 0 ? 0.4 : 1,
                   boxShadow: `0 6px 20px ${C[500]}60`,
@@ -647,7 +655,7 @@ export default function PageLibrary({
                 onMouseEnter={e => { if (displaySongs.length > 0) e.currentTarget.style.transform = "scale(1.06)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
               >
-                ▶
+                <FontAwesomeIcon icon={faPlay} style={{ fontSize: 17, marginLeft: 2 }} />
               </button>
               <span style={{ fontSize: 13, color: TEXT.secondary }}>
                 {activePl.type === "liked" && likedIds.size === 0
@@ -700,6 +708,7 @@ export default function PageLibrary({
                     }}>
                       <button
                         type="button"
+                        aria-label="Tìm trong danh sách này"
                         onClick={() => setShowTrackSearch(s => !s)}
                         style={{
                           width: 32,
@@ -709,12 +718,11 @@ export default function PageLibrary({
                           background: showTrackSearch || trackQuery ? "rgba(255,255,255,0.12)" : "transparent",
                           color: showTrackSearch || trackQuery ? "#fff" : TEXT.secondary,
                           cursor: "pointer",
-                          fontSize: 14,
                           transition: "background 0.15s, color 0.15s",
                           flexShrink: 0,
                         }}
                       >
-                        ⌕
+                        <FontAwesomeIcon icon={faMagnifyingGlass} style={{ fontSize: 12 }} />
                       </button>
                       <div style={{
                         overflow: "hidden",
@@ -762,7 +770,7 @@ export default function PageLibrary({
                         }}
                       >
                         {currentTrackSortLabel}
-                        <span style={{ fontSize: 9 }}>▾</span>
+                        <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 9 }} />
                       </button>
 
                       {showTrackSortMenu && (
@@ -813,7 +821,7 @@ export default function PageLibrary({
                                 }}
                               >
                                 <span style={{ width: 14, textAlign: "center", fontSize: 11 }}>
-                                  {trackSort === opt.key ? "✓" : ""}
+                                  {trackSort === opt.key && <FontAwesomeIcon icon={faCheck} />}
                                 </span>
                                 {opt.label}
                               </div>
