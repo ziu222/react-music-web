@@ -28,6 +28,7 @@ import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
 import PageAdmin from "./pages/admin/PageAdmin";
+import PageArtistStudio from "./pages/artist/PageArtistStudio";
 import PageProfile from "./pages/PageProfile";
 import logo from "./assets/logo.png";
 import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
@@ -833,6 +834,14 @@ export default function App() {
     );
   }
 
+  if (screen === "artist" && authUser?.role === "artist") {
+    return (
+      <div data-theme={settings.themeMode}>
+        <PageArtistStudio authUser={authUser} onExit={() => setScreen("app")} />
+      </div>
+    );
+  }
+
   return (
     <div
       data-theme={settings.themeMode}
@@ -1101,6 +1110,8 @@ export default function App() {
           onRequestDownload={requestDownload}
           isAdmin={authUser?.role === "admin"}
           onNavAdmin={() => setScreen("admin")}
+          isArtist={authUser?.role === "artist"}
+          onNavArtist={() => setScreen("artist")}
         />
 
         {/* Main content */}
