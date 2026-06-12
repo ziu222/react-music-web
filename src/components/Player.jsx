@@ -207,6 +207,8 @@ export default function Player({
         isOpen={lyricsOpen}
         onClose={() => setLyricsOpen(false)}
         currentSong={s}
+        currentTime={prog}
+        onSeek={onSeek}
       />
       <QueuePanel
         isOpen={queueOpen}

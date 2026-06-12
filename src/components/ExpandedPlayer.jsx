@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown, CircleCheck, CirclePlus, Pause, Play, Repeat, Repeat1,
   Shuffle, SkipBack, SkipForward, Volume2, VolumeX,
@@ -7,6 +7,7 @@ import EqBars from "./EqBars";
 import SaveToPlaylistPopover from "./SaveToPlaylistPopover";
 import { C } from "../constants/theme";
 import { getSongImage } from "../data/media";
+import { loadLyricsForSong } from "../lib/lyrics";
 
 export default function ExpandedPlayer({
   isOpen, onClose,
@@ -88,19 +89,19 @@ export default function ExpandedPlayer({
   const ctrlBtn = (active = false) => ({
     width: 36, height: 36, borderRadius: 999, border: "none",
     background: "transparent",
-    color: active ? C[400] : "rgba(255,255,255,0.72)",
+    color: active ? C[400] : "var(--island-fill)",
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     cursor: "pointer", flexShrink: 0,
     transition: "background 80ms ease, color 80ms ease, transform 140ms cubic-bezier(0.2,0,0,1)",
   });
 
   const ctrlHoverOn = (e, active = false) => {
-    e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-    e.currentTarget.style.color = active ? C[400] : "#fff";
+    e.currentTarget.style.background = "var(--island-hover)";
+    e.currentTarget.style.color = active ? C[400] : "var(--island-text)";
   };
   const ctrlHoverOff = (e, active = false) => {
     e.currentTarget.style.background = "transparent";
-    e.currentTarget.style.color = active ? C[400] : "rgba(255,255,255,0.72)";
+    e.currentTarget.style.color = active ? C[400] : "var(--island-fill)";
   };
   const ctrlPress = (e) => { e.currentTarget.style.transform = "scale(0.94)"; };
   const ctrlRelease = (e) => { e.currentTarget.style.transform = "scale(1)"; };
@@ -146,16 +147,16 @@ export default function ExpandedPlayer({
             onClick={onClose}
             style={{
               background: "transparent", border: "none", cursor: "pointer",
-              color: "rgba(255,255,255,0.64)", display: "inline-flex",
+              color: "var(--island-muted)", display: "inline-flex",
               padding: 6, borderRadius: "50%",
               transition: "background 80ms ease, color 80ms ease",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.64)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--island-hover)"; e.currentTarget.style.color = "var(--island-text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--island-muted)"; }}
           >
             <ChevronDown size={24} />
           </button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.72)", letterSpacing: "0.04em" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--island-fill)", letterSpacing: "0.04em" }}>
             Now Playing
           </span>
           <div style={{ display: "flex", gap: 2 }}>
@@ -163,17 +164,17 @@ export default function ExpandedPlayer({
               type="button"
               aria-label="Open lyrics panel"
               onClick={onOpenLyrics}
-              style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.52)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.52)"; }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--island-muted)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
             >♪</button>
             <button
               type="button"
               aria-label="Open queue panel"
               onClick={onOpenQueue}
-              style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.52)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.52)"; }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--island-muted)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
             >≡</button>
           </div>
         </div>
@@ -207,10 +208,10 @@ export default function ExpandedPlayer({
             {/* Track info + like */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#f4eee8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 6 }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--island-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 6 }}>
                   {s.title}
                 </div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.58)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontSize: 14, color: "var(--island-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {s.artist}
                 </div>
               </div>
@@ -220,12 +221,12 @@ export default function ExpandedPlayer({
                 onClick={() => setSaveOpen(p => !p)}
                 style={{
                   background: "transparent", border: "none", cursor: "pointer",
-                  color: isSaved ? "#1ed760" : "rgba(255,255,255,0.55)",
+                  color: isSaved ? "#1ed760" : "var(--island-muted)",
                   flexShrink: 0, display: "inline-flex", padding: 6, marginLeft: 12,
                   transition: "color 0.15s, transform 0.12s",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+                onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--island-text)"; e.currentTarget.style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--island-muted)"; e.currentTarget.style.transform = "scale(1)"; }}
                 onMouseDown={e => { e.currentTarget.style.transform = "scale(0.92)"; }}
                 onMouseUp={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
               >
@@ -245,7 +246,7 @@ export default function ExpandedPlayer({
                 <div style={{
                   position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)",
                   height: showThumb ? 6 : 4,
-                  background: "rgba(255,255,255,0.18)", borderRadius: 999, overflow: "hidden",
+                  background: "var(--island-rail)", borderRadius: 999, overflow: "hidden",
                   transition: "height 0.1s",
                 }}>
                   <div style={{ width: `${pct}%`, height: "100%", background: C[500], borderRadius: 999, transition: isDragging ? "none" : "width 1s linear" }} />
@@ -260,8 +261,8 @@ export default function ExpandedPlayer({
                 )}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontVariantNumeric: "tabular-nums" }}>{mins}:{secs}</span>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontVariantNumeric: "tabular-nums" }}>{s.duration}</span>
+                <span style={{ fontSize: 10, color: "var(--island-faint)", fontVariantNumeric: "tabular-nums" }}>{mins}:{secs}</span>
+                <span style={{ fontSize: 10, color: "var(--island-faint)", fontVariantNumeric: "tabular-nums" }}>{s.duration}</span>
               </div>
             </div>
 
@@ -342,14 +343,12 @@ export default function ExpandedPlayer({
             </div>
 
             {/* Lyrics preview */}
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.36)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-                Lyrics
-              </div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.26)", fontStyle: "italic" }}>
-                Lyrics not available for this track.
-              </div>
-            </div>
+            <ExpandedLyricsPreview
+              song={s}
+              currentTime={prog}
+              onSeek={onSeek}
+              onOpenLyrics={onOpenLyrics}
+            />
 
             {/* Next Up preview */}
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 20, marginTop: 20, paddingBottom: 8 }}>
@@ -392,6 +391,153 @@ export default function ExpandedPlayer({
       </div>
     </div>
     </>
+  );
+}
+
+function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
+  const [status, setStatus] = useState("idle");
+  const [lyrics, setLyrics] = useState(null);
+
+  useEffect(() => {
+    if (!song) return;
+    const controller = new AbortController();
+    Promise.resolve().then(() => {
+      if (controller.signal.aborted) return;
+      setStatus("loading");
+      setLyrics(prev => prev?.trackId === song.id ? prev : null);
+    });
+
+    loadLyricsForSong(song, { signal: controller.signal })
+      .then(result => {
+        setLyrics(result);
+        setStatus("ready");
+      })
+      .catch(err => {
+        if (err?.name === "AbortError") return;
+        setLyrics(null);
+        setStatus("error");
+      });
+
+    return () => controller.abort();
+  }, [song]);
+
+  const syncedLines = useMemo(() => lyrics?.syncedLines ?? [], [lyrics?.syncedLines]);
+  const plainLines = useMemo(() => (
+    String(lyrics?.plainText || "")
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(Boolean)
+  ), [lyrics?.plainText]);
+
+  const activeIndex = useMemo(() => {
+    if (lyrics?.type !== "synced" || syncedLines.length === 0) return -1;
+    let index = 0;
+    for (let i = 0; i < syncedLines.length; i += 1) {
+      if (syncedLines[i].time <= currentTime + 0.15) index = i;
+      else break;
+    }
+    return index;
+  }, [currentTime, lyrics?.type, syncedLines]);
+
+  const previewLines = useMemo(() => {
+    if (lyrics?.type === "synced") {
+      const start = Math.max(0, activeIndex <= 0 ? 0 : activeIndex - 1);
+      return syncedLines.slice(start, start + 3).map((line, offset) => ({
+        ...line,
+        index: start + offset,
+      }));
+    }
+    return plainLines.slice(0, 3).map((text, index) => ({ text, index }));
+  }, [activeIndex, lyrics?.type, plainLines, syncedLines]);
+
+  const emptyCopy = lyrics?.type === "instrumental"
+    ? "Instrumental track"
+    : status === "error"
+      ? "Lyrics failed to load"
+      : "Lyrics not available for this track.";
+
+  return (
+    <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.36)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          Lyrics
+        </div>
+        {onOpenLyrics && (
+          <button
+            type="button"
+            aria-label="Open full lyrics"
+            onClick={onOpenLyrics}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 11,
+              fontWeight: 700,
+              color: "var(--island-muted)",
+              padding: "2px 4px",
+              borderRadius: 4,
+              transition: "color 100ms ease, background 100ms ease",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; e.currentTarget.style.background = "var(--island-hover)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; e.currentTarget.style.background = "transparent"; }}
+          >
+            Open
+          </button>
+        )}
+      </div>
+
+      {status === "loading" ? (
+        <div style={{ display: "grid", gap: 9 }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: `${86 - i * 12}%`,
+                height: 17,
+                borderRadius: 5,
+                background: "linear-gradient(90deg, var(--island-hover), var(--island-rail), var(--island-hover))",
+                backgroundSize: "220% 100%",
+                animation: "lyrics-panel-skeleton 1.2s ease-in-out infinite",
+              }}
+            />
+          ))}
+        </div>
+      ) : previewLines.length > 0 ? (
+        <div style={{ display: "grid", gap: 2, animation: "lyrics-panel-content-in 260ms cubic-bezier(0.2, 0, 0, 1)" }}>
+          {previewLines.map(line => {
+            const active = lyrics?.type === "synced" && line.index === activeIndex;
+            return (
+              <button
+                key={`${line.index}-${line.time ?? line.text}`}
+                type="button"
+                onClick={() => typeof line.time === "number" && onSeek?.(Math.max(0, Math.floor(line.time)))}
+                style={{
+                  border: "none",
+                  background: active ? "rgba(249,115,22,0.10)" : "transparent",
+                  borderRadius: 6,
+                  textAlign: "left",
+                  cursor: typeof line.time === "number" ? "pointer" : "default",
+                  padding: "5px 6px",
+                  color: active ? "#fff" : "var(--island-fill)",
+                  opacity: active ? 1 : 0.58,
+                  fontSize: active ? 15 : 14,
+                  fontWeight: active ? 800 : 650,
+                  lineHeight: 1.45,
+                  transition: "opacity 180ms ease, color 180ms ease, background 180ms ease, transform 180ms cubic-bezier(0.2,0,0,1), font-size 180ms ease",
+                  transform: active ? "translateX(2px)" : "translateX(0)",
+                }}
+              >
+                {line.text || "..."}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.26)", fontStyle: "italic" }}>
+          {emptyCopy}
+        </div>
+      )}
+    </div>
   );
 }
 
