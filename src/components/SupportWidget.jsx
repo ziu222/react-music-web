@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeadset, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../constants/theme";
@@ -9,8 +9,8 @@ const GREETING = {
   text: "Xin chào! 👋 Mình là trợ lý Melodies. Bạn cần hỗ trợ vấn đề gì? Chọn một câu hỏi bên dưới nhé.",
 };
 
-export default function SupportWidget({ hasPlayer = false }) {
-  const [open, setOpen] = useState(false);
+export default function SupportWidget({ hasPlayer = false, open: controlledOpen, onOpenChange }) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [messages, setMessages] = useState([GREETING]);
   const [askedIds, setAskedIds] = useState(() => new Set());
   const [typing, setTyping] = useState(false);
@@ -18,6 +18,13 @@ export default function SupportWidget({ hasPlayer = false }) {
   const [hoverChip, setHoverChip] = useState(null);
   const listRef = useRef(null);
   const timerRef = useRef(null);
+  const open = controlledOpen ?? internalOpen;
+
+  const setWidgetOpen = useCallback((next) => {
+    const value = typeof next === "function" ? next(open) : next;
+    if (onOpenChange) onOpenChange(value);
+    else setInternalOpen(value);
+  }, [onOpenChange, open]);
 
   useEffect(() => {
     if (listRef.current) {
@@ -28,11 +35,11 @@ export default function SupportWidget({ hasPlayer = false }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") setWidgetOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, setWidgetOpen]);
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
@@ -287,7 +294,7 @@ export default function SupportWidget({ hasPlayer = false }) {
       {/* Floating button */}
       <button
         aria-label="Hỗ trợ"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setWidgetOpen((o) => !o)}
         onMouseEnter={() => setBtnHover(true)}
         onMouseLeave={() => setBtnHover(false)}
         style={{

@@ -88,7 +88,6 @@ export default function NavbarUserActions({
   onOpenPremium,
   onOpenSettings,
   onToggleAudioQuality,
-  onHome,
   onOpenProfile,
   onLogout,
 }) {
