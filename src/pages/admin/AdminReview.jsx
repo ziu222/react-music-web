@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faXmark, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCheck,
+  faXmark,
+  faCircleCheck,
+  faFileAudio,
+  faShieldHalved,
+} from "@fortawesome/free-solid-svg-icons";
 import { BG, TEXT, BORDER } from "../../constants/theme";
 import { reviewSubmission } from "../../lib/submissions";
+import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
 import { logAdminAction } from "../../lib/auditLog";
 import {
   loadNotifications,
@@ -30,10 +37,36 @@ function notifyArtist(sub, approved, reason) {
 export default function AdminReview({ subs, setSubs, authUser }) {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [mediaUrls, setMediaUrls] = useState({});
 
   const pending = subs
     .filter((s) => s.status === "pending")
     .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+  // Nạp audio/artwork từ IndexedDB cho các bài chờ duyệt
+  const pendingKey = pending.map((s) => s.id).join(",");
+  useEffect(() => {
+    let alive = true;
+    const urls = {};
+    Promise.all(
+      pending.map(async (sub) => {
+        urls[sub.id] = {
+          audio: await getMediaBlobUrl(sub.audioBlobId),
+          cover: await getMediaBlobUrl(sub.coverBlobId),
+        };
+      })
+    ).then(() => {
+      if (alive) setMediaUrls(urls);
+    });
+    return () => {
+      alive = false;
+      Object.values(urls).forEach((u) => {
+        revokeMediaBlobUrl(u.audio);
+        revokeMediaBlobUrl(u.cover);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingKey]);
 
   const reviewed = subs
     .filter((s) => s.status !== "pending")
@@ -92,34 +125,58 @@ export default function AdminReview({ subs, setSubs, authUser }) {
             borderRadius: 10,
             padding: 16,
             marginBottom: 10,
-            display: "flex",
-            gap: 14,
-            alignItems: "center",
-            flexWrap: "wrap",
           }}
         >
-          <div
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 8,
-              background: sub.bg,
-              flexShrink: 0,
-            }}
-          />
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: TEXT.strong }}>
-              {sub.title}
+          <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 8,
+                background: mediaUrls[sub.id]?.cover
+                  ? `url(${mediaUrls[sub.id].cover}) center/cover`
+                  : sub.bg,
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: TEXT.strong,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {sub.title}
+                {sub.explicit && (
+                  <span
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 800,
+                      background: "var(--overlay-2)",
+                      color: TEXT.secondary,
+                      borderRadius: 3,
+                      padding: "1px 4px",
+                    }}
+                  >
+                    E
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 2 }}>
+                {sub.artistName} · {sub.album}
+                {sub.contributors?.length > 0 &&
+                  " · ft. " + sub.contributors.map((c) => c.name).join(", ")}
+              </div>
+              <div style={{ fontSize: 11, color: TEXT.tertiary, marginTop: 2 }}>
+                {sub.genre} · {sub.language} · {sub.duration} · gửi{" "}
+                {new Date(sub.submittedAt).toLocaleDateString("vi-VN")}
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 2 }}>
-              {sub.artistName} · {sub.album}
-            </div>
-            <div style={{ fontSize: 11, color: TEXT.tertiary, marginTop: 2 }}>
-              {sub.genre} · {sub.duration} · gửi{" "}
-              {new Date(sub.submittedAt).toLocaleDateString("vi-VN")}
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             <button
               onClick={() => approve(sub)}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
@@ -169,7 +226,43 @@ export default function AdminReview({ subs, setSubs, authUser }) {
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 11 }} />
               Từ chối
             </button>
+            </div>
           </div>
+
+          {mediaUrls[sub.id]?.audio ? (
+            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+              <FontAwesomeIcon icon={faFileAudio} style={{ fontSize: 13, color: TEXT.tertiary, flexShrink: 0 }} />
+              <audio
+                controls
+                src={mediaUrls[sub.id].audio}
+                style={{ flex: 1, height: 34, minWidth: 200 }}
+              />
+            </div>
+          ) : (
+            sub.audioBlobId == null && (
+              <div style={{ marginTop: 10, fontSize: 11, color: TEXT.tertiary }}>
+                Không có file audio đính kèm (bài demo cũ).
+              </div>
+            )
+          )}
+
+          {(sub.copyrightOwner || sub.rightsConfirmed) && (
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 11,
+                color: sub.rightsConfirmed ? "#34d399" : TEXT.tertiary,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: 10 }} />
+              {sub.rightsConfirmed
+                ? `Đã xác nhận bản quyền — chủ sở hữu: ${sub.copyrightOwner || sub.artistName}`
+                : "Chưa xác nhận bản quyền"}
+            </div>
+          )}
         </div>
       ))}
 

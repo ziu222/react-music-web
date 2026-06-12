@@ -9,12 +9,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { StatusBadge } from "../../components/console/ConsoleUi";
-import { TrendBarChart, ProgressBar, TrendChip } from "../../components/console/Charts";
+import { TrendBarChart, ProgressBar, TrendChip, useCountUp } from "../../components/console/Charts";
 import { getArtistAnalytics, weeklyTrend, formatCompact } from "../../lib/artistStats";
 
-function InsightCard({ icon, accent, number, label, trend }) {
+function InsightCard({ icon, accent, value, format = String, label, trend, stagger = 0 }) {
+  // Count-up bắt đầu sau khi card đã đáp xuống (stagger 60ms + 180ms landing)
+  const animated = useCountUp(value, { delay: stagger * 60 + 180 });
   return (
     <div
+      className="studio-card"
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-2px)";
         e.currentTarget.style.boxShadow = "var(--shadow-card)";
@@ -32,10 +35,12 @@ function InsightCard({ icon, accent, number, label, trend }) {
         minWidth: 150,
         transition: "all 0.15s",
         boxSizing: "border-box",
+        "--stagger": stagger,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div
+          className="studio-card-icon"
           style={{
             width: 34,
             height: 34,
@@ -50,10 +55,17 @@ function InsightCard({ icon, accent, number, label, trend }) {
         >
           <FontAwesomeIcon icon={icon} />
         </div>
-        {trend != null && <TrendChip pct={trend} />}
+        {trend != null && (
+          <span
+            className="studio-fade-late"
+            style={{ animationDelay: `${stagger * 60 + 650}ms` }}
+          >
+            <TrendChip pct={trend} />
+          </span>
+        )}
       </div>
       <div style={{ fontSize: 26, fontWeight: 700, color: TEXT.strong, marginTop: 12 }}>
-        {number}
+        {format(Math.round(animated))}
       </div>
       <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 2 }}>{label}</div>
     </div>
@@ -80,10 +92,11 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
 
   return (
     <div>
-      {/* Hero */}
+      {/* Hero — dẫn đầu choreography, gradient nền thở chậm (ambient) */}
       <div
+        className="studio-hero"
         style={{
-          background: `linear-gradient(135deg, ${authUser?.color ?? C[500]}3d 0%, ${authUser?.color ?? C[500]}14 55%, transparent 100%)`,
+          position: "relative",
           border: "1px solid " + BORDER,
           borderRadius: 12,
           padding: "22px 24px",
@@ -92,14 +105,27 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
           gap: 18,
           marginBottom: 20,
           flexWrap: "wrap",
+          overflow: "hidden",
         }}
       >
         <div
+          className="studio-hero-ambient"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(135deg, ${authUser?.color ?? C[500]}3d 0%, ${authUser?.color ?? C[500]}14 55%, transparent 100%)`,
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          className="studio-pop"
           style={{
             width: 64,
             height: 64,
             borderRadius: "50%",
-            background: authUser?.color ?? C[500],
+            background: authUser?.avatarUrl
+              ? `url(${authUser.avatarUrl}) center/cover`
+              : authUser?.color ?? C[500],
             color: "#fff",
             fontSize: 24,
             fontWeight: 800,
@@ -108,16 +134,19 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             justifyContent: "center",
             flexShrink: 0,
             boxShadow: `0 6px 20px ${authUser?.color ?? C[500]}55`,
+            animationDelay: "120ms",
+            position: "relative",
           }}
         >
-          {authUser?.initial}
+          {!authUser?.avatarUrl && authUser?.initial}
         </div>
-        <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 20, fontWeight: 800, color: TEXT.strong }}>
               Chào, {authUser?.name}!
             </span>
             <span
+              className="studio-pop"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -129,6 +158,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
                 color: "#60a5fa",
                 background: "rgba(96,165,250,0.12)",
                 border: "1px solid rgba(96,165,250,0.3)",
+                animationDelay: "320ms",
               }}
             >
               <FontAwesomeIcon icon={faCircleCheck} style={{ fontSize: 9 }} />
@@ -139,7 +169,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             Đây là bức tranh tổng quan về âm nhạc của bạn trong 28 ngày qua.
           </div>
         </div>
-        <div style={{ display: "flex", gap: 24, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 24, flexShrink: 0, position: "relative" }}>
           <div>
             <div style={{ fontSize: 20, fontWeight: 800, color: TEXT.strong }}>
               {formatCompact(analytics.followers)}
@@ -160,29 +190,35 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
         <InsightCard
           icon={faHeadphones}
           accent={C[500]}
-          number={formatCompact(trend.last7)}
+          value={trend.last7}
+          format={formatCompact}
           label="Lượt nghe 7 ngày"
           trend={trend.pct}
+          stagger={0}
         />
         <InsightCard
           icon={faUsers}
           accent="#60a5fa"
-          number={formatCompact(analytics.followers)}
+          value={analytics.followers}
+          format={formatCompact}
           label="Người theo dõi"
+          stagger={1}
         />
-        <InsightCard icon={faMusic} accent="#34d399" number={approved.length} label="Đã phát hành" />
-        <InsightCard icon={faClock} accent="#fbbf24" number={pending} label="Chờ duyệt" />
-        <InsightCard icon={faCircleXmark} accent="#fb7185" number={rejected} label="Từ chối" />
+        <InsightCard icon={faMusic} accent="#34d399" value={approved.length} label="Đã phát hành" stagger={2} />
+        <InsightCard icon={faClock} accent="#fbbf24" value={pending} label="Chờ duyệt" stagger={3} />
+        <InsightCard icon={faCircleXmark} accent="#fb7185" value={rejected} label="Từ chối" stagger={4} />
       </div>
 
       {/* Chart */}
       <div
+        className="studio-card"
         style={{
           background: BG.card,
           border: "1px solid " + BORDER,
           borderRadius: 10,
           padding: 18,
           marginBottom: 20,
+          "--stagger": 5,
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 4 }}>
@@ -194,6 +230,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
       {/* Two columns */}
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
         <div
+          className="studio-card"
           style={{
             flex: 1,
             minWidth: 280,
@@ -201,6 +238,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             border: "1px solid " + BORDER,
             borderRadius: 10,
             padding: 18,
+            "--stagger": 6,
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
@@ -241,6 +279,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
         </div>
 
         <div
+          className="studio-card"
           style={{
             flex: 1,
             minWidth: 280,
@@ -248,6 +287,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             border: "1px solid " + BORDER,
             borderRadius: 10,
             padding: 18,
+            "--stagger": 7,
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>

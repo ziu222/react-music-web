@@ -21,9 +21,10 @@ const PERIOD_PILLS = [
 
 const SOURCE_COLORS = ["#f97316", "#60a5fa", "#a78bfa", "#34d399"];
 
-function MiniStat({ icon, accent, number, label }) {
+function MiniStat({ icon, accent, number, label, stagger = 0 }) {
   return (
     <div
+      className="studio-card"
       style={{
         background: BG.card,
         border: "1px solid " + BORDER,
@@ -35,6 +36,7 @@ function MiniStat({ icon, accent, number, label }) {
         alignItems: "center",
         gap: 12,
         boxSizing: "border-box",
+        "--stagger": stagger,
       }}
     >
       <div
@@ -63,9 +65,10 @@ function MiniStat({ icon, accent, number, label }) {
   );
 }
 
-function PanelCard({ title, children }) {
+function PanelCard({ title, children, stagger = 0 }) {
   return (
     <div
+      className="studio-card"
       style={{
         flex: 1,
         minWidth: 280,
@@ -74,6 +77,7 @@ function PanelCard({ title, children }) {
         borderRadius: 10,
         padding: 18,
         boxSizing: "border-box",
+        "--stagger": stagger,
       }}
     >
       <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 14 }}>
@@ -147,24 +151,28 @@ export default function StudioAnalytics({ authUser, mySubs }) {
           accent={C[500]}
           number={formatCompact(totalPlays)}
           label={`Lượt nghe ${period} ngày`}
+          stagger={0}
         />
         <MiniStat
           icon={faUsers}
           accent="#60a5fa"
           number={formatCompact(analytics.monthlyListeners)}
           label="Người nghe hàng tháng"
+          stagger={1}
         />
-        <MiniStat icon={faHeart} accent="#fb7185" number={formatCompact(totalLikes)} label="Lượt thích" />
-        <MiniStat icon={faBookmark} accent="#34d399" number={formatCompact(totalSaves)} label="Lượt lưu" />
+        <MiniStat icon={faHeart} accent="#fb7185" number={formatCompact(totalLikes)} label="Lượt thích" stagger={2} />
+        <MiniStat icon={faBookmark} accent="#34d399" number={formatCompact(totalSaves)} label="Lượt lưu" stagger={3} />
       </div>
 
       <div
+        className="studio-card"
         style={{
           background: BG.card,
           border: "1px solid " + BORDER,
           borderRadius: 10,
           padding: 18,
           marginBottom: 20,
+          "--stagger": 4,
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 4 }}>
@@ -174,7 +182,7 @@ export default function StudioAnalytics({ authUser, mySubs }) {
       </div>
 
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
-        <PanelCard title="Top bài hát">
+        <PanelCard title="Top bài hát" stagger={5}>
           {topSongs.length === 0 && (
             <div style={{ fontSize: 12, color: TEXT.tertiary }}>Chưa có bài phát hành</div>
           )}
@@ -212,7 +220,7 @@ export default function StudioAnalytics({ authUser, mySubs }) {
           ))}
         </PanelCard>
 
-        <PanelCard title="Nguồn nghe">
+        <PanelCard title="Nguồn nghe" stagger={6}>
           {analytics.sources.map((src, i) => (
             <div key={src.name} style={{ marginBottom: 12 }}>
               <div
@@ -232,7 +240,7 @@ export default function StudioAnalytics({ authUser, mySubs }) {
         </PanelCard>
       </div>
 
-      <PanelCard title="Khu vực nghe nhiều nhất">
+      <PanelCard title="Khu vực nghe nhiều nhất" stagger={7}>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {analytics.topLocations.map((loc) => (
             <div key={loc.name} style={{ display: "flex", alignItems: "center", gap: 12 }}>

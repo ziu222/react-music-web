@@ -7,12 +7,20 @@ import { getArtistAnalytics, formatCompact } from "../../lib/artistStats";
 
 const STATUS_PILLS = [
   { key: "all", label: "Tất cả" },
+  { key: "draft", label: "Nháp" },
   { key: "pending", label: "Chờ duyệt" },
   { key: "approved", label: "Đã duyệt" },
   { key: "rejected", label: "Từ chối" },
 ];
 
-export default function StudioSongs({ authUser, mySubs, onResubmit, onGoSubmit }) {
+export default function StudioSongs({
+  authUser,
+  mySubs,
+  onResubmit,
+  onGoSubmit,
+  onEditDraft,
+  onDeleteDraft,
+}) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -191,6 +199,49 @@ export default function StudioSongs({ authUser, mySubs, onResubmit, onGoSubmit }
                 <StatusBadge status={sub.status} />
               </div>
             </div>
+
+            {sub.status === "draft" && (
+              <div
+                style={{
+                  marginLeft: 56,
+                  marginTop: -4,
+                  marginBottom: 8,
+                  display: "flex",
+                  gap: 8,
+                }}
+              >
+                <button
+                  onClick={() => onEditDraft(sub)}
+                  style={{
+                    background: "transparent",
+                    border: `1px solid ${C[500]}`,
+                    color: C[400],
+                    borderRadius: 9999,
+                    padding: "4px 14px",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Tiếp tục chỉnh sửa
+                </button>
+                <button
+                  onClick={() => onDeleteDraft(sub)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(239,68,68,0.5)",
+                    color: "#f87171",
+                    borderRadius: 9999,
+                    padding: "4px 14px",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Xóa nháp
+                </button>
+              </div>
+            )}
 
             {sub.status === "rejected" && sub.rejectReason && (
               <div

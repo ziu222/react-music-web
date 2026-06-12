@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGlobe,
   faLink,
   faCircleCheck,
   faUsers,
+  faCamera,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { loadArtistProfile, saveArtistProfile } from "../../lib/artistProfile";
 import { getArtistAnalytics, formatCompact } from "../../lib/artistStats";
+import {
+  saveMediaBlob,
+  deleteMediaBlob,
+  getMediaBlobUrl,
+  revokeMediaBlobUrl,
+} from "../../lib/mediaStore";
+
+const THEME_COLORS = ["#f97316", "#a78bfa", "#38bdf8", "#fb7185", "#34d399", "#fbbf24"];
 
 const BIO_MAX = 300;
 const GENRE_OPTIONS = ["V-Pop", "Pop", "R&B", "Ballad", "EDM", "Dance", "Hip-Hop", "Indie", "Acoustic", "Rock"];
@@ -32,15 +42,56 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function StudioProfile({ authUser, mySubs, onSaved }) {
+export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) {
   const [profile, setProfile] = useState(() => loadArtistProfile(authUser?.email ?? ""));
   const [dirty, setDirty] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const avatarInputRef = useRef(null);
 
   const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
+  const themeColor = profile.themeColor || authUser?.color || C[500];
+  const stageName = profile.displayName?.trim() || authUser?.name;
+
+  useEffect(() => {
+    let alive = true;
+    let url = null;
+    getMediaBlobUrl(profile.avatarBlobId).then((u) => {
+      if (alive) {
+        url = u;
+        setAvatarUrl(u);
+      } else {
+        revokeMediaBlobUrl(u);
+      }
+    });
+    return () => {
+      alive = false;
+      revokeMediaBlobUrl(url);
+    };
+  }, [profile.avatarBlobId]);
 
   const update = (patch) => {
     setProfile((p) => ({ ...p, ...patch }));
     setDirty(true);
+  };
+
+  // Ảnh đại diện áp dụng ngay (như platform thật), không cần bấm Lưu
+  const changeAvatar = async (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const oldId = profile.avatarBlobId;
+    const meta = await saveMediaBlob(file, "avatar");
+    const next = { ...profile, avatarBlobId: meta.id };
+    setProfile(next);
+    saveArtistProfile(authUser.email, next);
+    if (oldId) deleteMediaBlob(oldId);
+    onChanged();
+  };
+
+  const removeAvatar = async () => {
+    if (profile.avatarBlobId) deleteMediaBlob(profile.avatarBlobId);
+    const next = { ...profile, avatarBlobId: null };
+    setProfile(next);
+    saveArtistProfile(authUser.email, next);
+    onChanged();
   };
 
   const toggleGenre = (g) => {
@@ -75,6 +126,167 @@ export default function StudioProfile({ authUser, mySubs, onSaved }) {
           boxSizing: "border-box",
         }}
       >
+        {/* ── Ảnh đại diện ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div
+            onClick={() => avatarInputRef.current?.click()}
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: "50%",
+              background: avatarUrl ? `url(${avatarUrl}) center/cover` : themeColor,
+              color: "#fff",
+              fontSize: 30,
+              fontWeight: 800,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+              position: "relative",
+              overflow: "hidden",
+              transition: "transform 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.04)";
+              e.currentTarget.querySelector("[data-overlay]").style.opacity = 1;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.querySelector("[data-overlay]").style.opacity = 0;
+            }}
+          >
+            {!avatarUrl && authUser?.initial}
+            <div
+              data-overlay
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0,0,0,0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: 0,
+                transition: "opacity 0.15s",
+              }}
+            >
+              <FontAwesomeIcon icon={faCamera} style={{ fontSize: 18 }} />
+            </div>
+          </div>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => changeAvatar(e.target.files?.[0])}
+          />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: TEXT.mid, marginBottom: 4 }}>
+              Ảnh đại diện
+            </div>
+            <div style={{ fontSize: 11, color: TEXT.tertiary, lineHeight: 1.5, marginBottom: 8 }}>
+              JPG, PNG — hiển thị khắp Studio và hồ sơ công khai. Áp dụng ngay khi chọn.
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                style={{
+                  background: "transparent",
+                  border: "1px solid " + BORDER,
+                  color: TEXT.mid,
+                  borderRadius: 9999,
+                  padding: "5px 14px",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                <FontAwesomeIcon icon={faCamera} style={{ fontSize: 9, marginRight: 6 }} />
+                Đổi ảnh
+              </button>
+              {avatarUrl && (
+                <button
+                  onClick={removeAvatar}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(239,68,68,0.4)",
+                    color: "#f87171",
+                    borderRadius: 9999,
+                    padding: "5px 14px",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  <FontAwesomeIcon icon={faXmark} style={{ fontSize: 9, marginRight: 6 }} />
+                  Gỡ ảnh
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Nghệ danh ── */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: TEXT.mid, marginBottom: 6 }}>
+            Nghệ danh
+          </div>
+          <input
+            value={profile.displayName}
+            onChange={(e) => update({ displayName: e.target.value.slice(0, 40) })}
+            placeholder={authUser?.name}
+            onFocus={(e) => (e.target.style.borderColor = C[500])}
+            onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+            style={inputStyle}
+          />
+          <div style={{ fontSize: 10, color: TEXT.tertiary, marginTop: 5 }}>
+            Tên hiển thị với người nghe — bài đăng mới sẽ dùng nghệ danh này.
+          </div>
+        </div>
+
+        {/* ── Màu chủ đề ── */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: TEXT.mid, marginBottom: 8 }}>
+            Màu chủ đề hồ sơ
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              onClick={() => update({ themeColor: "" })}
+              title="Màu mặc định tài khoản"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: authUser?.color,
+                border: "none",
+                cursor: "pointer",
+                outline: !profile.themeColor ? "2px solid #fff" : "none",
+                outlineOffset: 2,
+                transform: !profile.themeColor ? "scale(1.12)" : "scale(1)",
+                transition: "transform 0.15s",
+              }}
+            />
+            {THEME_COLORS.map((color) => (
+              <button
+                key={color}
+                onClick={() => update({ themeColor: color })}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: color,
+                  border: "none",
+                  cursor: "pointer",
+                  outline: profile.themeColor === color ? "2px solid #fff" : "none",
+                  outlineOffset: 2,
+                  transform: profile.themeColor === color ? "scale(1.12)" : "scale(1)",
+                  transition: "transform 0.15s",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
         <div>
           <div
             style={{
@@ -227,7 +439,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved }) {
         >
           <div
             style={{
-              background: `linear-gradient(160deg, ${authUser?.color ?? C[500]}55 0%, ${authUser?.color ?? C[500]}1a 65%, transparent 100%)`,
+              background: `linear-gradient(160deg, ${themeColor}55 0%, ${themeColor}1a 65%, transparent 100%)`,
               padding: "24px 18px 16px",
               textAlign: "center",
             }}
@@ -237,7 +449,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved }) {
                 width: 76,
                 height: 76,
                 borderRadius: "50%",
-                background: authUser?.color ?? C[500],
+                background: avatarUrl ? `url(${avatarUrl}) center/cover` : themeColor,
                 color: "#fff",
                 fontSize: 28,
                 fontWeight: 800,
@@ -245,10 +457,10 @@ export default function StudioProfile({ authUser, mySubs, onSaved }) {
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 12px",
-                boxShadow: `0 6px 22px ${authUser?.color ?? C[500]}66`,
+                boxShadow: `0 6px 22px ${themeColor}66`,
               }}
             >
-              {authUser?.initial}
+              {!avatarUrl && authUser?.initial}
             </div>
             <div
               style={{
@@ -260,7 +472,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved }) {
                 gap: 6,
               }}
             >
-              {authUser?.name}
+              {stageName}
               <FontAwesomeIcon icon={faCircleCheck} style={{ fontSize: 12, color: "#60a5fa" }} />
             </div>
             <div

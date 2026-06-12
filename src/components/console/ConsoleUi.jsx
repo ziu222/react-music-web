@@ -124,6 +124,7 @@ export function FilterPills({ options, active, onSelect }) {
 }
 
 const STATUS_STYLES = {
+  draft: { label: "Nháp", color: "#94a3b8" },
   pending: { label: "Chờ duyệt", color: "#fbbf24" },
   approved: { label: "Đã duyệt", color: "#34d399" },
   rejected: { label: "Từ chối", color: "#fb7185" },
