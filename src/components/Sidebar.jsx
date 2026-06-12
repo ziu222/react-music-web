@@ -21,6 +21,7 @@ import {
   faPlay,
   faPlus,
   faShareFromSquare,
+  faShieldHalved,
   faTableCells,
   faTableCellsLarge,
   faThumbtack,
@@ -551,6 +552,8 @@ export default function Sidebar({
   onRenamePlaylist,
   onTogglePinPlaylist,
   onTogglePublicPlaylist,
+  isAdmin = false,
+  onNavAdmin,
   canDownload = false,
   onRequestDownload,
 }) {
@@ -959,6 +962,26 @@ export default function Sidebar({
             onClick={() => selectAndNav(pl)}
           />
         ))}
+
+        {isAdmin && (
+          <div
+            onClick={onNavAdmin}
+            title="Admin"
+            style={{
+              marginTop: "auto",
+              width: 40, height: 40, borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", fontSize: 15,
+              color: "var(--island-muted)",
+              transition: "background 0.15s, color 0.15s",
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--island-hover)"; e.currentTarget.style.color = "var(--island-text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--island-muted)"; }}
+          >
+            <FontAwesomeIcon icon={faShieldHalved} />
+          </div>
+        )}
       </div>
 
       {/* ══ PANEL ══════════════════════════════════════════════════ */}

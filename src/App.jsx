@@ -1088,6 +1088,8 @@ export default function App() {
           onTogglePublicPlaylist={togglePublicPlaylist}
           canDownload={isPremium}
           onRequestDownload={requestDownload}
+          isAdmin={authUser?.role === "admin"}
+          onNavAdmin={() => nav("admin")}
         />
 
         {/* Main content */}
