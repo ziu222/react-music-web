@@ -25,6 +25,9 @@ import { loadNotifications, saveNotifications, createNotification } from "./lib/
 import { applyUserOverride } from "./lib/userOverrides";
 import { logAdminAction } from "./lib/auditLog";
 import { applySongOverrides } from "./lib/songOverrides";
+import { getApprovedSubmissions } from "./lib/submissions";
+import { getMediaBlobUrl } from "./lib/mediaStore";
+import { getArtistAnalytics } from "./lib/artistStats";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -62,11 +65,53 @@ export default function App() {
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
   const [likedIds, setLikedIds] = useState(new Set());
+  // Bài approved của nghệ sĩ được merge vào catalog — audio đọc từ IndexedDB
+  const [communitySongs, setCommunitySongs] = useState([]);
+  useEffect(() => {
+    if (screen !== "app") return undefined;
+    let alive = true;
+    (async () => {
+      const approved = getApprovedSubmissions();
+      const merged = await Promise.all(
+        approved.map(async (sub) => {
+          const [audioUrl, coverUrl] = await Promise.all([
+            getMediaBlobUrl(sub.audioBlobId),
+            getMediaBlobUrl(sub.coverBlobId),
+          ]);
+          const stats = getArtistAnalytics(sub.artistEmail, [sub]).songStats[sub.id];
+          return {
+            id: sub.id,
+            title: sub.title,
+            artist:
+              sub.artistName +
+              (sub.contributors?.length
+                ? " ft. " + sub.contributors.map((c) => c.name).join(", ")
+                : ""),
+            album: sub.album,
+            genre: sub.genre,
+            duration: sub.duration,
+            durationSecs: sub.durationSecs,
+            plays: stats?.plays ?? 0,
+            bg: sub.bg,
+            coverUrl,
+            audioUrl,
+            explicit: sub.explicit ?? false,
+            community: true,
+          };
+        })
+      );
+      if (alive) setCommunitySongs(merged);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [screen]);
+
   // Bài bị admin gỡ biến mất khỏi app — tính lại khi rời màn admin
   const list = useMemo(() => {
     void screen;
-    return applySongOverrides(songs);
-  }, [screen]);
+    return [...applySongOverrides(songs), ...applySongOverrides(communitySongs)];
+  }, [screen, communitySongs]);
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(() => loadSession());
