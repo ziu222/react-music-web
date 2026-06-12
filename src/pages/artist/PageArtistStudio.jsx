@@ -73,7 +73,9 @@ export default function PageArtistStudio({ authUser, onExit }) {
       )}
       {studioTab === "songs" && (
         <StudioSongs
+          authUser={authUser}
           mySubs={mySubs}
+          onGoSubmit={() => setStudioTab("submit")}
           onResubmit={(id) => {
             setSubs(resubmit(id));
             showToast("Đã gửi lại để duyệt");
