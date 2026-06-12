@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Music2, X } from "lucide-react";
-import { loadLyricsForSong } from "../lib/lyrics";
+import { loadLyricsForSong, loadLyricsOffsetMs, saveLyricsOffsetMs } from "../lib/lyrics";
 
 export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime = 0, onSeek }) {
   const [status, setStatus] = useState("idle");
   const [lyrics, setLyrics] = useState(null);
+  const [offsetMs, setOffsetMs] = useState(0);
   const lineRefs = useRef([]);
+  const currentSongId = currentSong?.id;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -37,6 +39,11 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
     return () => controller.abort();
   }, [isOpen, currentSong]);
 
+  useEffect(() => {
+    if (!currentSongId) return;
+    Promise.resolve().then(() => setOffsetMs(loadLyricsOffsetMs(currentSongId)));
+  }, [currentSongId]);
+
   const syncedLines = useMemo(() => lyrics?.syncedLines ?? [], [lyrics?.syncedLines]);
   const plainLines = useMemo(() => (
     String(lyrics?.plainText || "")
@@ -47,13 +54,14 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
 
   const activeIndex = useMemo(() => {
     if (lyrics?.type !== "synced" || syncedLines.length === 0) return -1;
+    const syncedTime = currentTime + offsetMs / 1000;
     let index = 0;
     for (let i = 0; i < syncedLines.length; i += 1) {
-      if (syncedLines[i].time <= currentTime + 0.15) index = i;
+      if (syncedLines[i].time <= syncedTime + 0.15) index = i;
       else break;
     }
     return index;
-  }, [currentTime, lyrics?.type, syncedLines]);
+  }, [currentTime, lyrics?.type, offsetMs, syncedLines]);
 
   useEffect(() => {
     if (!isOpen || activeIndex < 0) return;
@@ -65,6 +73,19 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
     || !lyrics
     || lyrics.type === "unavailable"
     || (lyrics.type !== "instrumental" && syncedLines.length === 0 && plainLines.length === 0);
+
+  const adjustOffset = (deltaMs) => {
+    setOffsetMs(prev => {
+      const next = Math.max(-10000, Math.min(10000, prev + deltaMs));
+      saveLyricsOffsetMs(currentSongId, next);
+      return next;
+    });
+  };
+
+  const resetOffset = () => {
+    setOffsetMs(0);
+    saveLyricsOffsetMs(currentSongId, 0);
+  };
 
   return (
     <div
@@ -152,7 +173,7 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
                   ref={node => { lineRefs.current[i] = node; }}
                   type="button"
                   data-time={line.time}
-                  onClick={() => onSeek?.(Math.max(0, Math.floor(line.time)))}
+                  onClick={() => onSeek?.(Math.max(0, line.time - offsetMs / 1000))}
                   style={{
                     width: "100%",
                     display: "block",
@@ -212,10 +233,43 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
           lineHeight: 1.4,
           flexShrink: 0,
         }}>
-          Lyrics from LRCLIB
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <span>Lyrics from LRCLIB</span>
+            {lyrics.type === "synced" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <SyncButton label="-0.5s" onClick={() => adjustOffset(-500)} />
+                <SyncButton label={offsetMs === 0 ? "Sync" : `${offsetMs > 0 ? "+" : ""}${(offsetMs / 1000).toFixed(1)}s`} onClick={resetOffset} />
+                <SyncButton label="+0.5s" onClick={() => adjustOffset(500)} />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+function SyncButton({ label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: "1px solid var(--island-border)",
+        background: "var(--island-hover)",
+        color: "var(--island-muted)",
+        borderRadius: 999,
+        cursor: "pointer",
+        fontSize: 10,
+        fontWeight: 700,
+        lineHeight: 1,
+        padding: "4px 6px",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+      onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
+    >
+      {label}
+    </button>
   );
 }
 

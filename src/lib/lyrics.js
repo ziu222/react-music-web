@@ -1,7 +1,10 @@
-const CACHE_KEY = "melodies_lyrics_cache_v1";
+const CACHE_KEY = "melodies_lyrics_cache_v2";
+const OFFSET_KEY = "melodies_lyrics_offsets_v1";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const MISS_TTL_MS = 1000 * 60 * 60 * 12;
 const LRCLIB_BASE_URL = "https://lrclib.net";
+const MIN_SYNC_CONFIDENCE = 0.82;
+const MAX_SYNC_DURATION_DIFF = 4;
 
 const EMPTY_LYRICS = {
   source: "none",
@@ -25,6 +28,32 @@ function readCache() {
 
 function writeCache(cache) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }
+  catch (err) { void err; }
+}
+
+function readOffsets() {
+  try {
+    const raw = localStorage.getItem(OFFSET_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function loadLyricsOffsetMs(trackId) {
+  if (!trackId) return 0;
+  const value = readOffsets()[trackId];
+  return Number.isFinite(value) ? value : 0;
+}
+
+export function saveLyricsOffsetMs(trackId, offsetMs) {
+  if (!trackId) return;
+  const offsets = readOffsets();
+  const clamped = Math.max(-10000, Math.min(10000, Math.round(offsetMs)));
+  if (clamped === 0) delete offsets[trackId];
+  else offsets[trackId] = clamped;
+  try { localStorage.setItem(OFFSET_KEY, JSON.stringify(offsets)); }
   catch (err) { void err; }
 }
 
@@ -54,11 +83,12 @@ function queryArtist(artist = "") {
 }
 
 function buildSongQuery(song) {
+  const duration = song.actualDurationSecs || song.durationSecs || 0;
   return {
     track_name: song.title,
     artist_name: queryArtist(song.artist),
     album_name: song.album || song.title,
-    duration: Math.round(song.durationSecs || 0),
+    duration: Math.round(duration),
   };
 }
 
@@ -106,7 +136,8 @@ function scoreCandidate(song, candidate) {
   const songArtist = normalizeLyricsQuery(queryArtist(song.artist));
   const candidateTitle = normalizeLyricsQuery(candidate.trackName || candidate.name);
   const candidateArtist = normalizeLyricsQuery(candidate.artistName);
-  const durationDiff = Math.abs(Number(candidate.duration || 0) - Number(song.durationSecs || 0));
+  const expectedDuration = Number(song.actualDurationSecs || song.durationSecs || 0);
+  const durationDiff = Math.abs(Number(candidate.duration || 0) - expectedDuration);
 
   let score = 0;
   if (candidateTitle === songTitle) score += 0.45;
@@ -129,9 +160,14 @@ function toLyricsResult(song, data, confidence = 1) {
 
   const syncedLines = parseSyncedLyrics(data.syncedLyrics);
   const plainText = String(data.plainLyrics || "").trim();
+  const expectedDuration = Number(song.actualDurationSecs || song.durationSecs || 0);
+  const durationDiff = Math.abs(Number(data.duration || 0) - expectedDuration);
+  const canTrustSynced = syncedLines.length > 0
+    && confidence >= MIN_SYNC_CONFIDENCE
+    && durationDiff <= MAX_SYNC_DURATION_DIFF;
   const type = data.instrumental
     ? "instrumental"
-    : syncedLines.length > 0
+    : canTrustSynced
       ? "synced"
       : plainText
         ? "plain"
@@ -152,6 +188,8 @@ function toLyricsResult(song, data, confidence = 1) {
       artistName: data.artistName || null,
       albumName: data.albumName || null,
       duration: data.duration ?? null,
+      durationDiff: Number.isFinite(durationDiff) ? Number(durationDiff.toFixed(2)) : null,
+      syncedRejected: syncedLines.length > 0 && !canTrustSynced,
     },
   };
 }
@@ -169,7 +207,7 @@ async function findFromLrclib(song, signal) {
   const candidates = Array.isArray(search) ? search : [];
   const ranked = candidates
     .map(candidate => ({ candidate, score: scoreCandidate(song, candidate) }))
-    .filter(item => item.score >= 0.62)
+    .filter(item => item.score >= 0.74)
     .sort((a, b) => b.score - a.score);
 
   if (ranked.length === 0) return null;

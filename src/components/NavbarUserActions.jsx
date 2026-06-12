@@ -89,6 +89,7 @@ export default function NavbarUserActions({
   onOpenSettings,
   onToggleAudioQuality,
   onHome,
+  onOpenProfile,
   onLogout,
 }) {
   const [openPanel, setOpenPanel] = useState(null);
@@ -288,7 +289,7 @@ export default function NavbarUserActions({
           </button>
 
           {[
-            { key: "profile", icon: UserRound, label: "Hồ sơ", onClick: onHome },
+            { key: "profile", icon: UserRound, label: "Hồ sơ", onClick: onOpenProfile },
             { key: "settings", icon: Settings, label: "Cài đặt", onClick: onOpenSettings },
             { key: "logout", icon: LogOut, label: "Đăng xuất", onClick: onLogout },
           ].map(item => {

@@ -10,6 +10,7 @@ import Sidebar from "./components/Sidebar";
 import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
 import NavbarUserActions from "./components/NavbarUserActions";
+import SupportWidget from "./components/SupportWidget";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/PremiumModal"));
@@ -26,6 +27,8 @@ import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
+import PageAdmin from "./pages/PageAdmin";
+import PageProfile from "./pages/PageProfile";
 import logo from "./assets/logo.png";
 import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
 
@@ -47,6 +50,7 @@ export default function App() {
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [prog, setProg] = useState(0);
+  const [actualDurationSecs, setActualDurationSecs] = useState(null);
   const [volume, setVolume] = useState(0.7);
   const [muted, setMuted] = useState(false);
   const [shuffle, setShuffle] = useState(false);
@@ -453,10 +457,11 @@ export default function App() {
 
   const seekTo = useCallback((seconds) => {
     if (!cur) return;
-    const clamped = Math.min(cur.durationSecs, Math.max(0, seconds));
+    const duration = actualDurationSecs || cur.durationSecs;
+    const clamped = Math.min(duration, Math.max(0, seconds));
     audioRef.current.currentTime = clamped;
-    setProg(Math.floor(clamped));
-  }, [cur]);
+    setProg(clamped);
+  }, [actualDurationSecs, cur]);
 
   const changeVolume = useCallback((value) => {
     const clamped = Math.min(1, Math.max(0, value));
@@ -735,14 +740,21 @@ export default function App() {
     const audio = audioRef.current;
     audio.preload = "metadata";
 
-    const syncProgress = () => setProg(Math.floor(audio.currentTime || 0));
+    const syncProgress = () => setProg(audio.currentTime || 0);
+    const syncDuration = () => {
+      setActualDurationSecs(Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : null);
+    };
     const stopPlayback = () => setPlaying(false);
     audio.addEventListener("timeupdate", syncProgress);
+    audio.addEventListener("loadedmetadata", syncDuration);
+    audio.addEventListener("durationchange", syncDuration);
     audio.addEventListener("error", stopPlayback);
 
     return () => {
       audio.pause();
       audio.removeEventListener("timeupdate", syncProgress);
+      audio.removeEventListener("loadedmetadata", syncDuration);
+      audio.removeEventListener("durationchange", syncDuration);
       audio.removeEventListener("error", stopPlayback);
     };
   }, []);
@@ -783,11 +795,13 @@ export default function App() {
     if (!cur?.audioUrl) {
       audio.removeAttribute("src");
       audio.load();
+      Promise.resolve().then(() => setActualDurationSecs(null));
       return;
     }
 
     audio.src = cur.audioUrl;
     audio.currentTime = 0;
+    Promise.resolve().then(() => setActualDurationSecs(null));
     audio.load();
   }, [cur]);
 
@@ -808,6 +822,14 @@ export default function App() {
   }, [playing, cur]);
 
   if (screen === "splash") return <Splash onDone={done} />;
+
+  if (screen === "admin" && authUser?.role === "admin") {
+    return (
+      <div data-theme={settings.themeMode}>
+        <PageAdmin authUser={authUser} songs={list} onExit={() => setScreen("app")} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -992,6 +1014,7 @@ export default function App() {
             onOpenSettings={() => setSettingsOpen(true)}
             onToggleAudioQuality={toggleAudioQuality}
             onHome={() => { nav("home"); setSearch(""); }}
+            onOpenProfile={() => nav("profile")}
             onLogout={handleLogout}
           />
           <button
@@ -1068,13 +1091,15 @@ export default function App() {
           onTogglePublicPlaylist={togglePublicPlaylist}
           canDownload={isPremium}
           onRequestDownload={requestDownload}
+          isAdmin={authUser?.role === "admin"}
+          onNavAdmin={() => setScreen("admin")}
         />
 
         {/* Main content */}
         <div style={{ flex: 1, overflowY: "auto", background: BG.base }}>
           {loading ? (
             <Loader text={`Đang tải ${
-              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album" }[page] ?? page
+              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album", profile: "hồ sơ" }[page] ?? page
             }...`} />
           ) : (
             <>
@@ -1156,6 +1181,17 @@ export default function App() {
                   onOpenAlbum={openAlbum}
                 />
               )}
+              {page === "profile" && (
+                <PageProfile
+                  user={authUser}
+                  isPremium={isPremium}
+                  likedCount={likedIds.size}
+                  recentSongs={recentSongs}
+                  onPlay={playWithAuth}
+                  cur={cur}
+                  onOpenPremium={() => setPremiumOpen(true)}
+                />
+              )}
             </>
           )}
         </div>
@@ -1166,6 +1202,7 @@ export default function App() {
         s={cur}
         playing={playing}
         prog={prog}
+        actualDurationSecs={actualDurationSecs}
         volume={volume}
         muted={muted}
         shuffle={shuffle}
@@ -1193,6 +1230,8 @@ export default function App() {
         onToggleSongInPlaylist={toggleSongInPlaylist}
         onCreatePlaylistWithSong={createPlaylistWithSong}
       />
+
+      <SupportWidget hasPlayer={Boolean(cur)} />
 
       {queueFeedback && (
         <div
