@@ -27,7 +27,7 @@ import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
-import PageAdmin from "./pages/PageAdmin";
+import PageAdmin from "./pages/admin/PageAdmin";
 import PageProfile from "./pages/PageProfile";
 import logo from "./assets/logo.png";
 import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
