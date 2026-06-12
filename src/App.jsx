@@ -65,6 +65,7 @@ export default function App() {
   const [authGate, setAuthGate] = useState(null);
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
@@ -212,6 +213,7 @@ export default function App() {
     setAuthMode(null);
     setPremiumOpen(false);
     setSettingsOpen(false);
+    setSupportOpen(false);
     setCur(null);
     setPlaying(false);
     setProg(0);
@@ -989,7 +991,14 @@ export default function App() {
             </span>
           )}
           <span
-            style={{ fontSize: 13, color: "var(--text-mid)", cursor: "pointer", padding: "0 6px", fontWeight: 500 }}
+            onClick={() => {
+              setSupportOpen(true);
+              setPremiumOpen(false);
+              setSettingsOpen(false);
+            }}
+            style={{ fontSize: 13, color: supportOpen ? C[400] : "var(--text-mid)", cursor: "pointer", padding: "0 6px", fontWeight: 500, transition: "color 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C[400]; }}
+            onMouseLeave={e => { e.currentTarget.style.color = supportOpen ? C[400] : "var(--text-mid)"; }}
           >
             Hỗ trợ
           </span>
@@ -1013,7 +1022,6 @@ export default function App() {
             onOpenPremium={() => setPremiumOpen(true)}
             onOpenSettings={() => setSettingsOpen(true)}
             onToggleAudioQuality={toggleAudioQuality}
-            onHome={() => { nav("home"); setSearch(""); }}
             onOpenProfile={() => nav("profile")}
             onLogout={handleLogout}
           />
@@ -1231,7 +1239,11 @@ export default function App() {
         onCreatePlaylistWithSong={createPlaylistWithSong}
       />
 
-      <SupportWidget hasPlayer={Boolean(cur)} />
+      <SupportWidget
+        hasPlayer={Boolean(cur)}
+        open={supportOpen}
+        onOpenChange={setSupportOpen}
+      />
 
       {queueFeedback && (
         <div
