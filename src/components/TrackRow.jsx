@@ -24,7 +24,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
         borderRadius: 6,
         cursor: "pointer",
         transition: "background 0.15s",
-        background: playing ? `${C[500]}12` : hov ? "rgba(255,255,255,0.06)" : "transparent",
+        background: playing ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
         userSelect: "none",
       }}
     >
@@ -34,7 +34,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           width: 20,
           textAlign: "center",
           fontSize: 12,
-          color: playing ? C[500] : "rgba(255,255,255,0.3)",
+          color: playing ? C[500] : "var(--text-tertiary)",
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
@@ -45,7 +45,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
         {playing
           ? <EqBars size={14} />
           : hov
-            ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "#fff" }} />
+            ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
             : index + 1}
       </span>
 
@@ -81,7 +81,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           style={{
             fontSize: 13,
             fontWeight: 500,
-            color: playing ? C[400] : "#ede5dd",
+            color: playing ? C[400] : "var(--text-primary)",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -93,7 +93,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
         <div
           style={{
             fontSize: 11,
-            color: "rgba(255,255,255,0.45)",
+            color: "var(--text-tertiary)",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -109,8 +109,8 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           flexShrink: 0,
           fontSize: 10,
           fontWeight: 500,
-          color: "rgba(255,255,255,0.35)",
-          background: "rgba(255,255,255,0.05)",
+          color: "var(--text-tertiary)",
+          background: "var(--overlay-1)",
           borderRadius: 9999,
           padding: "2px 8px",
           letterSpacing: 0.2,
@@ -124,7 +124,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
       <span
         style={{
           fontSize: 11,
-          color: "rgba(255,255,255,0.3)",
+          color: "var(--text-tertiary)",
           flexShrink: 0,
           minWidth: 28,
           textAlign: "right",
@@ -147,7 +147,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
             border: "none",
             cursor: "pointer",
             fontSize: 13,
-            color: "rgba(255,255,255,0.5)",
+            color: "var(--text-secondary)",
             padding: "2px 4px",
             lineHeight: 1,
             flexShrink: 0,
@@ -155,8 +155,8 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
             pointerEvents: hov ? "auto" : "none",
             transition: "opacity 0.15s, color 0.1s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; }}
         >
           <FontAwesomeIcon icon={faPlus} />
         </button>
@@ -174,7 +174,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           border: "none",
           cursor: "pointer",
           fontSize: 13,
-          color: liked ? R[400] : "rgba(255,255,255,0.45)",
+          color: liked ? R[400] : "var(--text-tertiary)",
           padding: "2px 4px",
           transition: "color 0.15s, transform 0.1s, opacity 0.15s",
           lineHeight: 1,

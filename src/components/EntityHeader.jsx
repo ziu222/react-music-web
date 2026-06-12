@@ -36,7 +36,7 @@ export default function EntityHeader({
         justifyContent: "center",
         fontSize: 52,
         fontWeight: 500,
-        color: "rgba(255,255,255,0.85)",
+        color: "var(--text-strong)",
       }}>
         {image ? (
           <img
@@ -63,7 +63,7 @@ export default function EntityHeader({
         <h1 style={{
           fontSize: title?.length > 28 ? 26 : 34,
           fontWeight: 700,
-          color: "#fff",
+          color: TEXT.primary,
           marginBottom: 10,
           whiteSpace: "nowrap",
           overflow: "hidden",

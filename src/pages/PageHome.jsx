@@ -115,7 +115,7 @@ function SectionHeader({ title }) {
         style={{
           fontSize: 12,
           fontWeight: 600,
-          color: hov ? "#ede5dd" : "rgba(255,255,255,0.5)",
+          color: hov ? "var(--text-primary)" : "var(--text-secondary)",
           textDecoration: hov ? "underline" : "none",
           cursor: "pointer",
           letterSpacing: 0.3,
@@ -155,8 +155,10 @@ function QuickTile({ song, cur, onPlay }) {
         height: 56,
         borderRadius: 6,
         overflow: "hidden",
-        background: hov ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.07)",
-        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
+        background: hov ? "var(--bg-el)" : "var(--bg-card)",
+        border: "1px solid var(--border)",
+        boxShadow: hov ? "var(--shadow-card-hover)" : "var(--shadow-card)",
+        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
         cursor: "pointer",
       }}
     >
@@ -165,7 +167,7 @@ function QuickTile({ song, cur, onPlay }) {
         height: 56,
         flexShrink: 0,
         background: song.bg ?? "rgba(255,255,255,0.08)",
-        boxShadow: "4px 0 16px rgba(0,0,0,0.35)",
+        boxShadow: "var(--shadow-cover)",
       }}>
         {cover && (
           <img
@@ -181,7 +183,7 @@ function QuickTile({ song, cur, onPlay }) {
         padding: "0 52px 0 12px",
         fontSize: 13,
         fontWeight: 600,
-        color: playing ? "#fb923c" : "#ede5dd",
+        color: playing ? "#fb923c" : "var(--text-primary)",
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
@@ -244,11 +246,10 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
         scrollSnapAlign: "start",
         padding: 12,
         borderRadius: 8,
-        background: hov ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+        background: hov ? "var(--bg-el)" : "var(--bg-card)",
+        border: "1px solid var(--border)",
         transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
-        boxShadow: hov
-          ? "rgba(0,0,0,0.4) 0px 8px 20px"
-          : "rgba(0,0,0,0.2) 0px 2px 8px",
+        boxShadow: hov ? "var(--shadow-card-hover)" : "var(--shadow-card)",
         cursor: "pointer",
       }}
     >
@@ -259,7 +260,7 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
           borderRadius: 6,
           background: album.representative.bg ?? "rgba(255,255,255,0.08)",
           overflow: "hidden",
-          boxShadow: "rgba(0,0,0,0.4) 0px 8px 24px",
+          boxShadow: "var(--shadow-cover)",
         }}>
           {cover ? (
             <img
@@ -301,14 +302,14 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
       </div>
 
       <div style={{
-        fontSize: 13, fontWeight: 600, color: "#ede5dd",
+        fontSize: 13, fontWeight: 600, color: "var(--text-primary)",
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         marginBottom: 3,
       }}>
         {album.album}
       </div>
       <div style={{
-        fontSize: 11, color: "rgba(255,255,255,0.45)",
+        fontSize: 11, color: "var(--text-tertiary)",
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
       }}>
         {album.artist} · Album
@@ -343,7 +344,8 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
         padding: 12,
         borderRadius: 8,
         textAlign: "center",
-        background: hov ? "rgba(255,255,255,0.07)" : "transparent",
+        background: hov ? "var(--overlay-1)" : "transparent",
+        border: "1px solid transparent",
         transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1)",
         cursor: "pointer",
         scrollSnapAlign: "start",
@@ -355,9 +357,9 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
           margin: "0 auto",
           background: artist.bg,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 40, fontWeight: 500, color: "rgba(255,255,255,0.9)",
+          fontSize: 40, fontWeight: 500, color: "var(--text-strong)",
           overflow: "hidden",
-          boxShadow: "rgba(0,0,0,0.4) 0px 8px 24px",
+          boxShadow: "var(--shadow-cover)",
         }}>
           {artist.image ? (
             <img
@@ -390,12 +392,12 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
         </div>
       </div>
       <div style={{
-        fontSize: 13, fontWeight: 600, color: "#ede5dd",
+        fontSize: 13, fontWeight: 600, color: "var(--text-primary)",
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
       }}>
         {artist.name}
       </div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+      <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 3 }}>
         Nghệ sĩ
       </div>
     </div>
