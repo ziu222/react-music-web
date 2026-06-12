@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
 import { C, G, BG, TEXT } from "../constants/theme";
 import users from "../data/users";
+import { applyUserOverride } from "../lib/userOverrides";
 
 const SOCIAL_PROVIDERS = [
   { id: "google", label: "Tiếp tục với Google", mark: "G", color: "#fff" },
@@ -343,7 +344,20 @@ export default function AuthModal({ mode, onClose, onAuth }) {
       }
       const safeUser = { ...matched };
       delete safeUser.password;
-      onAuth(safeUser);
+      const effective = applyUserOverride(safeUser);
+      if (effective.deleted) {
+        setErrors({ password: "Tài khoản không tồn tại." });
+        return;
+      }
+      if (effective.status === "banned") {
+        setErrors({
+          password:
+            "Tài khoản đã bị khóa" +
+            (effective.banReason ? ": " + effective.banReason : "."),
+        });
+        return;
+      }
+      onAuth(effective);
     }, 350);
   };
 

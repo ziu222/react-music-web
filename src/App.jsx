@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
 import songs from "./data/songs";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/Splash";
@@ -22,12 +22,16 @@ import {
 } from "./auth/session";
 import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/settings";
 import { loadNotifications, saveNotifications, createNotification } from "./lib/notifications";
+import { applyUserOverride } from "./lib/userOverrides";
+import { logAdminAction } from "./lib/auditLog";
+import { applySongOverrides } from "./lib/songOverrides";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
-import PageAdmin from "./pages/PageAdmin";
+import PageAdmin from "./pages/admin/PageAdmin";
+import PageArtistStudio from "./pages/artist/PageArtistStudio";
 import PageProfile from "./pages/PageProfile";
 import logo from "./assets/logo.png";
 import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
@@ -58,10 +62,15 @@ export default function App() {
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
   const [likedIds, setLikedIds] = useState(new Set());
-  const [list] = useState(songs);
+  // Bài bị admin gỡ biến mất khỏi app — tính lại khi rời màn admin
+  const list = useMemo(() => {
+    void screen;
+    return applySongOverrides(songs);
+  }, [screen]);
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(() => loadSession());
+  const [impersonatorAdmin, setImpersonatorAdmin] = useState(null);
   const [authGate, setAuthGate] = useState(null);
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -192,8 +201,10 @@ export default function App() {
   const openAuth = (mode) => setAuthMode(mode);
 
   const handleAuth = (user) => {
-    // Entitlement đã mua (premium) thắng plan mặc định của tài khoản seed
-    setAuthUser(normalizeUser(applyEntitlement(user)));
+    // Override của admin (role/plan/ban/xóa) đè lên seed, rồi mới tới entitlement
+    const effective = applyUserOverride(user);
+    if (effective.deleted || effective.status === "banned") return;
+    setAuthUser(normalizeUser(applyEntitlement(effective)));
     setAuthMode(null);
     const pendingAction = authGate?.afterAuth;
     setAuthGate(null);
@@ -206,8 +217,25 @@ export default function App() {
     setPage("home");
   };
 
+  const handleImpersonate = (target) => {
+    logAdminAction(authUser, "impersonate", target.name, target.email);
+    setImpersonatorAdmin(authUser);
+    setAuthUser(normalizeUser(applyEntitlement(applyUserOverride(target))));
+    setScreen("app");
+    setPage("home");
+  };
+
+  const stopImpersonate = () => {
+    if (!impersonatorAdmin) return;
+    setAuthUser(impersonatorAdmin);
+    setImpersonatorAdmin(null);
+    setScreen("admin");
+    setPage("home");
+  };
+
   const handleLogout = () => {
     clearSession();
+    setImpersonatorAdmin(null);
     setAuthUser(null);
     setAuthGate(null);
     setAuthMode(null);
@@ -828,7 +856,20 @@ export default function App() {
   if (screen === "admin" && authUser?.role === "admin") {
     return (
       <div data-theme={settings.themeMode}>
-        <PageAdmin authUser={authUser} songs={list} onExit={() => setScreen("app")} />
+        <PageAdmin
+          authUser={authUser}
+          songs={songs}
+          onExit={() => setScreen("app")}
+          onImpersonate={handleImpersonate}
+        />
+      </div>
+    );
+  }
+
+  if (screen === "artist" && authUser?.role === "artist") {
+    return (
+      <div data-theme={settings.themeMode}>
+        <PageArtistStudio authUser={authUser} onExit={() => setScreen("app")} />
       </div>
     );
   }
@@ -846,6 +887,43 @@ export default function App() {
         overflow: "hidden",
       }}
     >
+      {impersonatorAdmin && (
+        <div
+          style={{
+            height: 34,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            background: "linear-gradient(90deg, #7c2d12, #c2410c)",
+            color: "#fff",
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          <FontAwesomeIcon icon={faEye} style={{ fontSize: 11 }} />
+          <span>
+            Đang xem với tư cách {authUser?.name} ({authUser?.role})
+          </span>
+          <button
+            onClick={stopImpersonate}
+            style={{
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              color: "#fff",
+              borderRadius: 9999,
+              padding: "3px 12px",
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Quay lại Admin
+          </button>
+        </div>
+      )}
+
       {/* ── Top navbar ── */}
       <div
         style={{
@@ -1101,6 +1179,8 @@ export default function App() {
           onRequestDownload={requestDownload}
           isAdmin={authUser?.role === "admin"}
           onNavAdmin={() => setScreen("admin")}
+          isArtist={authUser?.role === "artist"}
+          onNavArtist={() => setScreen("artist")}
         />
 
         {/* Main content */}
