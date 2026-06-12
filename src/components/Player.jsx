@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   CircleCheck,
   CirclePlus,
@@ -29,6 +29,7 @@ export default function Player({
   s,
   playing,
   prog,
+  actualDurationSecs,
   volume,
   muted,
   shuffle,
@@ -80,7 +81,11 @@ export default function Player({
   const sRef = useRef(s);
   const onSeekRef = useRef(onSeek);
   const onVolumeChangeRef = useRef(onVolumeChange);
-  useEffect(() => { sRef.current = s; }, [s]);
+  const songForLyrics = useMemo(
+    () => s ? { ...s, actualDurationSecs: actualDurationSecs ?? null } : null,
+    [actualDurationSecs, s]
+  );
+  useEffect(() => { sRef.current = songForLyrics; }, [songForLyrics]);
   useEffect(() => { onSeekRef.current = onSeek; }, [onSeek]);
   useEffect(() => { onVolumeChangeRef.current = onVolumeChange; }, [onVolumeChange]);
 
@@ -89,7 +94,8 @@ export default function Player({
       if (dragStateRef.current.progress && progressBarRef.current) {
         const rect = progressBarRef.current.getBoundingClientRect();
         const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-        onSeekRef.current(Math.round(ratio * (sRef.current?.durationSecs || 0)));
+        const duration = sRef.current?.actualDurationSecs || sRef.current?.durationSecs || 0;
+        onSeekRef.current(ratio * duration);
       }
       if (dragStateRef.current.volume && volumeBarRef.current) {
         const rect = volumeBarRef.current.getBoundingClientRect();
@@ -114,7 +120,8 @@ export default function Player({
   const liked = likedIds.has(s.id);
   const isSaved = liked || userPlaylists.some(pl => typeof pl.id === "string" && pl.songIds?.includes(s.id));
   const cover = getSongImage(s);
-  const pct = s.durationSecs > 0 ? Math.min(100, Math.max(0, (prog / s.durationSecs) * 100)) : 0;
+  const playbackDurationSecs = actualDurationSecs || s.durationSecs || 0;
+  const pct = playbackDurationSecs > 0 ? Math.min(100, Math.max(0, (prog / playbackDurationSecs) * 100)) : 0;
   const volPct = muted ? 0 : Math.round(volume * 100);
   const mins = Math.floor(prog / 60);
   const secs = String(Math.floor(prog % 60)).padStart(2, "0");
@@ -126,7 +133,7 @@ export default function Player({
     if (progressBarRef.current) {
       const rect = progressBarRef.current.getBoundingClientRect();
       const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-      onSeek(Math.round(ratio * s.durationSecs));
+      onSeek(ratio * playbackDurationSecs);
     }
   };
 
@@ -176,7 +183,7 @@ export default function Player({
       <ExpandedPlayer
         isOpen={expandOpen}
         onClose={() => setExpandOpen(false)}
-        s={s} playing={playing} prog={prog} volume={volume} muted={muted}
+        s={songForLyrics} playing={playing} prog={prog} actualDurationSecs={actualDurationSecs} volume={volume} muted={muted}
         shuffle={shuffle} repeatMode={repeatMode} likedIds={likedIds}
         onToggle={onToggle} onPrevious={onPrevious} onNext={onNext}
         onSeek={onSeek} onVolumeChange={onVolumeChange} onMuteToggle={onMuteToggle}
@@ -206,7 +213,7 @@ export default function Player({
       <LyricsPanel
         isOpen={lyricsOpen}
         onClose={() => setLyricsOpen(false)}
-        currentSong={s}
+        currentSong={songForLyrics}
         currentTime={prog}
         onSeek={onSeek}
       />

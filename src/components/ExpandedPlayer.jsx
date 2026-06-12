@@ -7,11 +7,11 @@ import EqBars from "./EqBars";
 import SaveToPlaylistPopover from "./SaveToPlaylistPopover";
 import { C } from "../constants/theme";
 import { getSongImage } from "../data/media";
-import { loadLyricsForSong } from "../lib/lyrics";
+import { loadLyricsForSong, loadLyricsOffsetMs } from "../lib/lyrics";
 
 export default function ExpandedPlayer({
   isOpen, onClose,
-  s, playing, prog, volume, muted, shuffle, repeatMode,
+  s, playing, prog, actualDurationSecs, volume, muted, shuffle, repeatMode,
   likedIds,
   onToggle, onPrevious, onNext, onSeek, onVolumeChange, onMuteToggle,
   onShuffleToggle, onRepeatCycle, onLike,
@@ -39,7 +39,8 @@ export default function ExpandedPlayer({
       if (!dragRef.current || !progressBarRef.current) return;
       const rect = progressBarRef.current.getBoundingClientRect();
       const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-      onSeekRef.current(Math.round(ratio * (sRef.current?.durationSecs || 0)));
+      const duration = sRef.current?.actualDurationSecs || sRef.current?.durationSecs || 0;
+      onSeekRef.current(ratio * duration);
     };
     const onUp = () => { dragRef.current = false; setIsDragging(false); };
     document.addEventListener("mousemove", onMove);
@@ -61,7 +62,8 @@ export default function ExpandedPlayer({
   const liked = likedIds.has(s.id);
   const isSaved = liked || userPlaylists.some(pl => typeof pl.id === "string" && pl.songIds?.includes(s.id));
   const cover = getSongImage(s);
-  const pct = s.durationSecs > 0 ? Math.min(100, Math.max(0, (prog / s.durationSecs) * 100)) : 0;
+  const playbackDurationSecs = actualDurationSecs || s.actualDurationSecs || s.durationSecs || 0;
+  const pct = playbackDurationSecs > 0 ? Math.min(100, Math.max(0, (prog / playbackDurationSecs) * 100)) : 0;
   const volPct = muted ? 0 : Math.round(volume * 100);
   const mins = Math.floor(prog / 60);
   const secs = String(Math.floor(prog % 60)).padStart(2, "0");
@@ -73,7 +75,7 @@ export default function ExpandedPlayer({
     if (progressBarRef.current) {
       const rect = progressBarRef.current.getBoundingClientRect();
       const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-      onSeek(Math.round(ratio * s.durationSecs));
+      onSeek(ratio * playbackDurationSecs);
     }
   };
 
@@ -397,6 +399,8 @@ export default function ExpandedPlayer({
 function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
   const [status, setStatus] = useState("idle");
   const [lyrics, setLyrics] = useState(null);
+  const [offsetMs, setOffsetMs] = useState(0);
+  const songId = song?.id;
 
   useEffect(() => {
     if (!song) return;
@@ -421,6 +425,11 @@ function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
     return () => controller.abort();
   }, [song]);
 
+  useEffect(() => {
+    if (!songId) return;
+    Promise.resolve().then(() => setOffsetMs(loadLyricsOffsetMs(songId)));
+  }, [songId]);
+
   const syncedLines = useMemo(() => lyrics?.syncedLines ?? [], [lyrics?.syncedLines]);
   const plainLines = useMemo(() => (
     String(lyrics?.plainText || "")
@@ -431,13 +440,14 @@ function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
 
   const activeIndex = useMemo(() => {
     if (lyrics?.type !== "synced" || syncedLines.length === 0) return -1;
+    const syncedTime = currentTime + offsetMs / 1000;
     let index = 0;
     for (let i = 0; i < syncedLines.length; i += 1) {
-      if (syncedLines[i].time <= currentTime + 0.15) index = i;
+      if (syncedLines[i].time <= syncedTime + 0.15) index = i;
       else break;
     }
     return index;
-  }, [currentTime, lyrics?.type, syncedLines]);
+  }, [currentTime, lyrics?.type, offsetMs, syncedLines]);
 
   const previewLines = useMemo(() => {
     if (lyrics?.type === "synced") {
@@ -510,7 +520,7 @@ function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
               <button
                 key={`${line.index}-${line.time ?? line.text}`}
                 type="button"
-                onClick={() => typeof line.time === "number" && onSeek?.(Math.max(0, Math.floor(line.time)))}
+                onClick={() => typeof line.time === "number" && onSeek?.(Math.max(0, line.time - offsetMs / 1000))}
                 style={{
                   border: "none",
                   background: active ? "rgba(249,115,22,0.10)" : "transparent",

@@ -47,6 +47,7 @@ export default function App() {
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [prog, setProg] = useState(0);
+  const [actualDurationSecs, setActualDurationSecs] = useState(null);
   const [volume, setVolume] = useState(0.7);
   const [muted, setMuted] = useState(false);
   const [shuffle, setShuffle] = useState(false);
@@ -453,10 +454,11 @@ export default function App() {
 
   const seekTo = useCallback((seconds) => {
     if (!cur) return;
-    const clamped = Math.min(cur.durationSecs, Math.max(0, seconds));
+    const duration = actualDurationSecs || cur.durationSecs;
+    const clamped = Math.min(duration, Math.max(0, seconds));
     audioRef.current.currentTime = clamped;
-    setProg(Math.floor(clamped));
-  }, [cur]);
+    setProg(clamped);
+  }, [actualDurationSecs, cur]);
 
   const changeVolume = useCallback((value) => {
     const clamped = Math.min(1, Math.max(0, value));
@@ -735,14 +737,21 @@ export default function App() {
     const audio = audioRef.current;
     audio.preload = "metadata";
 
-    const syncProgress = () => setProg(Math.floor(audio.currentTime || 0));
+    const syncProgress = () => setProg(audio.currentTime || 0);
+    const syncDuration = () => {
+      setActualDurationSecs(Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : null);
+    };
     const stopPlayback = () => setPlaying(false);
     audio.addEventListener("timeupdate", syncProgress);
+    audio.addEventListener("loadedmetadata", syncDuration);
+    audio.addEventListener("durationchange", syncDuration);
     audio.addEventListener("error", stopPlayback);
 
     return () => {
       audio.pause();
       audio.removeEventListener("timeupdate", syncProgress);
+      audio.removeEventListener("loadedmetadata", syncDuration);
+      audio.removeEventListener("durationchange", syncDuration);
       audio.removeEventListener("error", stopPlayback);
     };
   }, []);
@@ -783,11 +792,13 @@ export default function App() {
     if (!cur?.audioUrl) {
       audio.removeAttribute("src");
       audio.load();
+      Promise.resolve().then(() => setActualDurationSecs(null));
       return;
     }
 
     audio.src = cur.audioUrl;
     audio.currentTime = 0;
+    Promise.resolve().then(() => setActualDurationSecs(null));
     audio.load();
   }, [cur]);
 
@@ -1166,6 +1177,7 @@ export default function App() {
         s={cur}
         playing={playing}
         prog={prog}
+        actualDurationSecs={actualDurationSecs}
         volume={volume}
         muted={muted}
         shuffle={shuffle}
