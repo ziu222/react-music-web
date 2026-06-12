@@ -27,6 +27,7 @@ import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
 import PageAdmin from "./pages/PageAdmin";
+import PageProfile from "./pages/PageProfile";
 import logo from "./assets/logo.png";
 import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
 
@@ -1012,6 +1013,7 @@ export default function App() {
             onOpenSettings={() => setSettingsOpen(true)}
             onToggleAudioQuality={toggleAudioQuality}
             onHome={() => { nav("home"); setSearch(""); }}
+            onOpenProfile={() => nav("profile")}
             onLogout={handleLogout}
           />
           <button
@@ -1096,7 +1098,7 @@ export default function App() {
         <div style={{ flex: 1, overflowY: "auto", background: BG.base }}>
           {loading ? (
             <Loader text={`Đang tải ${
-              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album" }[page] ?? page
+              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album", profile: "hồ sơ" }[page] ?? page
             }...`} />
           ) : (
             <>
@@ -1176,6 +1178,17 @@ export default function App() {
                   recentIds={recentIds}
                   onOpenArtist={openArtist}
                   onOpenAlbum={openAlbum}
+                />
+              )}
+              {page === "profile" && (
+                <PageProfile
+                  user={authUser}
+                  isPremium={isPremium}
+                  likedCount={likedIds.size}
+                  recentSongs={recentSongs}
+                  onPlay={playWithAuth}
+                  cur={cur}
+                  onOpenPremium={() => setPremiumOpen(true)}
                 />
               )}
             </>
