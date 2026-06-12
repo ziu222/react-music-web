@@ -9,7 +9,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
-import { loadSubmissions, resubmit } from "../../lib/submissions";
+import { loadSubmissions, resubmit, deleteSubmission } from "../../lib/submissions";
+import { deleteMediaBlob } from "../../lib/mediaStore";
 import StudioOverview from "./StudioOverview";
 import StudioAnalytics from "./StudioAnalytics";
 import StudioSongs from "./StudioSongs";
@@ -87,6 +88,16 @@ export default function PageArtistStudio({ authUser, onExit }) {
           onResubmit={(id) => {
             setSubs(resubmit(id));
             showToast("Đã gửi lại để duyệt");
+          }}
+          onEditDraft={(sub) => {
+            setEditingDraft(sub);
+            setStudioTab("submit");
+          }}
+          onDeleteDraft={(sub) => {
+            deleteMediaBlob(sub.audioBlobId);
+            deleteMediaBlob(sub.coverBlobId);
+            setSubs(deleteSubmission(sub.id));
+            showToast("Đã xóa bản nháp");
           }}
         />
       )}
