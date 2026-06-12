@@ -40,8 +40,8 @@ export default function QueuePanel({
         top: 60,
         bottom: 90,
         width: 320,
-        background: "#121212",
-        borderLeft: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--island-bg)",
+        borderLeft: "1px solid var(--island-border)",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
@@ -56,7 +56,7 @@ export default function QueuePanel({
       <div style={{
         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
         padding: "12px 16px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--island-border)",
         flexShrink: 0,
       }}>
         <div role="tablist" aria-label="Queue sections" style={{ display: "flex", alignItems: "flex-end", gap: 0 }}>
@@ -73,11 +73,11 @@ export default function QueuePanel({
               style={{
                 background: "none",
                 border: "none",
-                borderBottom: tab === id ? "2px solid #f4eee8" : "2px solid transparent",
+                borderBottom: tab === id ? "2px solid var(--island-text)" : "2px solid transparent",
                 cursor: "pointer",
                 fontSize: 13,
                 fontWeight: 700,
-                color: tab === id ? "#f4eee8" : "rgba(255,255,255,0.38)",
+                color: tab === id ? "var(--island-text)" : "var(--island-faint)",
                 padding: "0 0 10px",
                 marginRight: id === "queue" ? 16 : 0,
                 transition: "color 120ms ease, border-color 120ms ease",
@@ -97,13 +97,13 @@ export default function QueuePanel({
           onClick={onClose}
           style={{
             background: "transparent", border: "none", cursor: "pointer",
-            color: "rgba(255,255,255,0.54)", display: "inline-flex",
+            color: "var(--island-muted)", display: "inline-flex",
             padding: 4, borderRadius: 4,
             transition: "color 80ms ease",
             flexShrink: 0, marginBottom: 10,
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.54)"; }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
         >
           <X size={18} />
         </button>
@@ -134,13 +134,13 @@ export default function QueuePanel({
                     style={{
                       background: "none", border: "none", cursor: "pointer",
                       fontSize: 11, fontWeight: 600,
-                      color: "rgba(255,255,255,0.38)",
+                      color: "var(--island-faint)",
                       padding: "2px 4px", borderRadius: 3,
                       transition: "color 80ms ease",
                       lineHeight: 1,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.38)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "var(--island-faint)"; }}
                   >
                     Clear
                   </button>
@@ -165,11 +165,11 @@ export default function QueuePanel({
               <p style={sectionLabel}>Next Up</p>
               {upcomingTracks.length === 0 ? (
                 shuffle ? (
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", textAlign: "center", padding: "16px 8px", fontStyle: "italic", margin: 0 }}>
+                  <p style={{ fontSize: 11, color: "var(--island-faint)", textAlign: "center", padding: "16px 8px", fontStyle: "italic", margin: 0 }}>
                     Next cycle will reshuffle
                   </p>
                 ) : (
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "24px 0", margin: 0 }}>
+                  <p style={{ fontSize: 13, color: "var(--island-faint)", textAlign: "center", padding: "24px 0", margin: 0 }}>
                     No upcoming tracks
                   </p>
                 )
@@ -189,7 +189,7 @@ export default function QueuePanel({
           <section style={{ padding: "12px 12px 4px" }}>
             <p style={sectionLabel}>Recent</p>
             {recentTracks.length === 0 ? (
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "24px 0", margin: 0 }}>
+              <p style={{ fontSize: 13, color: "var(--island-faint)", textAlign: "center", padding: "24px 0", margin: 0 }}>
                 Nothing played yet
               </p>
             ) : (
@@ -210,7 +210,7 @@ export default function QueuePanel({
 }
 
 const sectionLabel = {
-  fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.38)",
+  fontSize: 10, fontWeight: 600, color: "var(--island-faint)",
   textTransform: "uppercase", letterSpacing: "0.08em",
   marginBottom: 6, padding: "0 4px", margin: "0 0 6px",
 };
@@ -224,14 +224,14 @@ function ActionButton({ label, children, onClick, disabled }) {
       disabled={disabled}
       style={{
         background: "none", border: "none", cursor: disabled ? "default" : "pointer",
-        color: disabled ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)",
+        color: disabled ? "var(--island-rail)" : "var(--island-muted)",
         fontSize: 13, lineHeight: 1,
         padding: "3px 4px", borderRadius: 3,
         transition: "color 80ms ease",
         flexShrink: 0,
       }}
       onMouseEnter={e => { if (!disabled) e.currentTarget.style.color = "#fff"; }}
-      onMouseLeave={e => { if (!disabled) e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+      onMouseLeave={e => { if (!disabled) e.currentTarget.style.color = "var(--island-muted)"; }}
     >
       {children}
     </button>
@@ -260,7 +260,7 @@ function QueuedRow({ song, index, total, onPlay, onRemove, onMoveUp, onMoveDown 
         display: "flex", alignItems: "center", gap: 8,
         padding: "5px 4px", borderRadius: 6,
         cursor: "pointer",
-        background: showActions ? "rgba(255,255,255,0.08)" : "transparent",
+        background: showActions ? "var(--island-hover)" : "transparent",
         transition: "background 80ms ease",
       }}
     >
@@ -274,12 +274,12 @@ function QueuedRow({ song, index, total, onPlay, onRemove, onMoveUp, onMoveDown 
 
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{
-          fontSize: 13, fontWeight: 600, color: "#f4eee8",
+          fontSize: 13, fontWeight: 600, color: "var(--island-text)",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
           {song.title}
         </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ fontSize: 11, color: "var(--island-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {song.artist}
         </div>
       </div>
@@ -291,7 +291,7 @@ function QueuedRow({ song, index, total, onPlay, onRemove, onMoveUp, onMoveDown 
           <ActionButton label="Remove from queue" onClick={onRemove}>✕</ActionButton>
         </div>
       ) : (
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+        <span style={{ fontSize: 11, color: "var(--island-faint)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
           {song.duration}
         </span>
       )}
@@ -311,11 +311,11 @@ function QueueRow({ song, isActive = false, onPlay }) {
         display: "flex", alignItems: "center", gap: 10,
         padding: "5px 4px", borderRadius: 6,
         cursor: onPlay ? "pointer" : "default",
-        background: isActive ? "rgba(255,255,255,0.06)" : "transparent",
+        background: isActive ? "var(--island-hover)" : "transparent",
         transition: "background 80ms ease",
       }}
-      onMouseEnter={e => { if (onPlay) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-      onMouseLeave={e => { if (onPlay) e.currentTarget.style.background = isActive ? "rgba(255,255,255,0.06)" : "transparent"; }}
+      onMouseEnter={e => { if (onPlay) e.currentTarget.style.background = "var(--island-hover)"; }}
+      onMouseLeave={e => { if (onPlay) e.currentTarget.style.background = isActive ? "var(--island-hover)" : "transparent"; }}
     >
       <div style={{
         width: 40, height: 40, borderRadius: 4, flexShrink: 0,
@@ -328,17 +328,17 @@ function QueueRow({ song, isActive = false, onPlay }) {
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{
           fontSize: 13, fontWeight: 600,
-          color: isActive ? C[400] : "#f4eee8",
+          color: isActive ? C[400] : "var(--island-text)",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
           {song.title}
         </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ fontSize: 11, color: "var(--island-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {song.artist}
         </div>
       </div>
 
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+      <span style={{ fontSize: 11, color: "var(--island-faint)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
         {song.duration}
       </span>
     </div>

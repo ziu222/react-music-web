@@ -88,19 +88,19 @@ export default function ExpandedPlayer({
   const ctrlBtn = (active = false) => ({
     width: 36, height: 36, borderRadius: 999, border: "none",
     background: "transparent",
-    color: active ? C[400] : "rgba(255,255,255,0.72)",
+    color: active ? C[400] : "var(--island-fill)",
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     cursor: "pointer", flexShrink: 0,
     transition: "background 80ms ease, color 80ms ease, transform 140ms cubic-bezier(0.2,0,0,1)",
   });
 
   const ctrlHoverOn = (e, active = false) => {
-    e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-    e.currentTarget.style.color = active ? C[400] : "#fff";
+    e.currentTarget.style.background = "var(--island-hover)";
+    e.currentTarget.style.color = active ? C[400] : "var(--island-text)";
   };
   const ctrlHoverOff = (e, active = false) => {
     e.currentTarget.style.background = "transparent";
-    e.currentTarget.style.color = active ? C[400] : "rgba(255,255,255,0.72)";
+    e.currentTarget.style.color = active ? C[400] : "var(--island-fill)";
   };
   const ctrlPress = (e) => { e.currentTarget.style.transform = "scale(0.94)"; };
   const ctrlRelease = (e) => { e.currentTarget.style.transform = "scale(1)"; };
@@ -146,16 +146,16 @@ export default function ExpandedPlayer({
             onClick={onClose}
             style={{
               background: "transparent", border: "none", cursor: "pointer",
-              color: "rgba(255,255,255,0.64)", display: "inline-flex",
+              color: "var(--island-muted)", display: "inline-flex",
               padding: 6, borderRadius: "50%",
               transition: "background 80ms ease, color 80ms ease",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.64)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--island-hover)"; e.currentTarget.style.color = "var(--island-text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--island-muted)"; }}
           >
             <ChevronDown size={24} />
           </button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.72)", letterSpacing: "0.04em" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--island-fill)", letterSpacing: "0.04em" }}>
             Now Playing
           </span>
           <div style={{ display: "flex", gap: 2 }}>
@@ -163,17 +163,17 @@ export default function ExpandedPlayer({
               type="button"
               aria-label="Open lyrics panel"
               onClick={onOpenLyrics}
-              style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.52)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.52)"; }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--island-muted)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
             >♪</button>
             <button
               type="button"
               aria-label="Open queue panel"
               onClick={onOpenQueue}
-              style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.52)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.52)"; }}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--island-muted)", fontSize: 17, display: "inline-flex", alignItems: "center", padding: "4px 6px", borderRadius: 4, transition: "color 80ms ease" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
             >≡</button>
           </div>
         </div>
@@ -207,10 +207,10 @@ export default function ExpandedPlayer({
             {/* Track info + like */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#f4eee8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 6 }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--island-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 6 }}>
                   {s.title}
                 </div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.58)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontSize: 14, color: "var(--island-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {s.artist}
                 </div>
               </div>
@@ -220,12 +220,12 @@ export default function ExpandedPlayer({
                 onClick={() => setSaveOpen(p => !p)}
                 style={{
                   background: "transparent", border: "none", cursor: "pointer",
-                  color: isSaved ? "#1ed760" : "rgba(255,255,255,0.55)",
+                  color: isSaved ? "#1ed760" : "var(--island-muted)",
                   flexShrink: 0, display: "inline-flex", padding: 6, marginLeft: 12,
                   transition: "color 0.15s, transform 0.12s",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "#fff"; e.currentTarget.style.transform = "scale(1.12)"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "rgba(255,255,255,0.55)"; e.currentTarget.style.transform = "scale(1)"; }}
+                onMouseEnter={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--island-text)"; e.currentTarget.style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = isSaved ? "#1ed760" : "var(--island-muted)"; e.currentTarget.style.transform = "scale(1)"; }}
                 onMouseDown={e => { e.currentTarget.style.transform = "scale(0.92)"; }}
                 onMouseUp={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
               >
@@ -245,7 +245,7 @@ export default function ExpandedPlayer({
                 <div style={{
                   position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)",
                   height: showThumb ? 6 : 4,
-                  background: "rgba(255,255,255,0.18)", borderRadius: 999, overflow: "hidden",
+                  background: "var(--island-rail)", borderRadius: 999, overflow: "hidden",
                   transition: "height 0.1s",
                 }}>
                   <div style={{ width: `${pct}%`, height: "100%", background: C[500], borderRadius: 999, transition: isDragging ? "none" : "width 1s linear" }} />
@@ -260,8 +260,8 @@ export default function ExpandedPlayer({
                 )}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontVariantNumeric: "tabular-nums" }}>{mins}:{secs}</span>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontVariantNumeric: "tabular-nums" }}>{s.duration}</span>
+                <span style={{ fontSize: 10, color: "var(--island-faint)", fontVariantNumeric: "tabular-nums" }}>{mins}:{secs}</span>
+                <span style={{ fontSize: 10, color: "var(--island-faint)", fontVariantNumeric: "tabular-nums" }}>{s.duration}</span>
               </div>
             </div>
 

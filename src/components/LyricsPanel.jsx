@@ -25,8 +25,8 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, lyrics = nul
         top: 60,
         bottom: 90,
         width: 320,
-        background: "#121212",
-        borderLeft: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--island-bg)",
+        borderLeft: "1px solid var(--island-border)",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
@@ -41,13 +41,13 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, lyrics = nul
       <div style={{
         display: "flex", alignItems: "flex-start", justifyContent: "space-between",
         padding: "16px 16px 12px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--island-border)",
         flexShrink: 0, gap: 8,
       }}>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#f4eee8" }}>Lyrics</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--island-text)" }}>Lyrics</div>
           {currentSong && (
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ fontSize: 11, color: "var(--island-faint)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {currentSong.title} — {currentSong.artist}
             </div>
           )}
@@ -58,11 +58,11 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, lyrics = nul
           onClick={onClose}
           style={{
             background: "transparent", border: "none", cursor: "pointer", flexShrink: 0,
-            color: "rgba(255,255,255,0.54)", display: "inline-flex", padding: 4,
+            color: "var(--island-muted)", display: "inline-flex", padding: 4,
             borderRadius: 4, transition: "color 80ms ease",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.54)"; }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
         >
           <X size={18} />
         </button>
@@ -74,10 +74,10 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, lyrics = nul
           /* Empty state */
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "0 16px", textAlign: "center" }}>
             <div style={{ fontSize: 36, marginBottom: 14, opacity: 0.22, userSelect: "none" }}>♪</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.52)", marginBottom: 6 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--island-muted)", marginBottom: 6 }}>
               Lyrics not available
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.26)", lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: "var(--island-faint)", lineHeight: 1.5 }}>
               We don't have lyrics for this track yet.
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, lyrics = nul
                 data-time={line.time ?? null}
                 style={{
                   fontSize: 16, fontWeight: 500,
-                  color: "rgba(255,255,255,0.72)",
+                  color: "var(--island-fill)",
                   lineHeight: 1.75, marginBottom: 2,
                   transition: "color 200ms ease, opacity 200ms ease",
                 }}
