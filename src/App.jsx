@@ -24,6 +24,7 @@ import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./l
 import { loadNotifications, saveNotifications, createNotification } from "./lib/notifications";
 import { applyUserOverride } from "./lib/userOverrides";
 import { logAdminAction } from "./lib/auditLog";
+import { applySongOverrides } from "./lib/songOverrides";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -61,7 +62,11 @@ export default function App() {
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
   const [likedIds, setLikedIds] = useState(new Set());
-  const [list] = useState(songs);
+  // Bài bị admin gỡ biến mất khỏi app — tính lại khi rời màn admin
+  const list = useMemo(() => {
+    void screen;
+    return applySongOverrides(songs);
+  }, [screen]);
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(() => loadSession());
@@ -853,7 +858,7 @@ export default function App() {
       <div data-theme={settings.themeMode}>
         <PageAdmin
           authUser={authUser}
-          songs={list}
+          songs={songs}
           onExit={() => setScreen("app")}
           onImpersonate={handleImpersonate}
         />

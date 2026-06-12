@@ -9,7 +9,10 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import users from "../../data/users";
-import { StatCard } from "../../components/console/ConsoleUi";
+import { StatCard, ActionChip } from "../../components/console/ConsoleUi";
+import { loadAuditLog, ACTION_LABELS } from "../../lib/auditLog";
+import { formatNotificationTime } from "../../lib/notifications";
+import { actionColor } from "./AdminAudit";
 
 export default function AdminDashboard({ songs, pendingCount = 0, allUsers }) {
   const activeUsers = (allUsers ?? users).filter((u) => !u.deleted);
@@ -27,6 +30,8 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers }) {
   const recentUsers = [...users]
     .sort((a, b) => new Date(b.joinedAt) - new Date(a.joinedAt))
     .slice(0, 3);
+
+  const recentAudit = loadAuditLog().slice(0, 5);
 
   return (
     <div>
@@ -96,6 +101,48 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers }) {
             </div>
             <div style={{ fontSize: 11, color: TEXT.tertiary, flexShrink: 0 }}>
               {new Date(user.joinedAt).toLocaleDateString("vi-VN")}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          background: BG.card,
+          border: "1px solid " + BORDER,
+          borderRadius: 10,
+          padding: 18,
+          marginBottom: 20,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
+          Hoạt động quản trị gần đây
+        </div>
+        {recentAudit.length === 0 && (
+          <div style={{ fontSize: 12, color: TEXT.tertiary }}>Chưa có hoạt động</div>
+        )}
+        {recentAudit.map((e) => (
+          <div
+            key={e.id}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}
+          >
+            <ActionChip color={actionColor(e.action)} label={ACTION_LABELS[e.action] ?? e.action} />
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                fontSize: 13,
+                fontWeight: 600,
+                color: TEXT.strong,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {e.target}
+            </div>
+            <div style={{ fontSize: 11, color: TEXT.tertiary, flexShrink: 0 }}>
+              {formatNotificationTime(e.time)}
             </div>
           </div>
         ))}
