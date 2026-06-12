@@ -10,6 +10,7 @@ import Sidebar from "./components/Sidebar";
 import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
 import NavbarUserActions from "./components/NavbarUserActions";
+import SupportWidget from "./components/SupportWidget";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/PremiumModal"));
@@ -1229,6 +1230,8 @@ export default function App() {
         onToggleSongInPlaylist={toggleSongInPlaylist}
         onCreatePlaylistWithSong={createPlaylistWithSong}
       />
+
+      <SupportWidget hasPlayer={Boolean(cur)} />
 
       {queueFeedback && (
         <div
