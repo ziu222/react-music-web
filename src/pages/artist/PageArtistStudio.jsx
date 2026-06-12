@@ -58,7 +58,11 @@ export default function PageArtistStudio({ authUser, onExit }) {
       />
 
       {studioTab === "overview" && (
-        <StudioOverview mySubs={mySubs} onGoSubmit={() => setStudioTab("submit")} />
+        <StudioOverview
+          authUser={authUser}
+          mySubs={mySubs}
+          onGoSubmit={() => setStudioTab("submit")}
+        />
       )}
       {studioTab === "songs" && (
         <StudioSongs
