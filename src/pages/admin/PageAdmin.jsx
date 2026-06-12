@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   faShieldHalved,
   faChartPie,
@@ -7,28 +7,33 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
-import ListenerProfileModal from "../../components/ListenerProfileModal";
+import UserDetailModal from "../../components/UserDetailModal";
 import { loadSubmissions } from "../../lib/submissions";
+import { getAllUsersWithOverrides } from "../../lib/userOverrides";
 import AdminDashboard from "./AdminDashboard";
-import AdminListeners from "./AdminListeners";
+import AdminUsers from "./AdminUsers";
 import AdminReview from "./AdminReview";
 
 const HEADERS = {
   dashboard: { title: "Dashboard", subtitle: "Tổng quan hệ thống Melodies" },
-  listeners: { title: "Listeners", subtitle: "Quản lý người nghe" },
+  users: { title: "Người dùng", subtitle: "Quản lý toàn bộ tài khoản" },
   review: { title: "Duyệt bài hát", subtitle: "Phê duyệt bài hát do nghệ sĩ gửi lên" },
 };
 
-export default function PageAdmin({ authUser, songs, onExit }) {
+export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
   const [adminTab, setAdminTab] = useState("dashboard");
-  const [selectedListener, setSelectedListener] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [subs, setSubs] = useState(() => loadSubmissions());
+  const [usersVersion, setUsersVersion] = useState(0);
+
+  const allUsers = useMemo(() => getAllUsersWithOverrides(), [usersVersion]);
+  const refreshUsers = () => setUsersVersion((v) => v + 1);
 
   const pendingCount = subs.filter((s) => s.status === "pending").length;
 
   const navItems = [
     { key: "dashboard", label: "Dashboard", icon: faChartPie },
-    { key: "listeners", label: "Listeners", icon: faUsers },
+    { key: "users", label: "Người dùng", icon: faUsers },
     { key: "review", label: "Duyệt bài hát", icon: faListCheck, badge: pendingCount },
   ];
 
@@ -46,18 +51,25 @@ export default function PageAdmin({ authUser, songs, onExit }) {
       <ConsoleHeader title={HEADERS[adminTab].title} subtitle={HEADERS[adminTab].subtitle} />
 
       {adminTab === "dashboard" && (
-        <AdminDashboard songs={songs} pendingCount={pendingCount} />
+        <AdminDashboard songs={songs} pendingCount={pendingCount} allUsers={allUsers} />
       )}
-      {adminTab === "listeners" && (
-        <AdminListeners onOpenProfile={setSelectedListener} />
+      {adminTab === "users" && (
+        <AdminUsers users={allUsers} onOpenUser={(u) => setSelectedUserId(u.id)} />
       )}
       {adminTab === "review" && (
         <AdminReview subs={subs} setSubs={setSubs} authUser={authUser} />
       )}
 
-      <ListenerProfileModal
-        user={selectedListener}
-        onClose={() => setSelectedListener(null)}
+      <UserDetailModal
+        user={
+          selectedUserId != null
+            ? allUsers.find((u) => u.id === selectedUserId) ?? null
+            : null
+        }
+        currentAdmin={authUser}
+        onClose={() => setSelectedUserId(null)}
+        onChanged={refreshUsers}
+        onImpersonate={onImpersonate}
       />
     </ConsoleShell>
   );

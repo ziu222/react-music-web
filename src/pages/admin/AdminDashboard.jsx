@@ -11,12 +11,13 @@ import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import users from "../../data/users";
 import { StatCard } from "../../components/console/ConsoleUi";
 
-export default function AdminDashboard({ songs, pendingCount = 0 }) {
-  const listeners = users.filter((u) => u.role === "listener");
-  const premiumCount = users.filter((u) => u.plan === "premium").length;
+export default function AdminDashboard({ songs, pendingCount = 0, allUsers }) {
+  const activeUsers = (allUsers ?? users).filter((u) => !u.deleted);
+  const listeners = activeUsers.filter((u) => u.role === "listener");
+  const premiumCount = activeUsers.filter((u) => u.plan === "premium").length;
 
   const statCards = [
-    { number: users.length, label: "Người dùng", icon: faUsers, accent: C[500] },
+    { number: activeUsers.length, label: "Người dùng", icon: faUsers, accent: C[500] },
     { number: premiumCount, label: "Premium", icon: faCrown, accent: "#fbbf24" },
     { number: songs.length, label: "Bài hát", icon: faMusic, accent: "#60a5fa" },
     { number: listeners.length, label: "Listeners", icon: faHeadphones, accent: "#34d399" },
