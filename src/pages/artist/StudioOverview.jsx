@@ -123,7 +123,9 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             width: 64,
             height: 64,
             borderRadius: "50%",
-            background: authUser?.color ?? C[500],
+            background: authUser?.avatarUrl
+              ? `url(${authUser.avatarUrl}) center/cover`
+              : authUser?.color ?? C[500],
             color: "#fff",
             fontSize: 24,
             fontWeight: 800,
@@ -136,7 +138,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             position: "relative",
           }}
         >
-          {authUser?.initial}
+          {!authUser?.avatarUrl && authUser?.initial}
         </div>
         <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

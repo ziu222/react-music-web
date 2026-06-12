@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   faMicrophone,
   faChartPie,
@@ -10,7 +10,8 @@ import {
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
 import { loadSubmissions, resubmit, deleteSubmission } from "../../lib/submissions";
-import { deleteMediaBlob } from "../../lib/mediaStore";
+import { deleteMediaBlob, getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
+import { loadArtistProfile } from "../../lib/artistProfile";
 import StudioOverview from "./StudioOverview";
 import StudioAnalytics from "./StudioAnalytics";
 import StudioSongs from "./StudioSongs";
@@ -22,6 +23,42 @@ export default function PageArtistStudio({ authUser, onExit }) {
   const [subs, setSubs] = useState(() => loadSubmissions());
   const [toast, setToast] = useState(null);
   const [editingDraft, setEditingDraft] = useState(null);
+  const [profileVersion, setProfileVersion] = useState(0);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  const profile = useMemo(
+    () => loadArtistProfile(authUser?.email ?? ""),
+    [authUser?.email, profileVersion]
+  );
+
+  useEffect(() => {
+    let alive = true;
+    let url = null;
+    getMediaBlobUrl(profile.avatarBlobId).then((u) => {
+      if (alive) {
+        url = u;
+        setAvatarUrl(u);
+      } else {
+        revokeMediaBlobUrl(u);
+      }
+    });
+    return () => {
+      alive = false;
+      revokeMediaBlobUrl(url);
+    };
+  }, [profile.avatarBlobId]);
+
+  // Nhận dạng nghệ sĩ (nghệ danh + ảnh + màu chủ đề) áp toàn studio
+  const studioUser = useMemo(
+    () =>
+      authUser && {
+        ...authUser,
+        name: profile.displayName?.trim() || authUser.name,
+        color: profile.themeColor || authUser.color,
+        avatarUrl,
+      },
+    [authUser, profile.displayName, profile.themeColor, avatarUrl]
+  );
 
   const mySubs = subs.filter(
     (s) => s.artistEmail === authUser?.email?.toLowerCase()
@@ -61,7 +98,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
       navItems={navItems}
       activeTab={studioTab}
       onSelectTab={setStudioTab}
-      user={authUser}
+      user={studioUser}
       userRoleLabel="Nghệ sĩ"
       onExit={onExit}
     >
@@ -72,7 +109,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
 
       {studioTab === "overview" && (
         <StudioOverview
-          authUser={authUser}
+          authUser={studioUser}
           mySubs={mySubs}
           onGoSubmit={() => setStudioTab("submit")}
         />
@@ -104,7 +141,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
       {studioTab === "submit" && (
         <StudioSubmit
           key={editingDraft?.id ?? "new"}
-          authUser={authUser}
+          authUser={studioUser}
           draft={editingDraft}
           onSubmitted={() => {
             setSubs(loadSubmissions());
@@ -125,7 +162,11 @@ export default function PageArtistStudio({ authUser, onExit }) {
         <StudioProfile
           authUser={authUser}
           mySubs={mySubs}
-          onSaved={() => showToast("Đã lưu hồ sơ nghệ sĩ")}
+          onSaved={() => {
+            setProfileVersion((v) => v + 1);
+            showToast("Đã lưu hồ sơ nghệ sĩ");
+          }}
+          onChanged={() => setProfileVersion((v) => v + 1)}
         />
       )}
 

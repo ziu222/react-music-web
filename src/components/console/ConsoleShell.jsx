@@ -121,7 +121,9 @@ export default function ConsoleShell({
                 width: 32,
                 height: 32,
                 borderRadius: "50%",
-                background: user.color,
+                background: user.avatarUrl
+                  ? `url(${user.avatarUrl}) center/cover`
+                  : user.color,
                 color: "#fff",
                 fontSize: 12,
                 fontWeight: 700,
@@ -131,7 +133,7 @@ export default function ConsoleShell({
                 flexShrink: 0,
               }}
             >
-              {user.initial}
+              {!user.avatarUrl && user.initial}
             </div>
             <div style={{ minWidth: 0 }}>
               <div

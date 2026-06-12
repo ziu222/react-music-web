@@ -9,6 +9,9 @@ export const DEFAULT_PROFILE = {
   bio: "",
   genres: [],
   links: { website: "", facebook: "", instagram: "", youtube: "" },
+  avatarBlobId: null,   // ảnh đại diện thật — blob trong IndexedDB (mediaStore)
+  displayName: "",      // nghệ danh — rỗng thì dùng tên tài khoản
+  themeColor: "",       // màu chủ đề hồ sơ — rỗng thì dùng màu tài khoản
 };
 
 function readStore() {
