@@ -27,8 +27,6 @@ import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
 import PageAdmin from "./pages/PageAdmin";
-import ListenerProfileModal from "./components/ListenerProfileModal";
-import users from "./data/users";
 import logo from "./assets/logo.png";
 import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
 
@@ -87,7 +85,6 @@ export default function App() {
     try { return new Set(JSON.parse(localStorage.getItem("melodies_followed_artists") || "[]")); }
     catch { return new Set(); }
   });
-  const [selectedListener, setSelectedListener] = useState(null);
   const [savedAlbums, setSavedAlbums] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("melodies_saved_albums") || "[]")); }
     catch { return new Set(); }
@@ -277,11 +274,6 @@ export default function App() {
       if (!entry.libraryFilter) setLibraryFilter("Danh sách phát");
     }
     setPage(entry.page);
-  }, []);
-
-  const openListenerProfile = useCallback((userId) => {
-    const user = users.find(u => u.id === userId);
-    setSelectedListener(user ?? null);
   }, []);
 
   // entry: extra route state (artist/album/playlistId) recorded in history
@@ -829,6 +821,14 @@ export default function App() {
 
   if (screen === "splash") return <Splash onDone={done} />;
 
+  if (screen === "admin" && authUser?.role === "admin") {
+    return (
+      <div data-theme={settings.themeMode}>
+        <PageAdmin authUser={authUser} songs={list} onExit={() => setScreen("app")} />
+      </div>
+    );
+  }
+
   return (
     <div
       data-theme={settings.themeMode}
@@ -1089,14 +1089,14 @@ export default function App() {
           canDownload={isPremium}
           onRequestDownload={requestDownload}
           isAdmin={authUser?.role === "admin"}
-          onNavAdmin={() => nav("admin")}
+          onNavAdmin={() => setScreen("admin")}
         />
 
         {/* Main content */}
         <div style={{ flex: 1, overflowY: "auto", background: BG.base }}>
           {loading ? (
             <Loader text={`Đang tải ${
-              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album", admin: "trang quản trị" }[page] ?? page
+              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album" }[page] ?? page
             }...`} />
           ) : (
             <>
@@ -1176,13 +1176,6 @@ export default function App() {
                   recentIds={recentIds}
                   onOpenArtist={openArtist}
                   onOpenAlbum={openAlbum}
-                />
-              )}
-              {page === "admin" && (
-                <PageAdmin
-                  onOpenProfile={openListenerProfile}
-                  authUser={authUser}
-                  songs={list}
                 />
               )}
             </>
@@ -1289,11 +1282,6 @@ export default function App() {
           />
         </Suspense>
       )}
-
-      <ListenerProfileModal
-        user={selectedListener}
-        onClose={() => setSelectedListener(null)}
-      />
 
       {/* ── Bottom promo banner: guest → đăng ký, free → nâng cấp, premium → ẩn ── */}
       {!cur && !isPremium && (
