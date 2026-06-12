@@ -249,8 +249,38 @@ body {
 .console-tab-content {
   animation: consoleTabIn 0.28s cubic-bezier(0.2, 0, 0, 1) both;
 }
+
+/* Hero dẫn đầu choreography — vào trước, đổ bóng theo sau */
+@keyframes studioHeroIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.studio-hero { animation: studioHeroIn 0.5s cubic-bezier(0.05, 0.7, 0.1, 1) both; }
+
+/* Pop với overshoot nhẹ 4% — avatar, badge */
+@keyframes studioPopIn {
+  0%   { opacity: 0; transform: scale(0.82); }
+  70%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.studio-pop { animation: studioPopIn 0.42s cubic-bezier(0.2, 0, 0, 1) both; }
+
+.studio-fade-late { animation: fadeIn 0.45s ease both; }
+
+/* Ambient: gradient hero thở chậm — lớp nền, không đụng content */
+@keyframes heroBreathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.78; }
+}
+.studio-hero-ambient { animation: heroBreathe 7s ease-in-out infinite; }
+
+/* Secondary motion: icon trong card nhích theo khi hover card */
+.studio-card-icon { transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1); }
+.studio-card:hover .studio-card-icon { transform: scale(1.1) rotate(-3deg); }
+
 @media (prefers-reduced-motion: reduce) {
-  .studio-card, .studio-bar, .console-tab-content { animation: none; }
+  .studio-card, .studio-bar, .console-tab-content,
+  .studio-hero, .studio-pop, .studio-fade-late, .studio-hero-ambient { animation: none; }
 }
 
 /* ── Horizontal shelf ── */

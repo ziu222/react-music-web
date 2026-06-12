@@ -1,5 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TEXT } from "../../constants/theme";
+
+/* Count-up: số chạy từ 0 lên giá trị thật bằng rAF, ease-out cubic.
+ * Tôn trọng prefers-reduced-motion (nhảy thẳng đến đích). */
+export function useCountUp(target, { duration = 750, delay = 0 } = {}) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setVal(target);
+      return undefined;
+    }
+    let raf = null;
+    let start = null;
+    const tick = (t) => {
+      if (start == null) start = t;
+      const p = Math.min((t - start) / duration, 1);
+      setVal(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    const timer = setTimeout(() => {
+      raf = requestAnimationFrame(tick);
+    }, delay);
+    return () => {
+      clearTimeout(timer);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [target, duration, delay]);
+  return val;
+}
 
 /* Bar chart thuần CSS — không dùng thư viện chart. */
 export function TrendBarChart({ points, height = 140, accent = "#f97316" }) {
