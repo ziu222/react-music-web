@@ -41,11 +41,13 @@ export function TrendBarChart({ points, height = 140, accent = "#f97316" }) {
             }}
           >
             <div
+              className="studio-bar"
               style={{
                 height: `${Math.max((val(p) / max) * 100, 2)}%`,
                 background: hover === i ? accent : accent + "8c",
                 borderRadius: "4px 4px 0 0",
                 transition: "background 0.12s",
+                "--stagger": i,
               }}
             />
           </div>

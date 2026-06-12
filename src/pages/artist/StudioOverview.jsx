@@ -12,9 +12,10 @@ import { StatusBadge } from "../../components/console/ConsoleUi";
 import { TrendBarChart, ProgressBar, TrendChip } from "../../components/console/Charts";
 import { getArtistAnalytics, weeklyTrend, formatCompact } from "../../lib/artistStats";
 
-function InsightCard({ icon, accent, number, label, trend }) {
+function InsightCard({ icon, accent, number, label, trend, stagger = 0 }) {
   return (
     <div
+      className="studio-card"
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-2px)";
         e.currentTarget.style.boxShadow = "var(--shadow-card)";
@@ -32,6 +33,7 @@ function InsightCard({ icon, accent, number, label, trend }) {
         minWidth: 150,
         transition: "all 0.15s",
         boxSizing: "border-box",
+        "--stagger": stagger,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -82,6 +84,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
     <div>
       {/* Hero */}
       <div
+        className="studio-card"
         style={{
           background: `linear-gradient(135deg, ${authUser?.color ?? C[500]}3d 0%, ${authUser?.color ?? C[500]}14 55%, transparent 100%)`,
           border: "1px solid " + BORDER,
@@ -163,26 +166,30 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
           number={formatCompact(trend.last7)}
           label="Lượt nghe 7 ngày"
           trend={trend.pct}
+          stagger={0}
         />
         <InsightCard
           icon={faUsers}
           accent="#60a5fa"
           number={formatCompact(analytics.followers)}
           label="Người theo dõi"
+          stagger={1}
         />
-        <InsightCard icon={faMusic} accent="#34d399" number={approved.length} label="Đã phát hành" />
-        <InsightCard icon={faClock} accent="#fbbf24" number={pending} label="Chờ duyệt" />
-        <InsightCard icon={faCircleXmark} accent="#fb7185" number={rejected} label="Từ chối" />
+        <InsightCard icon={faMusic} accent="#34d399" number={approved.length} label="Đã phát hành" stagger={2} />
+        <InsightCard icon={faClock} accent="#fbbf24" number={pending} label="Chờ duyệt" stagger={3} />
+        <InsightCard icon={faCircleXmark} accent="#fb7185" number={rejected} label="Từ chối" stagger={4} />
       </div>
 
       {/* Chart */}
       <div
+        className="studio-card"
         style={{
           background: BG.card,
           border: "1px solid " + BORDER,
           borderRadius: 10,
           padding: 18,
           marginBottom: 20,
+          "--stagger": 5,
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 4 }}>
@@ -194,6 +201,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
       {/* Two columns */}
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
         <div
+          className="studio-card"
           style={{
             flex: 1,
             minWidth: 280,
@@ -201,6 +209,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             border: "1px solid " + BORDER,
             borderRadius: 10,
             padding: 18,
+            "--stagger": 6,
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
@@ -241,6 +250,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
         </div>
 
         <div
+          className="studio-card"
           style={{
             flex: 1,
             minWidth: 280,
@@ -248,6 +258,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
             border: "1px solid " + BORDER,
             borderRadius: 10,
             padding: 18,
+            "--stagger": 7,
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>

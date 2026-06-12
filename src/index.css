@@ -224,6 +224,35 @@ body {
   animation-delay: calc(var(--stagger, 0) * 70ms);
 }
 
+/* ── Console (admin / artist studio) motion ── */
+@keyframes studioCardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.studio-card {
+  animation: studioCardIn 0.45s cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 60ms);
+}
+@keyframes studioBarGrow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+.studio-bar {
+  transform-origin: bottom;
+  animation: studioBarGrow 0.5s cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 22ms);
+}
+@keyframes consoleTabIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.console-tab-content {
+  animation: consoleTabIn 0.28s cubic-bezier(0.2, 0, 0, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-card, .studio-bar, .console-tab-content { animation: none; }
+}
+
 /* ── Horizontal shelf ── */
 .hscroll {
   scroll-behavior: smooth;

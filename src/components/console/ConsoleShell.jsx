@@ -191,7 +191,9 @@ export default function ConsoleShell({
           boxSizing: "border-box",
         }}
       >
-        {children}
+        <div key={activeTab} className="console-tab-content">
+          {children}
+        </div>
       </div>
     </div>
   );
