@@ -5,12 +5,13 @@ import {
   faMusic,
   faHeadphones,
   faCompactDisc,
+  faListCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import users from "../../data/users";
 import { StatCard } from "../../components/console/ConsoleUi";
 
-export default function AdminDashboard({ songs }) {
+export default function AdminDashboard({ songs, pendingCount = 0 }) {
   const listeners = users.filter((u) => u.role === "listener");
   const premiumCount = users.filter((u) => u.plan === "premium").length;
 
@@ -19,6 +20,7 @@ export default function AdminDashboard({ songs }) {
     { number: premiumCount, label: "Premium", icon: faCrown, accent: "#fbbf24" },
     { number: songs.length, label: "Bài hát", icon: faMusic, accent: "#60a5fa" },
     { number: listeners.length, label: "Listeners", icon: faHeadphones, accent: "#34d399" },
+    { number: pendingCount, label: "Chờ duyệt", icon: faListCheck, accent: "#fbbf24" },
   ];
 
   const recentUsers = [...users]
