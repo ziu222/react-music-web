@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   faMicrophone,
   faChartPie,
+  faChartSimple,
   faMusic,
   faCloudArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
@@ -9,6 +10,7 @@ import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
 import { loadSubmissions, resubmit } from "../../lib/submissions";
 import StudioOverview from "./StudioOverview";
+import StudioAnalytics from "./StudioAnalytics";
 import StudioSongs from "./StudioSongs";
 import StudioSubmit from "./StudioSubmit";
 
@@ -28,6 +30,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
 
   const headers = {
     overview: { title: "Tổng quan", subtitle: "Không gian nghệ sĩ của bạn" },
+    analytics: { title: "Thống kê", subtitle: "Hiệu suất âm nhạc của bạn theo thời gian" },
     songs: { title: "Bài hát của tôi", subtitle: mySubs.length + " bài hát" },
     submit: {
       title: "Đăng bài mới",
@@ -37,6 +40,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
 
   const navItems = [
     { key: "overview", label: "Tổng quan", icon: faChartPie },
+    { key: "analytics", label: "Thống kê", icon: faChartSimple },
     { key: "songs", label: "Bài hát của tôi", icon: faMusic },
     { key: "submit", label: "Đăng bài mới", icon: faCloudArrowUp },
   ];
@@ -63,6 +67,9 @@ export default function PageArtistStudio({ authUser, onExit }) {
           mySubs={mySubs}
           onGoSubmit={() => setStudioTab("submit")}
         />
+      )}
+      {studioTab === "analytics" && (
+        <StudioAnalytics authUser={authUser} mySubs={mySubs} />
       )}
       {studioTab === "songs" && (
         <StudioSongs
