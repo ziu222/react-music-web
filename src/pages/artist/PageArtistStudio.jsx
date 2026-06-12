@@ -20,6 +20,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
   const [studioTab, setStudioTab] = useState("overview");
   const [subs, setSubs] = useState(() => loadSubmissions());
   const [toast, setToast] = useState(null);
+  const [editingDraft, setEditingDraft] = useState(null);
 
   const mySubs = subs.filter(
     (s) => s.artistEmail === authUser?.email?.toLowerCase()
@@ -91,11 +92,20 @@ export default function PageArtistStudio({ authUser, onExit }) {
       )}
       {studioTab === "submit" && (
         <StudioSubmit
+          key={editingDraft?.id ?? "new"}
           authUser={authUser}
+          draft={editingDraft}
           onSubmitted={() => {
             setSubs(loadSubmissions());
+            setEditingDraft(null);
             setStudioTab("songs");
             showToast("Đã gửi bài hát, chờ phê duyệt");
+          }}
+          onDraftSaved={() => {
+            setSubs(loadSubmissions());
+            setEditingDraft(null);
+            setStudioTab("songs");
+            showToast("Đã lưu bản nháp");
           }}
         />
       )}
