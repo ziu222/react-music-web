@@ -5,6 +5,7 @@ import { TEXT } from "../../constants/theme";
 import { loadSongOverrides, toggleSongHidden } from "../../lib/songOverrides";
 import { logAdminAction } from "../../lib/auditLog";
 import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
+import { getSongImage } from "../../data/media";
 
 export default function AdminContent({ songs, authUser }) {
   const [hiddenIds, setHiddenIds] = useState(() => loadSongOverrides().hiddenIds);
@@ -48,6 +49,7 @@ export default function AdminContent({ songs, authUser }) {
 
       {filtered.map((song) => {
         const hidden = hiddenIds.includes(song.id);
+        const cover = getSongImage(song);
         return (
           <div
             key={song.id}
@@ -74,8 +76,17 @@ export default function AdminContent({ songs, authUser }) {
                 background: song.bg,
                 flexShrink: 0,
                 opacity: hidden ? 0.45 : 1,
+                overflow: "hidden",
               }}
-            />
+            >
+              {cover && (
+                <img
+                  src={cover}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
+              )}
+            </div>
             <div style={{ flex: 1.4, minWidth: 140, opacity: hidden ? 0.45 : 1 }}>
               <div
                 style={{

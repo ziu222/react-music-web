@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeadphones, faHeart, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { C, TEXT } from "../../constants/theme";
 import { StatusBadge, SearchInput, FilterPills } from "../../components/console/ConsoleUi";
 import { getArtistAnalytics, formatCompact } from "../../lib/artistStats";
+import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
 
 const STATUS_PILLS = [
   { key: "all", label: "Tất cả" },
@@ -23,6 +24,23 @@ export default function StudioSongs({
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [coverUrls, setCoverUrls] = useState({});
+
+  const subsKey = mySubs.map((s) => s.id).join(",");
+  useEffect(() => {
+    let alive = true;
+    const urls = {};
+    Promise.all(
+      mySubs.map(async (sub) => {
+        if (sub.coverBlobId) urls[sub.id] = await getMediaBlobUrl(sub.coverBlobId);
+      })
+    ).then(() => { if (alive) setCoverUrls(urls); });
+    return () => {
+      alive = false;
+      Object.values(urls).forEach((u) => revokeMediaBlobUrl(u));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subsKey]);
 
   const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
 
@@ -126,12 +144,21 @@ export default function StudioSongs({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  overflow: "hidden",
                 }}
               >
-                <FontAwesomeIcon
-                  icon={faMusic}
-                  style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}
-                />
+                {coverUrls[sub.id] ? (
+                  <img
+                    src={coverUrls[sub.id]}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                ) : (
+                  <FontAwesomeIcon
+                    icon={faMusic}
+                    style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}
+                  />
+                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div

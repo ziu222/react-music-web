@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMusic,
@@ -11,6 +12,7 @@ import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { StatusBadge } from "../../components/console/ConsoleUi";
 import { TrendBarChart, ProgressBar, TrendChip, useCountUp } from "../../components/console/Charts";
 import { getArtistAnalytics, weeklyTrend, formatCompact } from "../../lib/artistStats";
+import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
 
 function InsightCard({ icon, accent, value, format = String, label, trend, stagger = 0 }) {
   // Count-up bắt đầu sau khi card đã đáp xuống (stagger 60ms + 180ms landing)
@@ -73,6 +75,24 @@ function InsightCard({ icon, accent, value, format = String, label, trend, stagg
 }
 
 export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
+  const [coverUrls, setCoverUrls] = useState({});
+
+  const subsKey = mySubs.map((s) => s.id).join(",");
+  useEffect(() => {
+    let alive = true;
+    const urls = {};
+    Promise.all(
+      mySubs.map(async (sub) => {
+        if (sub.coverBlobId) urls[sub.id] = await getMediaBlobUrl(sub.coverBlobId);
+      })
+    ).then(() => { if (alive) setCoverUrls(urls); });
+    return () => {
+      alive = false;
+      Object.values(urls).forEach((u) => revokeMediaBlobUrl(u));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subsKey]);
+
   const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
   const trend = weeklyTrend(analytics.dailyPlays);
 
@@ -254,7 +274,11 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
               <div style={{ width: 16, fontSize: 13, fontWeight: 700, color: i === 0 ? C[400] : TEXT.tertiary }}>
                 {i + 1}
               </div>
-              <div style={{ width: 36, height: 36, borderRadius: 6, background: s.bg, flexShrink: 0 }} />
+              <div style={{ width: 36, height: 36, borderRadius: 6, background: s.bg, flexShrink: 0, overflow: "hidden" }}>
+                {coverUrls[s.id] && (
+                  <img src={coverUrls[s.id]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                )}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
@@ -324,7 +348,11 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
           )}
           {recent.map((sub) => (
             <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 6, background: sub.bg, flexShrink: 0 }} />
+              <div style={{ width: 32, height: 32, borderRadius: 6, background: sub.bg, flexShrink: 0, overflow: "hidden" }}>
+                {coverUrls[sub.id] && (
+                  <img src={coverUrls[sub.id]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                )}
+              </div>
               <div
                 style={{
                   flex: 1,
