@@ -6,6 +6,7 @@ import {
   faHeadphones,
   faListCheck,
   faMicrophoneLines,
+  faCompactDisc,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { StatCard, ActionChip } from "../../components/console/ConsoleUi";

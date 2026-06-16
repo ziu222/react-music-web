@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
+import { useApplyTheme } from "./lib/theme/useTheme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
 import playlistsSeed from "./data/playlists";
@@ -218,10 +219,7 @@ export default function App() {
   const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
   const notifications = notifState.value;
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = settings.themeMode;
-    return () => { delete document.documentElement.dataset.theme; };
-  }, [settings.themeMode]);
+  useApplyTheme(settings.themeMode);
 
   // Đổi user → reset state theo key ngay trong render (React adjust-state-on-prop-change pattern)
   if (settingsState.key !== userKey) {
@@ -944,7 +942,7 @@ export default function App() {
 
   if (screen === "admin" && authUser?.role === "admin") {
     return (
-      <div data-theme={settings.themeMode}>
+      <div>
         <PageAdmin
           authUser={authUser}
           songs={list}
@@ -957,7 +955,7 @@ export default function App() {
 
   if (screen === "artist" && authUser?.role === "artist") {
     return (
-      <div data-theme={settings.themeMode}>
+      <div>
         <PageArtistStudio authUser={authUser} onExit={() => setScreen("app")} />
       </div>
     );
@@ -965,7 +963,6 @@ export default function App() {
 
   return (
     <div
-      data-theme={settings.themeMode}
       style={{
         height: "100vh",
         display: "flex",
@@ -1411,6 +1408,7 @@ export default function App() {
 
       <SupportWidget
         hasPlayer={Boolean(cur)}
+        hasPromoBanner={!cur && !isPremium}
         open={supportOpen}
         onOpenChange={setSupportOpen}
         onAction={(action) => {
