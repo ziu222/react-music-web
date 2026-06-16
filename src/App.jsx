@@ -1411,6 +1411,7 @@ export default function App() {
 
       <SupportWidget
         hasPlayer={Boolean(cur)}
+        hasPromoBanner={!cur && !isPremium}
         open={supportOpen}
         onOpenChange={setSupportOpen}
         onAction={(action) => {

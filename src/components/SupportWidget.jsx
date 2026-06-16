@@ -9,7 +9,7 @@ const GREETING = {
   text: "Xin chào! 👋 Mình là trợ lý Melodies. Bạn cần hỗ trợ vấn đề gì? Chọn một câu hỏi bên dưới nhé.",
 };
 
-export default function SupportWidget({ hasPlayer = false, open: controlledOpen, onOpenChange, onAction }) {
+export default function SupportWidget({ hasPlayer = false, hasPromoBanner = false, open: controlledOpen, onOpenChange, onAction }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [messages, setMessages] = useState([GREETING]);
   const [askedIds, setAskedIds] = useState(() => new Set());
@@ -90,7 +90,7 @@ export default function SupportWidget({ hasPlayer = false, open: controlledOpen,
           style={{
             position: "fixed",
             right: 24,
-            bottom: hasPlayer ? 178 : 88,
+            bottom: hasPlayer ? 178 : hasPromoBanner ? 144 : 88,
             zIndex: 240,
             width: 340,
             maxWidth: "calc(100vw - 48px)",
@@ -317,7 +317,7 @@ export default function SupportWidget({ hasPlayer = false, open: controlledOpen,
         style={{
           position: "fixed",
           right: 24,
-          bottom: hasPlayer ? 114 : 24,
+          bottom: hasPlayer ? 114 : hasPromoBanner ? 80 : 24,
           zIndex: 240,
           width: 52,
           height: 52,
