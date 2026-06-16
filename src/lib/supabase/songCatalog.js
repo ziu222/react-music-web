@@ -15,6 +15,9 @@ function mapRow(r) {
     coverUrl: r.cover_url ?? null,
     explicit: r.explicit ?? false,
     community: r.community ?? false,
+    language: r.language ?? null,
+    lyricsText: r.lyrics_text ?? null,
+    artistEmail: r.artist_email ?? null,
   };
 }
 
@@ -23,7 +26,7 @@ export async function fetchSongsFromSupabase() {
   const { data, error } = await supabase
     .from("songs")
     .select("*")
-    .eq("community", false)
+    .order("community")
     .order("id");
   if (error || !data) return [];
   return data.map(mapRow);
