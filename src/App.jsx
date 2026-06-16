@@ -1337,6 +1337,7 @@ export default function App() {
                   onPlay={playWithAuth}
                   cur={cur}
                   onOpenPremium={() => setPremiumOpen(true)}
+                  onOpenArtistUpgrade={(prefill) => { setArtistUpgradeOpen(true); }}
                 />
               )}
             </>

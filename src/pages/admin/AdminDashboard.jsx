@@ -4,8 +4,8 @@ import {
   faCrown,
   faMusic,
   faHeadphones,
-  faCompactDisc,
   faListCheck,
+  faMicrophoneLines,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import users from "../../data/users";
@@ -13,11 +13,13 @@ import { StatCard, ActionChip } from "../../components/console/ConsoleUi";
 import { loadAuditLog, ACTION_LABELS } from "../../lib/auditLog";
 import { formatNotificationTime } from "../../lib/notifications";
 import { actionColor } from "./AdminAudit";
+import { getPendingRequests } from "../../lib/upgradeRequests";
 
-export default function AdminDashboard({ songs, pendingCount = 0, allUsers }) {
+export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNavigateUsers }) {
   const activeUsers = (allUsers ?? users).filter((u) => !u.deleted);
   const listeners = activeUsers.filter((u) => u.role === "listener");
   const premiumCount = activeUsers.filter((u) => u.plan === "premium").length;
+  const upgradeRequestCount = getPendingRequests().length;
 
   const statCards = [
     { number: activeUsers.length, label: "Người dùng", icon: faUsers, accent: C[500] },
@@ -40,6 +42,41 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers }) {
           <StatCard key={card.label} {...card} />
         ))}
       </div>
+
+      {upgradeRequestCount > 0 && (
+        <div
+          onClick={onNavigateUsers}
+          style={{
+            background: `${C[500]}12`, border: `1px solid ${C[500]}44`,
+            borderRadius: 10, padding: "14px 18px", marginBottom: 20,
+            display: "flex", alignItems: "center", gap: 12,
+            cursor: onNavigateUsers ? "pointer" : "default",
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 8,
+            background: `${C[500]}22`, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <FontAwesomeIcon icon={faMicrophoneLines} style={{ color: C[400], fontSize: 15 }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.strong }}>
+              Đơn đăng ký Nghệ sĩ
+            </div>
+            <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 2 }}>
+              {upgradeRequestCount} đơn đang chờ xét duyệt
+            </div>
+          </div>
+          <div style={{
+            background: "#ef4444", color: "#fff", borderRadius: 9999,
+            minWidth: 22, height: 22, display: "flex", alignItems: "center",
+            justifyContent: "center", fontSize: 11, fontWeight: 800, padding: "0 6px",
+          }}>
+            {upgradeRequestCount}
+          </div>
+        </div>
+      )}
 
       <div
         style={{

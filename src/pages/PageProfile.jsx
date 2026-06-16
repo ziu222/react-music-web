@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserCircle,
@@ -6,9 +7,18 @@ import {
   faClock,
   faHeart,
   faMicrophone,
+  faArrowUp,
+  faCircleNotch,
+  faTriangleExclamation,
+  faXmarkCircle,
+  faReply,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, G, BORDER, BG, TEXT } from "../constants/theme";
 import { listenerStats } from "../data/listenerStats";
+import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/upgradeRequests";
+import { createNotification, loadNotifications, saveNotifications } from "../lib/notifications";
+
+const ADMIN_KEY = "linh@melodies.local";
 
 function StatCard({ icon, accent, value, label }) {
   return (
@@ -60,7 +70,34 @@ export default function PageProfile({
   onPlay,
   cur,
   onOpenPremium,
+  onOpenArtistUpgrade,
 }) {
+  const [upgradeReq, setUpgradeReq] = useState(() => user ? getRequest(user.email) : null);
+  const [infoReply, setInfoReply] = useState("");
+  const [replySent, setReplySent] = useState(false);
+
+  useEffect(() => {
+    if (user) setUpgradeReq(getRequest(user.email));
+  }, [user]);
+
+  const handleWithdraw = () => {
+    withdrawUpgradeRequest(user.email);
+    setUpgradeReq(null);
+  };
+
+  const handleReply = () => {
+    if (!infoReply.trim()) return;
+    replyToInfoRequest(user.email, infoReply.trim());
+    const notif = createNotification(
+      "system",
+      "Phản hồi đơn đăng ký nghệ sĩ",
+      `${user.name} đã phản hồi yêu cầu bổ sung thông tin`
+    );
+    saveNotifications(ADMIN_KEY, [notif, ...loadNotifications(ADMIN_KEY)]);
+    setUpgradeReq(getRequest(user.email));
+    setReplySent(true);
+    setInfoReply("");
+  };
   if (!user) {
     return (
       <div style={{ padding: 60, textAlign: "center" }}>
@@ -282,6 +319,181 @@ export default function PageProfile({
                 <div style={{ fontSize: 14, fontWeight: 600, color: TEXT.strong }}>{artist}</div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Artist Upgrade Section ── */}
+        {user.role === "listener" && (
+          <div style={{ marginBottom: 32 }}>
+            <SectionTitle>Trở thành Nghệ sĩ</SectionTitle>
+
+            {/* State 1: Chưa gửi */}
+            {!upgradeReq && (
+              <div style={{
+                background: BG.card, border: "1px solid " + BORDER,
+                borderRadius: 12, padding: "20px 24px",
+                display: "flex", alignItems: "center", gap: 16,
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10,
+                  background: `${C[500]}22`, flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <FontAwesomeIcon icon={faMicrophone} style={{ color: C[400], fontSize: 18 }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT.strong }}>Bắt đầu hành trình âm nhạc</div>
+                  <div style={{ fontSize: 12, color: TEXT.secondary, marginTop: 3 }}>
+                    Upload nhạc, xem analytics và xây dựng fan base riêng
+                  </div>
+                </div>
+                <button
+                  onClick={onOpenArtistUpgrade}
+                  style={{
+                    background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
+                    color: "#fff", border: "none", borderRadius: 9999,
+                    padding: "8px 20px", fontSize: 12, fontWeight: 700,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                    flexShrink: 0,
+                  }}
+                >
+                  <FontAwesomeIcon icon={faArrowUp} style={{ fontSize: 11 }} />
+                  Đăng ký ngay
+                </button>
+              </div>
+            )}
+
+            {/* State 2: Đang chờ duyệt */}
+            {upgradeReq?.status === "pending" && (
+              <div style={{
+                background: BG.card, border: "1px solid " + BORDER,
+                borderRadius: 12, padding: "18px 24px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <FontAwesomeIcon icon={faCircleNotch} style={{ color: "#fbbf24", fontSize: 14 }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: TEXT.strong }}>Đang chờ xét duyệt</span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, borderRadius: 9999,
+                    padding: "2px 10px", background: "#fbbf2422", color: "#fbbf24",
+                  }}>PENDING</span>
+                </div>
+                <div style={{ fontSize: 12, color: TEXT.secondary, marginBottom: 14 }}>
+                  Tên nghệ sĩ: <strong style={{ color: TEXT.strong }}>{upgradeReq.artistName}</strong> · {upgradeReq.genre}
+                </div>
+                <div style={{ fontSize: 11, color: TEXT.tertiary, marginBottom: 14 }}>
+                  Gửi lúc {new Date(upgradeReq.requestedAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "long", year: "numeric" })}
+                </div>
+                <button
+                  onClick={handleWithdraw}
+                  style={{
+                    background: "transparent", border: "1px solid " + BORDER,
+                    color: TEXT.secondary, borderRadius: 9999,
+                    padding: "6px 16px", fontSize: 12, fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Rút yêu cầu
+                </button>
+              </div>
+            )}
+
+            {/* State 3: Cần bổ sung thông tin */}
+            {upgradeReq?.status === "info_requested" && (
+              <div style={{
+                background: BG.card, borderRadius: 12,
+                border: "1px solid #f59e0b44",
+                overflow: "hidden",
+              }}>
+                <div style={{
+                  background: "#f59e0b18", padding: "12px 20px",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <FontAwesomeIcon icon={faTriangleExclamation} style={{ color: "#f59e0b", fontSize: 13 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>Admin cần thêm thông tin</span>
+                </div>
+                <div style={{ padding: "16px 20px" }}>
+                  <div style={{
+                    fontSize: 13, color: TEXT.strong, lineHeight: 1.6,
+                    marginBottom: 14,
+                    padding: "10px 14px", borderRadius: 8, background: "var(--overlay-1)",
+                    border: "1px solid " + BORDER,
+                  }}>
+                    {upgradeReq.adminNote}
+                  </div>
+                  {replySent || upgradeReq.listenerReply ? (
+                    <div style={{ fontSize: 12, color: "#34d399" }}>
+                      Phản hồi của bạn đã được gửi. Đang chờ admin xét duyệt lại.
+                    </div>
+                  ) : (
+                    <>
+                      <textarea
+                        value={infoReply}
+                        onChange={(e) => setInfoReply(e.target.value)}
+                        placeholder="Nhập phản hồi của bạn..."
+                        rows={3}
+                        style={{
+                          width: "100%", boxSizing: "border-box",
+                          padding: "10px 14px", borderRadius: 8,
+                          background: "var(--overlay-1)", border: "1px solid " + BORDER,
+                          color: TEXT.strong, fontSize: 13, resize: "vertical",
+                          outline: "none", fontFamily: "inherit",
+                        }}
+                      />
+                      <button
+                        onClick={handleReply}
+                        disabled={!infoReply.trim()}
+                        style={{
+                          marginTop: 10,
+                          background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
+                          color: "#fff", border: "none", borderRadius: 9999,
+                          padding: "7px 20px", fontSize: 12, fontWeight: 700,
+                          cursor: infoReply.trim() ? "pointer" : "not-allowed",
+                          opacity: infoReply.trim() ? 1 : 0.45,
+                          display: "flex", alignItems: "center", gap: 6,
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faReply} style={{ fontSize: 10 }} />
+                        Gửi phản hồi
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* State 4: Bị từ chối */}
+            {upgradeReq?.status === "rejected" && (
+              <div style={{
+                background: BG.card, borderRadius: 12,
+                border: "1px solid #ef444444", overflow: "hidden",
+              }}>
+                <div style={{
+                  background: "#ef444418", padding: "12px 20px",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <FontAwesomeIcon icon={faXmarkCircle} style={{ color: "#ef4444", fontSize: 13 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444" }}>Chưa được duyệt</span>
+                </div>
+                <div style={{ padding: "14px 20px" }}>
+                  {upgradeReq.rejectReason && (
+                    <div style={{ fontSize: 13, color: TEXT.secondary, marginBottom: 14, lineHeight: 1.6 }}>
+                      Lý do: {upgradeReq.rejectReason}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => onOpenArtistUpgrade?.({ ...upgradeReq })}
+                    style={{
+                      background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
+                      color: "#fff", border: "none", borderRadius: 9999,
+                      padding: "7px 20px", fontSize: 12, fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Gửi lại đơn
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
