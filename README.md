@@ -25,6 +25,7 @@ The app can run in a localStorage-first mode for UI development. When Supabase e
 - Font Awesome React icons
 - Lucide React icons
 - Framer Motion dependency available for motion work
+- Playwright setup under `e2e/` for local end-to-end coverage
 
 
 ## Architecture
