@@ -32,6 +32,7 @@ import { getMediaBlobUrl } from "./lib/music/mediaStore";
 import { getArtistAnalytics } from "./lib/artist/artistStats";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
+import { subscribeToNotifications } from "./lib/supabase/realtime";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -209,6 +210,19 @@ export default function App() {
     if (authUser?.email) {
       syncFromSupabase(authUser.email).catch(() => {});
     }
+  }, [authUser?.email]);
+
+  // Realtime: push notifications from Supabase (admin broadcast, song approved, etc.)
+  useEffect(() => {
+    if (!authUser?.email) return;
+    const key = authUser.email.toLowerCase();
+    return subscribeToNotifications(key, (items) => {
+      setNotifState(s => {
+        if (s.key !== key) return s;
+        return { ...s, value: items };
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.email]);
 
   /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
@@ -948,7 +962,7 @@ export default function App() {
       <div data-theme={settings.themeMode}>
         <PageAdmin
           authUser={authUser}
-          songs={songs}
+          songs={list}
           onExit={() => setScreen("app")}
           onImpersonate={handleImpersonate}
         />
