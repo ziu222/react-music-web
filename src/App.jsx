@@ -23,6 +23,7 @@ import {
 } from "./auth/session";
 import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/settings";
 import { loadNotifications, saveNotifications, createNotification } from "./lib/notifications";
+import { syncFromSupabase } from "./lib/syncFromSupabase";
 import { applyUserOverride } from "./lib/userOverrides";
 import { logAdminAction } from "./lib/auditLog";
 import { applySongOverrides } from "./lib/songOverrides";
@@ -182,6 +183,13 @@ export default function App() {
     else clearSession();
   }, [authUser]);
 
+  // Sync from Supabase whenever user logs in (or on first load if session exists)
+  useEffect(() => {
+    if (authUser?.email) {
+      syncFromSupabase(authUser.email).catch(() => {});
+    }
+  }, [authUser?.email]);
+
   /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
   const userKey = authUser?.email?.toLowerCase() ?? "guest";
   const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
@@ -253,7 +261,9 @@ export default function App() {
     // Override của admin (role/plan/ban/xóa) đè lên seed, rồi mới tới entitlement
     const effective = applyUserOverride(user);
     if (effective.deleted || effective.status === "banned") return;
-    setAuthUser(normalizeUser(applyEntitlement(effective)));
+    const resolvedUser = normalizeUser(applyEntitlement(effective));
+    setAuthUser(resolvedUser);
+    syncFromSupabase(resolvedUser.email).catch(() => {});
     setAuthMode(null);
     const pendingAction = authGate?.afterAuth;
     setAuthGate(null);
