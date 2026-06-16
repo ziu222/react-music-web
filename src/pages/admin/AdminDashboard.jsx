@@ -10,10 +10,10 @@ import {
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import users from "../../data/users";
 import { StatCard, ActionChip } from "../../components/console/ConsoleUi";
-import { loadAuditLog, ACTION_LABELS } from "../../lib/auditLog";
-import { formatNotificationTime } from "../../lib/notifications";
+import { loadAuditLog, ACTION_LABELS } from "../../lib/user/auditLog";
+import { formatNotificationTime } from "../../lib/social/notifications";
 import { actionColor } from "./AdminAudit";
-import { getPendingRequests } from "../../lib/upgradeRequests";
+import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 
 export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNavigateUsers }) {
   const activeUsers = (allUsers ?? users).filter((u) => !u.deleted);

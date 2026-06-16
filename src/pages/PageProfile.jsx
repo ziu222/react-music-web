@@ -15,8 +15,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { C, G, BORDER, BG, TEXT } from "../constants/theme";
 import { listenerStats } from "../data/listenerStats";
-import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/upgradeRequests";
-import { createNotification, loadNotifications, saveNotifications } from "../lib/notifications";
+import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/artist/upgradeRequests";
+import { createNotification, loadNotifications, saveNotifications } from "../lib/social/notifications";
 
 const ADMIN_KEY = "linh@melodies.local";
 

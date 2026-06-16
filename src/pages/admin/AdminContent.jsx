@@ -2,8 +2,8 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
 import { TEXT } from "../../constants/theme";
-import { loadSongOverrides, toggleSongHidden } from "../../lib/songOverrides";
-import { logAdminAction } from "../../lib/auditLog";
+import { loadSongOverrides, toggleSongHidden } from "../../lib/music/songOverrides";
+import { logAdminAction } from "../../lib/user/auditLog";
 import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
 import { getSongImage } from "../../data/media";
 

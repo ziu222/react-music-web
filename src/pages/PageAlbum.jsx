@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faCirclePlus, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
-import EntityHeader from "../components/EntityHeader";
-import TrackList from "../components/TrackList";
-import AlbumTile from "../components/AlbumTile";
+import EntityHeader from "../components/ui/EntityHeader";
+import TrackList from "../components/ui/TrackList";
+import AlbumTile from "../components/ui/AlbumTile";
 import { TEXT } from "../constants/theme";
 import { getSongImage, getPrimaryArtist } from "../data/media";
 import { getAlbum, deriveAlbums, formatTotalDuration } from "../data/derived";

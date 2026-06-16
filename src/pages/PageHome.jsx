@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faChevronRight, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
-import Card from "../components/Card";
+import Card from "../components/ui/Card";
 import { getSongImage, artistImages, getPrimaryArtist } from "../data/media";
 
 const ARTIST_COLORS = [

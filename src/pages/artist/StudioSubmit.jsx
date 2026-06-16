@@ -13,19 +13,19 @@ import {
   faShieldHalved,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
-import { addSubmission, updateSubmission, submitDraft } from "../../lib/submissions";
+import { addSubmission, updateSubmission, submitDraft } from "../../lib/artist/submissions";
 import {
   saveMediaBlob,
   deleteMediaBlob,
   getMediaBlobUrl,
   revokeMediaBlobUrl,
   readAudioDuration,
-} from "../../lib/mediaStore";
+} from "../../lib/music/mediaStore";
 import {
   loadNotifications,
   saveNotifications,
   createNotification,
-} from "../../lib/notifications";
+} from "../../lib/social/notifications";
 
 const GENRES = ["V-Pop", "Pop", "R&B", "Ballad", "EDM", "Dance", "Hip-Hop", "Indie", "Acoustic", "Rock"];
 const LANGUAGES = ["Tiếng Việt", "Tiếng Anh", "Tiếng Hàn", "Tiếng Nhật", "Không lời", "Khác"];

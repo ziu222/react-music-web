@@ -10,9 +10,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
-import UserDetailModal from "../../components/UserDetailModal";
-import { loadSubmissions } from "../../lib/submissions";
-import { getAllUsersWithOverrides } from "../../lib/userOverrides";
+import UserDetailModal from "../../components/modals/UserDetailModal";
+import { loadSubmissions } from "../../lib/artist/submissions";
+import { getAllUsersWithOverrides } from "../../lib/user/userOverrides";
 import AdminDashboard from "./AdminDashboard";
 import AdminUsers from "./AdminUsers";
 import AdminReview from "./AdminReview";

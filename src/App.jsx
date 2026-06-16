@@ -1,37 +1,37 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
-import songs from "./data/songs";
 import playlistsSeed from "./data/playlists";
-import Splash from "./components/Splash";
-import Loader from "./components/Loader";
-import Player from "./components/Player";
-import Sidebar from "./components/Sidebar";
-import AuthModal from "./components/AuthModal";
-import AuthGateModal from "./components/AuthGateModal";
-import NavbarUserActions from "./components/NavbarUserActions";
+import Splash from "./components/ui/Splash";
+import Loader from "./components/ui/Loader";
+import Player from "./components/player/Player";
+import Sidebar from "./components/nav/Sidebar";
+import AuthModal from "./components/modals/AuthModal";
+import AuthGateModal from "./components/modals/AuthGateModal";
+import NavbarUserActions from "./components/nav/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
-import ArtistUpgradeModal from "./components/ArtistUpgradeModal";
+import ArtistUpgradeModal from "./components/modals/ArtistUpgradeModal";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
-const PremiumModal = lazy(() => import("./components/PremiumModal"));
-const SettingsModal = lazy(() => import("./components/SettingsModal"));
+const PremiumModal = lazy(() => import("./components/modals/PremiumModal"));
+const SettingsModal = lazy(() => import("./components/modals/SettingsModal"));
 import {
   loadSession, saveSession, clearSession,
   normalizeUser, applyEntitlement, saveEntitlement, isPremiumUser,
   PLAN_PREMIUM,
 } from "./auth/session";
-import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/settings";
-import { loadNotifications, saveNotifications, createNotification } from "./lib/notifications";
-import { syncFromSupabase } from "./lib/syncFromSupabase";
-import { applyUserOverride } from "./lib/userOverrides";
-import { logAdminAction } from "./lib/auditLog";
-import { applySongOverrides } from "./lib/songOverrides";
-import { getApprovedSubmissions } from "./lib/submissions";
-import { getMediaBlobUrl } from "./lib/mediaStore";
-import { getArtistAnalytics } from "./lib/artistStats";
-import { incrementPlay, incrementLike, decrementLike } from "./lib/playLog";
-import { addFollower, removeFollower } from "./lib/followerIndex";
+import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/user/settings";
+import { loadNotifications, saveNotifications, createNotification } from "./lib/social/notifications";
+import { syncFromSupabase } from "./lib/supabase/syncFromSupabase";
+import { applyUserOverride } from "./lib/user/userOverrides";
+import { logAdminAction } from "./lib/user/auditLog";
+import { applySongOverrides } from "./lib/music/songOverrides";
+import { getApprovedSubmissions } from "./lib/artist/submissions";
+import { getMediaBlobUrl } from "./lib/music/mediaStore";
+import { getArtistAnalytics } from "./lib/artist/artistStats";
+import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
+import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
+import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -69,6 +69,11 @@ export default function App() {
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
   const [likedIds, setLikedIds] = useState(new Set());
+  const [catalogSongs, setCatalogSongs] = useState([]);
+  useEffect(() => {
+    fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
+  }, []);
+
   // Bài approved của nghệ sĩ được merge vào catalog — audio đọc từ IndexedDB
   const [communitySongs, setCommunitySongs] = useState([]);
   useEffect(() => {
@@ -114,8 +119,8 @@ export default function App() {
   // Bài bị admin gỡ biến mất khỏi app — tính lại khi rời màn admin
   const list = useMemo(() => {
     void screen;
-    return [...applySongOverrides(songs), ...applySongOverrides(communitySongs)];
-  }, [screen, communitySongs]);
+    return [...applySongOverrides(catalogSongs), ...applySongOverrides(communitySongs)];
+  }, [screen, catalogSongs, communitySongs]);
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(() => loadSession());

@@ -11,8 +11,8 @@ import {
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { StatusBadge } from "../../components/console/ConsoleUi";
 import { TrendBarChart, ProgressBar, TrendChip, useCountUp } from "../../components/console/Charts";
-import { getArtistAnalytics, weeklyTrend, formatCompact } from "../../lib/artistStats";
-import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
+import { getArtistAnalytics, weeklyTrend, formatCompact } from "../../lib/artist/artistStats";
+import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
 
 function InsightCard({ icon, accent, value, format = String, label, trend, stagger = 0 }) {
   // Count-up bắt đầu sau khi card đã đáp xuống (stagger 60ms + 180ms landing)

@@ -45,5 +45,17 @@ master.md
 .mcp.json
 .mcp.local.json
 
+# Supabase local dev
+supabase/.temp/
+supabase/config.toml
+
+# Secrets & credentials (never commit these)
+.env.production
+.env.staging
+*.pem
+*.key
+*.p12
+*.pfx
+
 # Binary audio assets — served locally, not tracked in git
 public/audio/

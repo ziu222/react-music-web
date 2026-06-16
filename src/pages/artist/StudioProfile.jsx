@@ -9,14 +9,14 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
-import { loadArtistProfile, saveArtistProfile } from "../../lib/artistProfile";
-import { getArtistAnalytics, formatCompact } from "../../lib/artistStats";
+import { loadArtistProfile, saveArtistProfile } from "../../lib/artist/artistProfile";
+import { getArtistAnalytics, formatCompact } from "../../lib/artist/artistStats";
 import {
   saveMediaBlob,
   deleteMediaBlob,
   getMediaBlobUrl,
   revokeMediaBlobUrl,
-} from "../../lib/mediaStore";
+} from "../../lib/music/mediaStore";
 
 const THEME_COLORS = ["#f97316", "#a78bfa", "#38bdf8", "#fb7185", "#34d399", "#fbbf24"];
 

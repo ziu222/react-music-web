@@ -8,16 +8,16 @@ import {
   faShieldHalved,
 } from "@fortawesome/free-solid-svg-icons";
 import { BG, TEXT, BORDER } from "../../constants/theme";
-import { reviewSubmission } from "../../lib/submissions";
-import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
-import { logAdminAction } from "../../lib/auditLog";
+import { reviewSubmission } from "../../lib/artist/submissions";
+import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
+import { logAdminAction } from "../../lib/user/auditLog";
 import {
   loadNotifications,
   saveNotifications,
   createNotification,
-} from "../../lib/notifications";
+} from "../../lib/social/notifications";
 import { StatusBadge } from "../../components/console/ConsoleUi";
-import { getFollowers } from "../../lib/followerIndex";
+import { getFollowers } from "../../lib/social/followerIndex";
 
 function notifyArtist(sub, approved, reason) {
   const key = sub.artistEmail.toLowerCase();

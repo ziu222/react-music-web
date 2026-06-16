@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
-import TrackRow from "../components/TrackRow";
-import PlaylistCover from "../components/PlaylistCover";
+import TrackRow from "../components/ui/TrackRow";
+import PlaylistCover from "../components/ui/PlaylistCover";
 import { TEXT } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists, deriveAlbums } from "../data/derived";

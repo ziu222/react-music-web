@@ -8,8 +8,8 @@ import {
   saveNotifications,
   createNotification,
   formatNotificationTime,
-} from "../../lib/notifications";
-import { loadAuditLog, logAdminAction } from "../../lib/auditLog";
+} from "../../lib/social/notifications";
+import { loadAuditLog, logAdminAction } from "../../lib/user/auditLog";
 
 const TYPE_OPTIONS = [
   { key: "system", label: "Hệ thống" },

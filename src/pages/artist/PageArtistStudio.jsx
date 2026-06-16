@@ -9,9 +9,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
-import { loadSubmissions, resubmit, deleteSubmission } from "../../lib/submissions";
-import { deleteMediaBlob, getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
-import { loadArtistProfile } from "../../lib/artistProfile";
+import { loadSubmissions, resubmit, deleteSubmission } from "../../lib/artist/submissions";
+import { deleteMediaBlob, getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
+import { loadArtistProfile } from "../../lib/artist/artistProfile";
 import StudioOverview from "./StudioOverview";
 import StudioAnalytics from "./StudioAnalytics";
 import StudioSongs from "./StudioSongs";
