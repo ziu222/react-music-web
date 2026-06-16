@@ -4,6 +4,8 @@ import { faStar, faChevronRight, faMicrophoneLines } from "@fortawesome/free-sol
 import { TEXT, C } from "../../constants/theme";
 import { SearchInput, FilterPills } from "../../components/console/ConsoleUi";
 import { getPendingRequests } from "../../lib/artist/upgradeRequests";
+import { grantPremium, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
+import { logAdminAction } from "../../lib/user/auditLog";
 
 const ROLE_PILLS = [
   { key: "all", label: "Tất cả" },
@@ -46,10 +48,12 @@ function InlinePill({ color, children }) {
   );
 }
 
-export default function AdminUsers({ users, onOpenUser }) {
+export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
+  const [bulkDuration, setBulkDuration] = useState("1m");
+  const [bulkDone, setBulkDone] = useState(null);
 
   const pendingRequestEmails = useMemo(() => {
     const reqs = getPendingRequests();
@@ -89,6 +93,36 @@ export default function AdminUsers({ users, onOpenUser }) {
         <FilterPills options={ROLE_PILLS} active={roleFilter} onSelect={setRoleFilter} />
         <div style={{ width: 1, height: 18, background: "var(--border)" }} />
         <FilterPills options={PLAN_PILLS} active={planFilter} onSelect={setPlanFilter} />
+      </div>
+
+      <div style={{
+        background: "var(--overlay-1)", border: "1px solid var(--border)", borderRadius: 10,
+        padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid, flexShrink: 0 }}>Bulk grant Premium:</div>
+        {GRANT_DURATIONS.map((d) => (
+          <button key={d.key} onClick={() => setBulkDuration(d.key)} style={{
+            background: bulkDuration === d.key ? "#fbbf24" : "transparent",
+            border: "1px solid #fbbf24", color: bulkDuration === d.key ? "#0a0a08" : "#fbbf24",
+            borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer",
+          }}>{d.label}</button>
+        ))}
+        <button onClick={() => {
+          const listeners = filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener");
+          listeners.forEach((u) => grantPremium(authUser?.email, u.email, bulkDuration, "bulk grant"));
+          logAdminAction(authUser, "change_plan", listeners.length + " listeners", "bulk → premium " + GRANT_DURATIONS.find(d=>d.key===bulkDuration)?.label);
+          setBulkDone(listeners.length);
+          setTimeout(() => setBulkDone(null), 4000);
+          onRefresh?.();
+        }} style={{
+          background: "#fbbf24", border: "none", color: "#0a0a08", borderRadius: 9999,
+          padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", marginLeft: "auto",
+        }}>
+          Áp dụng cho Listeners ({filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener").length})
+        </button>
+        {bulkDone !== null && (
+          <div style={{ fontSize: 12, color: "#34d399" }}>✓ Đã grant {bulkDone} tài khoản</div>
+        )}
       </div>
 
       <div
@@ -184,8 +218,16 @@ export default function AdminUsers({ users, onOpenUser }) {
                 </InlinePill>
               )}
             </div>
-            <div style={{ width: 86, flexShrink: 0 }}>
+            <div style={{ width: 86, flexShrink: 0, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
               <InlinePill color={roleChip.color}>{roleChip.label}</InlinePill>
+              {user.verified && (
+                <span style={{ fontSize: 9, fontWeight: 800, background: "#3b82f6", color: "#fff",
+                  borderRadius: 4, padding: "1px 5px", letterSpacing: "0.04em" }}>✓ Verified</span>
+              )}
+              {user.suspended && (
+                <span style={{ fontSize: 9, fontWeight: 800, background: "#f59e0b", color: "#0a0a08",
+                  borderRadius: 4, padding: "1px 5px" }}>Suspended</span>
+              )}
             </div>
             <div
               style={{

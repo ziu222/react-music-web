@@ -20,6 +20,7 @@ import { listenerStats } from "../../data/listenerStats";
 import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { getRequest, requestMoreInfo, resolveUpgradeRequest, undoRejectUpgradeRequest } from "../../lib/artist/upgradeRequests";
+import { grantPremium, revokePremium, getGrantHistory, getActiveGrant, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
 import { createNotification, loadNotifications, saveNotifications } from "../../lib/social/notifications";
 import { getMediaBlobUrl } from "../../lib/music/mediaStore";
 
@@ -93,6 +94,10 @@ export default function UserDetailModal({
   const [adminInfoNote, setAdminInfoNote] = useState("");
   const [adminRejectReason, setAdminRejectReason] = useState("");
   const [upgradeAction, setUpgradeAction] = useState(null); // "info" | "reject" | null
+  const [premiumDuration, setPremiumDuration] = useState("1m");
+  const [adminNote, setAdminNote] = useState(() => localStorage.getItem("melodies_admin_note_" + user?.email) || "");
+  const grantHistory = getGrantHistory(user?.email ?? "");
+  const activeGrant = getActiveGrant(user?.email ?? "");
 
   useEffect(() => {
     if (!user) return undefined;
@@ -556,6 +561,51 @@ export default function UserDetailModal({
             </div>
           )}
 
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--island-faint)", marginBottom: 6 }}>
+              Ghi chú nội bộ (chỉ admin thấy)
+            </div>
+            <textarea
+              value={adminNote}
+              onChange={(e) => {
+                setAdminNote(e.target.value);
+                localStorage.setItem("melodies_admin_note_" + user.email, e.target.value);
+              }}
+              placeholder="Ghi chú về người dùng này..."
+              style={{ width: "100%", minHeight: 60, background: "rgba(255,255,255,0.05)",
+                border: "1px solid var(--island-border)", borderRadius: 8, padding: "8px 10px",
+                color: "var(--island-text)", fontSize: 12, resize: "vertical", outline: "none",
+                boxSizing: "border-box", fontFamily: "inherit" }}
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              const data = JSON.stringify({
+                profile: user,
+                grantHistory: getGrantHistory(user.email),
+                exportedAt: new Date().toISOString(),
+              }, null, 2);
+              const blob = new Blob([data], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "user_" + user.email.split("@")[0] + ".json";
+              a.click();
+              URL.revokeObjectURL(url);
+              logAdminAction(currentAdmin, "export_user_data", user.name, user.email);
+            }}
+            style={{
+              width: "100%", background: "transparent",
+              border: "1px solid var(--island-border)", color: "var(--island-faint)",
+              borderRadius: 9999, padding: "8px 12px", fontSize: 12, fontWeight: 600,
+              cursor: "pointer", display: "inline-flex", alignItems: "center",
+              justifyContent: "center", gap: 6, marginTop: 6, marginBottom: 14,
+            }}
+          >
+            Xuất dữ liệu người dùng (JSON)
+          </button>
+
           <div
             style={{
               marginBottom: 14,
@@ -596,34 +646,74 @@ export default function UserDetailModal({
             </div>
           </div>
 
-          <button
-            onClick={() =>
-              act(
-                "change_plan",
-                { plan: isPremium ? "free" : "premium" },
-                "→ " + (isPremium ? "free" : "premium")
-              )
-            }
-            style={{
-              width: "100%",
-              background: "transparent",
-              border: "1px solid #fbbf24",
-              color: "#fbbf24",
-              borderRadius: 9999,
-              padding: "8px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              marginBottom: 8,
-            }}
-          >
-            <FontAwesomeIcon icon={faCrown} style={{ fontSize: 11 }} />
-            {isPremium ? "Hạ xuống Free" : "Nâng lên Premium"}
-          </button>
+          {!isPremium && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+                {GRANT_DURATIONS.map((d) => (
+                  <button key={d.key} onClick={() => setPremiumDuration(d.key)} style={{
+                    background: premiumDuration === d.key ? "#fbbf24" : "transparent",
+                    border: "1px solid #fbbf24",
+                    color: premiumDuration === d.key ? "#0a0a08" : "#fbbf24",
+                    borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600,
+                    cursor: "pointer",
+                  }}>{d.label}</button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const { expiresAt } = grantPremium(currentAdmin?.email, user.email, premiumDuration);
+                  act("change_plan", { plan: "premium" }, "→ premium " + GRANT_DURATIONS.find(d=>d.key===premiumDuration)?.label);
+                  void expiresAt;
+                }}
+                style={{
+                  width: "100%", background: "transparent", border: "1px solid #fbbf24",
+                  color: "#fbbf24", borderRadius: 9999, padding: "8px 12px", fontSize: 12,
+                  fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center",
+                  justifyContent: "center", gap: 6, marginBottom: 0,
+                }}
+              >
+                <FontAwesomeIcon icon={faCrown} style={{ fontSize: 11 }} />
+                Nâng lên Premium ({GRANT_DURATIONS.find(d=>d.key===premiumDuration)?.label})
+              </button>
+            </div>
+          )}
+          {isPremium && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "#fbbf24", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                <FontAwesomeIcon icon={faCrown} style={{ fontSize: 10 }} />
+                {activeGrant?.expiresAt
+                  ? "Hết hạn: " + new Date(activeGrant.expiresAt).toLocaleDateString("vi-VN")
+                  : "Premium vĩnh viễn"}
+              </div>
+              <button
+                onClick={() => { revokePremium(currentAdmin?.email, user.email); act("change_plan", { plan: "free" }, "→ free"); }}
+                style={{
+                  width: "100%", background: "transparent", border: "1px solid #fbbf24",
+                  color: "#fbbf24", borderRadius: 9999, padding: "8px 12px", fontSize: 12,
+                  fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center",
+                  justifyContent: "center", gap: 6,
+                }}
+              >
+                <FontAwesomeIcon icon={faCrown} style={{ fontSize: 11 }} />
+                Hạ xuống Free
+              </button>
+            </div>
+          )}
+          {grantHistory.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--island-faint)", marginBottom: 6 }}>
+                Lịch sử subscription
+              </div>
+              {grantHistory.slice(0, 4).map((g) => (
+                <div key={g.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--island-muted)", padding: "3px 0", borderBottom: "1px solid var(--island-border)" }}>
+                  <span style={{ color: g.plan === "premium" ? "#fbbf24" : "var(--island-faint)" }}>
+                    {g.plan === "premium" ? "↑ Premium" : "↓ Free"} · {g.durationLabel}
+                  </span>
+                  <span>{new Date(g.grantedAt).toLocaleDateString("vi-VN")}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {!isSelf && !isBanned && !user.deleted && user.role !== "admin" && (
             <button
@@ -705,6 +795,35 @@ export default function UserDetailModal({
                 }}
               >
                 Xác nhận khóa tài khoản
+              </button>
+            </div>
+          )}
+
+          {user.role === "artist" && (
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <button
+                onClick={() => { act(user.verified ? "unverify_artist" : "verify_artist", { verified: !user.verified }, ""); }}
+                style={{
+                  flex: 1, background: "transparent",
+                  border: "1px solid " + (user.verified ? "#3b82f6" : "var(--island-border)"),
+                  color: user.verified ? "#3b82f6" : "var(--island-muted)",
+                  borderRadius: 9999, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                {user.verified ? "✓ Verified" : "Xác minh Nghệ sĩ"}
+              </button>
+              <button
+                onClick={() => { act(user.suspended ? "unsuspend_artist" : "suspend_artist", { suspended: !user.suspended }, ""); }}
+                style={{
+                  flex: 1, background: "transparent",
+                  border: "1px solid " + (user.suspended ? "#f59e0b" : "var(--island-border)"),
+                  color: user.suspended ? "#f59e0b" : "var(--island-muted)",
+                  borderRadius: 9999, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                {user.suspended ? "Bỏ tạm dừng" : "Tạm dừng Upload"}
               </button>
             </div>
           )}

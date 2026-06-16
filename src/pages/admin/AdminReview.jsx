@@ -41,6 +41,8 @@ export default function AdminReview({ subs, setSubs, authUser }) {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [mediaUrls, setMediaUrls] = useState({});
+  const [selected, setSelected] = useState(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const pending = subs
     .filter((s) => s.status === "pending")
@@ -106,6 +108,43 @@ export default function AdminReview({ subs, setSubs, authUser }) {
     setRejectReason("");
   };
 
+  const toggleSelect = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selected.size === pending.length) setSelected(new Set());
+    else setSelected(new Set(pending.map((s) => s.id)));
+  };
+
+  const bulkApprove = () => {
+    setBulkLoading(true);
+    [...selected].forEach((id) => {
+      const sub = pending.find((s) => s.id === id);
+      if (sub) approve(sub);
+    });
+    setSelected(new Set());
+    setBulkLoading(false);
+  };
+
+  const bulkReject = () => {
+    const reason = window.prompt("Lý do từ chối (áp dụng cho tất cả bài đã chọn):");
+    if (!reason?.trim()) return;
+    [...selected].forEach((id) => {
+      const sub = pending.find((s) => s.id === id);
+      if (sub) {
+        setSubs(reviewSubmission(sub.id, "rejected", reason));
+        notifyArtist(sub, false, reason);
+        logAdminAction(authUser, "reject_song", sub.title, reason);
+      }
+    });
+    setSelected(new Set());
+  };
+
   const undoReject = (sub) => {
     setSubs(undoRejectSubmission(sub.id));
     const key = sub.artistEmail.toLowerCase();
@@ -123,6 +162,30 @@ export default function AdminReview({ subs, setSubs, authUser }) {
       <div style={{ fontSize: 14, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
         Hàng chờ duyệt ({pending.length})
       </div>
+
+      {pending.length > 1 && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+          <button onClick={selectAll} style={{
+            background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+            borderRadius: 9999, padding: "5px 12px", fontSize: 11, cursor: "pointer",
+          }}>
+            {selected.size === pending.length ? "Bỏ chọn tất cả" : "Chọn tất cả (" + pending.length + ")"}
+          </button>
+          {selected.size > 0 && (
+            <>
+              <span style={{ fontSize: 11, color: TEXT.tertiary }}>Đã chọn {selected.size}</span>
+              <button onClick={bulkApprove} disabled={bulkLoading} style={{
+                background: "#34d399", border: "none", color: "#08110d",
+                borderRadius: 9999, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+              }}>Duyệt tất cả</button>
+              <button onClick={bulkReject} disabled={bulkLoading} style={{
+                background: "transparent", border: "1px solid #ef4444", color: "#ef4444",
+                borderRadius: 9999, padding: "5px 14px", fontSize: 11, fontWeight: 600, cursor: "pointer",
+              }}>Từ chối tất cả</button>
+            </>
+          )}
+        </div>
+      )}
 
       {pending.length === 0 && (
         <div
@@ -157,6 +220,12 @@ export default function AdminReview({ subs, setSubs, authUser }) {
           }}
         >
           <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              type="checkbox"
+              checked={selected.has(sub.id)}
+              onChange={() => toggleSelect(sub.id)}
+              style={{ flexShrink: 0, cursor: "pointer", width: 16, height: 16 }}
+            />
             <div
               style={{
                 width: 52,
