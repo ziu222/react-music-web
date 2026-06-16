@@ -95,6 +95,7 @@ export default function UserDetailModal({
   const [adminRejectReason, setAdminRejectReason] = useState("");
   const [upgradeAction, setUpgradeAction] = useState(null); // "info" | "reject" | null
   const [premiumDuration, setPremiumDuration] = useState("1m");
+  const [adminNote, setAdminNote] = useState(() => localStorage.getItem("melodies_admin_note_" + user?.email) || "");
   const grantHistory = getGrantHistory(user?.email ?? "");
   const activeGrant = getActiveGrant(user?.email ?? "");
 
@@ -559,6 +560,51 @@ export default function UserDetailModal({
               Lý do khóa: {user.banReason}
             </div>
           )}
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--island-faint)", marginBottom: 6 }}>
+              Ghi chú nội bộ (chỉ admin thấy)
+            </div>
+            <textarea
+              value={adminNote}
+              onChange={(e) => {
+                setAdminNote(e.target.value);
+                localStorage.setItem("melodies_admin_note_" + user.email, e.target.value);
+              }}
+              placeholder="Ghi chú về người dùng này..."
+              style={{ width: "100%", minHeight: 60, background: "rgba(255,255,255,0.05)",
+                border: "1px solid var(--island-border)", borderRadius: 8, padding: "8px 10px",
+                color: "var(--island-text)", fontSize: 12, resize: "vertical", outline: "none",
+                boxSizing: "border-box", fontFamily: "inherit" }}
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              const data = JSON.stringify({
+                profile: user,
+                grantHistory: getGrantHistory(user.email),
+                exportedAt: new Date().toISOString(),
+              }, null, 2);
+              const blob = new Blob([data], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "user_" + user.email.split("@")[0] + ".json";
+              a.click();
+              URL.revokeObjectURL(url);
+              logAdminAction(currentAdmin, "export_user_data", user.name, user.email);
+            }}
+            style={{
+              width: "100%", background: "transparent",
+              border: "1px solid var(--island-border)", color: "var(--island-faint)",
+              borderRadius: 9999, padding: "8px 12px", fontSize: 12, fontWeight: 600,
+              cursor: "pointer", display: "inline-flex", alignItems: "center",
+              justifyContent: "center", gap: 6, marginTop: 6, marginBottom: 14,
+            }}
+          >
+            Xuất dữ liệu người dùng (JSON)
+          </button>
 
           <div
             style={{
