@@ -17,6 +17,7 @@ import {
   createNotification,
 } from "../../lib/notifications";
 import { StatusBadge } from "../../components/console/ConsoleUi";
+import { getFollowers } from "../../lib/followerIndex";
 
 function notifyArtist(sub, approved, reason) {
   const key = sub.artistEmail.toLowerCase();
@@ -73,9 +74,22 @@ export default function AdminReview({ subs, setSubs, authUser }) {
     .sort((a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt))
     .slice(0, 10);
 
+  const notifyFollowers = (sub) => {
+    const followers = getFollowers(sub.artistName);
+    const notif = createNotification(
+      "social",
+      `Nhạc mới từ ${sub.artistName}`,
+      `"${sub.title}" vừa được phát hành — nghe ngay!`
+    );
+    followers.forEach((email) => {
+      saveNotifications(email, [notif, ...loadNotifications(email)]);
+    });
+  };
+
   const approve = (sub) => {
     setSubs(reviewSubmission(sub.id, "approved"));
     notifyArtist(sub, true);
+    notifyFollowers(sub);
     logAdminAction(authUser, "approve_song", sub.title, "Nghệ sĩ: " + sub.artistName);
   };
 

@@ -29,6 +29,7 @@ import { getApprovedSubmissions } from "./lib/submissions";
 import { getMediaBlobUrl } from "./lib/mediaStore";
 import { getArtistAnalytics } from "./lib/artistStats";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/playLog";
+import { addFollower, removeFollower } from "./lib/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -634,7 +635,10 @@ export default function App() {
       next.has(artistName) ? next.delete(artistName) : next.add(artistName);
       return next;
     });
-    if (!isFollowing) {
+    if (isFollowing) {
+      removeFollower(artistName, authUser?.email);
+    } else {
+      addFollower(artistName, authUser?.email);
       pushNotification("social", `Đang theo dõi ${artistName}`, "Nghệ sĩ đã được thêm vào thư viện của bạn.");
     }
   };
