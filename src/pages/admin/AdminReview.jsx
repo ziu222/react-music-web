@@ -10,6 +10,7 @@ import {
 import { BG, TEXT, BORDER } from "../../constants/theme";
 import { reviewSubmission } from "../../lib/artist/submissions";
 import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
+import { insertApprovedSong } from "../../lib/supabase/storageUpload";
 import { logAdminAction } from "../../lib/user/auditLog";
 import {
   loadNotifications,
@@ -52,8 +53,8 @@ export default function AdminReview({ subs, setSubs, authUser }) {
     Promise.all(
       pending.map(async (sub) => {
         urls[sub.id] = {
-          audio: await getMediaBlobUrl(sub.audioBlobId),
-          cover: await getMediaBlobUrl(sub.coverBlobId),
+          audio: sub.audioStorageUrl || (await getMediaBlobUrl(sub.audioBlobId)),
+          cover: sub.coverStorageUrl || (await getMediaBlobUrl(sub.coverBlobId)),
         };
       })
     ).then(() => {
@@ -91,6 +92,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
     notifyArtist(sub, true);
     notifyFollowers(sub);
     logAdminAction(authUser, "approve_song", sub.title, "Nghệ sĩ: " + sub.artistName);
+    insertApprovedSong(sub).catch(() => {});
   };
 
   const confirmReject = () => {
