@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faChevronRight } from "@fortawesome/free-solid-svg-icons";
-import { TEXT } from "../../constants/theme";
+import { faStar, faChevronRight, faMicrophoneLines } from "@fortawesome/free-solid-svg-icons";
+import { TEXT, C } from "../../constants/theme";
 import { SearchInput, FilterPills } from "../../components/console/ConsoleUi";
+import { getPendingRequests } from "../../lib/upgradeRequests";
 
 const ROLE_PILLS = [
   { key: "all", label: "Tất cả" },
@@ -10,6 +11,7 @@ const ROLE_PILLS = [
   { key: "artist", label: "Nghệ sĩ" },
   { key: "admin", label: "Admin" },
   { key: "deleted", label: "Đã xóa" },
+  { key: "requests", label: "Đơn NS" },
 ];
 
 const PLAN_PILLS = [
@@ -49,9 +51,16 @@ export default function AdminUsers({ users, onOpenUser }) {
   const [roleFilter, setRoleFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
 
+  const pendingRequestEmails = useMemo(() => {
+    const reqs = getPendingRequests();
+    return new Set(reqs.map((r) => r.email));
+  }, []);
+
   const filtered = users.filter((u) => {
     if (roleFilter === "deleted") {
       if (!u.deleted) return false;
+    } else if (roleFilter === "requests") {
+      if (!pendingRequestEmails.has(u.email)) return false;
     } else {
       if (u.deleted) return false;
       if (roleFilter !== "all" && u.role !== roleFilter) return false;
@@ -105,6 +114,7 @@ export default function AdminUsers({ users, onOpenUser }) {
       {filtered.map((user) => {
         const dimmed = user.status === "banned" || user.deleted;
         const roleChip = ROLE_CHIPS[user.role] ?? ROLE_CHIPS.listener;
+        const hasRequest = pendingRequestEmails.has(user.email);
         return (
           <div
             key={user.id}
@@ -167,6 +177,12 @@ export default function AdminUsers({ users, onOpenUser }) {
               </span>
               {user.status === "banned" && <InlinePill color="#f87171">Đã khóa</InlinePill>}
               {user.deleted && <InlinePill>Đã xóa</InlinePill>}
+              {hasRequest && (
+                <InlinePill color={C[400]}>
+                  <FontAwesomeIcon icon={faMicrophoneLines} style={{ fontSize: 8, marginRight: 2 }} />
+                  Đơn NS
+                </InlinePill>
+              )}
             </div>
             <div style={{ width: 86, flexShrink: 0 }}>
               <InlinePill color={roleChip.color}>{roleChip.label}</InlinePill>
