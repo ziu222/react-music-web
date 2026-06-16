@@ -11,6 +11,7 @@ import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
 import NavbarUserActions from "./components/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
+import ArtistUpgradeModal from "./components/ArtistUpgradeModal";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/PremiumModal"));
@@ -122,6 +123,7 @@ export default function App() {
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [artistUpgradeOpen, setArtistUpgradeOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
@@ -1380,6 +1382,18 @@ export default function App() {
         hasPlayer={Boolean(cur)}
         open={supportOpen}
         onOpenChange={setSupportOpen}
+        onAction={(action) => {
+          if (action === "start_artist_signup") {
+            setSupportOpen(false);
+            setArtistUpgradeOpen(true);
+          }
+        }}
+      />
+
+      <ArtistUpgradeModal
+        open={artistUpgradeOpen}
+        onClose={() => setArtistUpgradeOpen(false)}
+        authUser={authUser}
       />
 
       {queueFeedback && (

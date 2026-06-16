@@ -9,7 +9,7 @@ const GREETING = {
   text: "Xin chào! 👋 Mình là trợ lý Melodies. Bạn cần hỗ trợ vấn đề gì? Chọn một câu hỏi bên dưới nhé.",
 };
 
-export default function SupportWidget({ hasPlayer = false, open: controlledOpen, onOpenChange }) {
+export default function SupportWidget({ hasPlayer = false, open: controlledOpen, onOpenChange, onAction }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [messages, setMessages] = useState([GREETING]);
   const [askedIds, setAskedIds] = useState(() => new Set());
@@ -53,7 +53,10 @@ export default function SupportWidget({ hasPlayer = false, open: controlledOpen,
     });
     setTyping(true);
     timerRef.current = setTimeout(() => {
-      setMessages((m) => [...m, { from: "bot", text: item.a }]);
+      setMessages((m) => [
+        ...m,
+        { from: "bot", text: item.a, action: item.action ?? null },
+      ]);
       setTyping(false);
     }, 600);
   };
@@ -180,6 +183,20 @@ export default function SupportWidget({ hasPlayer = false, open: controlledOpen,
                   }}
                 >
                   {m.text}
+                  {m.action && onAction && (
+                    <button
+                      onClick={() => onAction(m.action)}
+                      style={{
+                        display: "block", marginTop: 10,
+                        background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
+                        color: "#fff", border: "none", borderRadius: 9999,
+                        padding: "6px 16px", fontSize: 12, fontWeight: 700,
+                        cursor: "pointer", width: "100%",
+                      }}
+                    >
+                      Bắt đầu đăng ký →
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div

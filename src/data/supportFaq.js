@@ -7,4 +7,5 @@ export const supportFaq = [
   { id: 6, q: "Đổi giao diện sáng / tối ở đâu?", a: "Vào Cài đặt (biểu tượng bánh răng), chọn mục Giao diện và chuyển giữa chế độ Sáng, Tối hoặc Theo hệ thống." },
   { id: 7, q: "Làm sao hủy gói Premium?", a: "Vào Cài đặt → Tài khoản → Quản lý gói. Nhấn \"Hủy Premium\" — bạn vẫn dùng được Premium đến hết chu kỳ đã thanh toán." },
   { id: 8, q: "Liên hệ đội ngũ hỗ trợ?", a: "Bạn có thể gửi email tới support@melodies.app hoặc nhắn qua fanpage Melodies. Đội ngũ hỗ trợ phản hồi trong vòng 24 giờ." },
+  { id: 9, q: "Làm sao trở thành Nghệ sĩ trên Melodies?", a: "Nghệ sĩ được upload nhạc, xem analytics và xây dựng fan base riêng. Đăng ký ngay để được xét duyệt!", action: "start_artist_signup" },
 ];
