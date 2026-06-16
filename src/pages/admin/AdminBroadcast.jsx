@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBullhorn } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
-import users from "../../data/users";
 import {
   loadNotifications,
   saveNotifications,
@@ -29,7 +28,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function AdminBroadcast({ authUser }) {
+export default function AdminBroadcast({ authUser, allUsers = [] }) {
   const [type, setType] = useState("system");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -45,7 +44,7 @@ export default function AdminBroadcast({ authUser }) {
 
   const send = () => {
     if (!canSend) return;
-    const keys = [...new Set(users.map((u) => u.email.toLowerCase())), "guest"];
+    const keys = [...new Set(allUsers.map((u) => u.email.toLowerCase())), "guest"];
     keys.forEach((key) => {
       saveNotifications(key, [
         createNotification(type, title.trim(), body.trim()),

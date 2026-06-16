@@ -1,8 +1,28 @@
 import { useEffect, useState } from "react";
 import logo from "../../assets/logo.png";
 import { C, G, BG, TEXT } from "../../constants/theme";
-import users from "../../data/users";
+import { supabase } from "../../lib/supabase/supabase";
 import { applyUserOverride } from "../../lib/user/userOverrides";
+
+async function fetchUserMeta(userId) {
+  if (!supabase) return null;
+  const { data } = await supabase.from("users").select("*").eq("id", userId).single();
+  return data;
+}
+
+function buildUserFromMeta(authUser, meta) {
+  return {
+    id: authUser.id,
+    email: authUser.email,
+    name: meta?.name || authUser.email.split("@")[0],
+    initial: meta?.initial || authUser.email[0].toUpperCase(),
+    color: meta?.color || "#f97316",
+    role: meta?.role || "listener",
+    plan: meta?.plan || "free",
+    status: meta?.status || "active",
+    joinedAt: meta?.joined_at || new Date().toISOString(),
+  };
+}
 
 const SOCIAL_PROVIDERS = [
   { id: "google", label: "Tiếp tục với Google", mark: "G", color: "#fff" },
@@ -320,45 +340,46 @@ export default function AuthModal({ mode, onClose, onAuth }) {
     return nextErrors;
   };
 
-  const handleSubmit = event => {
+  const handleSubmit = async event => {
     event.preventDefault();
     const nextErrors = validateAuth();
-    if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { setErrors(nextErrors); return; }
+
+    setLoading(true);
+    if (tab === "register") {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { name: name.trim(), initial: name.trim()[0]?.toUpperCase() || "U" } },
+      });
+      setLoading(false);
+      if (error) { setErrors({ password: error.message }); return; }
+      const meta = await fetchUserMeta(data.user.id);
+      const user = buildUserFromMeta(data.user, meta);
+      const effective = applyUserOverride(user);
+      if (effective.deleted) { setErrors({ password: "Tài khoản không tồn tại." }); return; }
+      setFlow("success");
+      // lưu user để completeRegister dùng
+      window.__pendingAuthUser = effective;
       return;
     }
 
-    setLoading(true);
-    window.setTimeout(() => {
-      setLoading(false);
-      if (tab === "register") {
-        setFlow("success");
-        return;
-      }
-      const matched = users.find(
-        u => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
-      );
-      if (!matched) {
-        setErrors({ password: "Email hoặc mật khẩu không đúng" });
-        return;
-      }
-      const safeUser = { ...matched };
-      delete safeUser.password;
-      const effective = applyUserOverride(safeUser);
-      if (effective.deleted) {
-        setErrors({ password: "Tài khoản không tồn tại." });
-        return;
-      }
-      if (effective.status === "banned") {
-        setErrors({
-          password:
-            "Tài khoản đã bị khóa" +
-            (effective.banReason ? ": " + effective.banReason : "."),
-        });
-        return;
-      }
-      onAuth(effective);
-    }, 350);
+    // Login
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setLoading(false);
+    if (error) { setErrors({ password: "Email hoặc mật khẩu không đúng" }); return; }
+    const meta = await fetchUserMeta(data.user.id);
+    const user = buildUserFromMeta(data.user, meta);
+    const effective = applyUserOverride(user);
+    if (effective.deleted) { setErrors({ password: "Tài khoản không tồn tại." }); return; }
+    if (effective.status === "banned") {
+      setErrors({ password: "Tài khoản đã bị khóa" + (effective.banReason ? ": " + effective.banReason : ".") });
+      return;
+    }
+    onAuth(effective);
   };
 
   const handleForgotSubmit = event => {
@@ -392,10 +413,9 @@ export default function AuthModal({ mode, onClose, onAuth }) {
   };
 
   const completeRegister = () => {
-    onAuth({
-      email: email.trim() || "listener@melodies.local",
-      name: name.trim(),
-    });
+    const pending = window.__pendingAuthUser;
+    window.__pendingAuthUser = null;
+    onAuth(pending || { email: email.trim(), name: name.trim(), role: "listener", plan: "free" });
   };
 
   const title =

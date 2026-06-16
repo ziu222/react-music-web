@@ -1,10 +1,9 @@
-/* ── Admin user overrides storage (frontend-only) ─────────────────
- * Lưu trong localStorage key `melodies_user_overrides`, object map
- * theo email lowercase — đè role/plan/status/banReason/deleted lên
- * seed users mà không sửa src/data/users.js.
+/* ── User overrides — dùng Supabase public.users làm nguồn sự thật ──
+ * Admin thay đổi role/plan/status/ban/delete → ghi thẳng vào DB.
+ * localStorage cache dùng để đọc nhanh khi app mount, Supabase là primary.
  */
 
-import users from "../../data/users";
+import { supabase } from "../supabase/supabase";
 
 const STORE_KEY = "melodies_user_overrides";
 
@@ -13,9 +12,7 @@ function readStore() {
     const raw = localStorage.getItem(STORE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
+  } catch { return {}; }
 }
 
 function saveStore(overrides) {
@@ -33,14 +30,50 @@ export function applyUserOverride(user) {
   return override ? { ...user, ...override } : user;
 }
 
-export function setUserOverride(email, patch) {
-  const overrides = readStore();
+export async function setUserOverride(email, patch) {
   const key = String(email).toLowerCase();
-  overrides[key] = { ...(overrides[key] ?? null), ...patch };
+
+  // Cập nhật localStorage cache
+  const overrides = readStore();
+  overrides[key] = { ...(overrides[key] ?? {}), ...patch };
   saveStore(overrides);
+
+  // Ghi lên Supabase
+  if (supabase) {
+    const dbPatch = {};
+    if (patch.role      !== undefined) dbPatch.role       = patch.role;
+    if (patch.plan      !== undefined) dbPatch.plan       = patch.plan;
+    if (patch.status    !== undefined) dbPatch.status     = patch.status;
+    if (patch.banReason !== undefined) dbPatch.ban_reason = patch.banReason;
+    if (patch.deleted   !== undefined) dbPatch.deleted    = patch.deleted;
+
+    if (Object.keys(dbPatch).length) {
+      supabase.from("users").update(dbPatch).eq("email", key).then().catch(() => {});
+    }
+  }
+
   return overrides;
 }
 
-export function getAllUsersWithOverrides() {
-  return users.map(applyUserOverride);
+export async function getAllUsersWithOverrides() {
+  if (supabase) {
+    const { data } = await supabase.from("users").select("*").order("joined_at");
+    if (data?.length) {
+      return data.map(r => ({
+        id: r.id,
+        email: r.email,
+        name: r.name,
+        initial: r.initial,
+        color: r.color,
+        role: r.role,
+        plan: r.plan,
+        status: r.status,
+        banReason: r.ban_reason ?? null,
+        deleted: r.deleted ?? false,
+        joinedAt: r.joined_at,
+      }));
+    }
+  }
+  // Fallback: localStorage overrides only (no base users without Supabase)
+  return [];
 }

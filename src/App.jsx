@@ -18,6 +18,7 @@ const SettingsModal = lazy(() => import("./components/modals/SettingsModal"));
 import {
   loadSession, saveSession, clearSession,
   normalizeUser, applyEntitlement, saveEntitlement, isPremiumUser,
+  restoreSessionFromSupabase,
   PLAN_PREMIUM,
 } from "./auth/session";
 import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/user/settings";
@@ -182,13 +183,28 @@ export default function App() {
 
   const isPremium = isPremiumUser(authUser);
 
-  // Persist mock session so reload giữ trạng thái đăng nhập/gói
+  // Restore Supabase session on mount (token còn hạn → tự động đăng nhập lại)
+  useEffect(() => {
+    if (!authUser) {
+      restoreSessionFromSupabase()
+        .then(user => { if (user) setAuthUser(user); })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist session và clear Supabase session khi logout
   useEffect(() => {
     if (authUser) saveSession(authUser);
-    else clearSession();
+    else {
+      clearSession();
+      import("./lib/supabase/supabase.js")
+        .then(({ supabase }) => supabase?.auth.signOut())
+        .catch(() => {});
+    }
   }, [authUser]);
 
-  // Sync from Supabase whenever user logs in (or on first load if session exists)
+  // Sync from Supabase whenever user logs in
   useEffect(() => {
     if (authUser?.email) {
       syncFromSupabase(authUser.email).catch(() => {});

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   faShieldHalved,
   faChartPie,
@@ -33,10 +33,12 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
   const [adminTab, setAdminTab] = useState("dashboard");
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [subs, setSubs] = useState(() => loadSubmissions());
-  const [usersVersion, setUsersVersion] = useState(0);
+  const [allUsers, setAllUsers] = useState([]);
+  const refreshUsers = () => {
+    getAllUsersWithOverrides().then(setAllUsers).catch(() => {});
+  };
 
-  const allUsers = useMemo(() => getAllUsersWithOverrides(), [usersVersion]);
-  const refreshUsers = () => setUsersVersion((v) => v + 1);
+  useEffect(() => { refreshUsers(); }, []);
 
   const pendingCount = subs.filter((s) => s.status === "pending").length;
 
@@ -77,7 +79,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
         <AdminReview subs={subs} setSubs={setSubs} authUser={authUser} />
       )}
       {adminTab === "content" && <AdminContent songs={songs} authUser={authUser} />}
-      {adminTab === "broadcast" && <AdminBroadcast authUser={authUser} />}
+      {adminTab === "broadcast" && <AdminBroadcast authUser={authUser} allUsers={allUsers} />}
       {adminTab === "audit" && <AdminAudit />}
 
       <UserDetailModal

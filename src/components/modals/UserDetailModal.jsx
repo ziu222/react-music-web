@@ -135,7 +135,7 @@ export default function UserDetailModal({
 
   const approveUpgrade = () => {
     resolveUpgradeRequest(user.email, true);
-    setUserOverride(user.email, { role: "artist" });
+    setUserOverride(user.email, { role: "artist" }).catch(() => {});
     logAdminAction(currentAdmin, "approve_artist_signup", user.name, `→ ${upgradeReq?.artistName}`);
     const notif = createNotification("system", "Chúc mừng! Bạn đã trở thành Nghệ sĩ 🎉",
       `Tài khoản Nghệ sĩ "${upgradeReq?.artistName}" đã được kích hoạt. Đăng nhập lại để dùng Melodies Studio.`);
@@ -173,7 +173,7 @@ export default function UserDetailModal({
   const stats = listenerStats.find((s) => s.userId === user.id);
 
   const act = (action, patch, detail) => {
-    setUserOverride(user.email, patch);
+    setUserOverride(user.email, patch).catch(() => {});
     logAdminAction(currentAdmin, action, user.name, detail);
     onChanged();
   };
