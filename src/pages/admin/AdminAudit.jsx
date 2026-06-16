@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { TEXT } from "../../constants/theme";
-import { loadAuditLog, ACTION_LABELS } from "../../lib/auditLog";
-import { formatNotificationTime } from "../../lib/notifications";
+import { loadAuditLog, ACTION_LABELS } from "../../lib/user/auditLog";
+import { formatNotificationTime } from "../../lib/social/notifications";
 import { FilterPills, ActionChip } from "../../components/console/ConsoleUi";
 
 const USER_ACTIONS = [

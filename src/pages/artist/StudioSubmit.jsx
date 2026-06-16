@@ -13,19 +13,20 @@ import {
   faShieldHalved,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
-import { addSubmission, updateSubmission, submitDraft } from "../../lib/submissions";
+import { addSubmission, updateSubmission, submitDraft } from "../../lib/artist/submissions";
 import {
   saveMediaBlob,
   deleteMediaBlob,
   getMediaBlobUrl,
   revokeMediaBlobUrl,
   readAudioDuration,
-} from "../../lib/mediaStore";
+} from "../../lib/music/mediaStore";
+import { uploadAudio, uploadCover } from "../../lib/supabase/storageUpload";
 import {
   loadNotifications,
   saveNotifications,
   createNotification,
-} from "../../lib/notifications";
+} from "../../lib/social/notifications";
 
 const GENRES = ["V-Pop", "Pop", "R&B", "Ballad", "EDM", "Dance", "Hip-Hop", "Indie", "Acoustic", "Rock"];
 const LANGUAGES = ["Tiếng Việt", "Tiếng Anh", "Tiếng Hàn", "Tiếng Nhật", "Không lời", "Khác"];
@@ -126,6 +127,8 @@ export default function StudioSubmit({ authUser, draft = null, onSubmitted, onDr
 
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  // Stable temp id dùng cho Supabase Storage path trong phiên upload này
+  const [tempId] = useState(() => `sub-${Date.now()}`);
   const audioInputRef = useRef(null);
   const coverInputRef = useRef(null);
 
@@ -156,9 +159,12 @@ export default function StudioSubmit({ authUser, draft = null, onSubmitted, onDr
     setBusy(true);
     if (audioMeta?.id) await deleteMediaBlob(audioMeta.id);
     revokeMediaBlobUrl(audioUrl);
-    const meta = await saveMediaBlob(file, "audio");
-    const secs = await readAudioDuration(file);
-    setAudioMeta(meta);
+    const [meta, secs, storageUrl] = await Promise.all([
+      saveMediaBlob(file, "audio"),
+      readAudioDuration(file),
+      uploadAudio(file, tempId).catch(() => null),
+    ]);
+    setAudioMeta({ ...meta, storageUrl });
     setAudioUrl(URL.createObjectURL(file));
     if (secs) setDurationSecs(secs);
     setBusy(false);
@@ -177,8 +183,11 @@ export default function StudioSubmit({ authUser, draft = null, onSubmitted, onDr
     setBusy(true);
     if (coverMeta?.id) await deleteMediaBlob(coverMeta.id);
     revokeMediaBlobUrl(coverUrl);
-    const meta = await saveMediaBlob(file, "cover");
-    setCoverMeta(meta);
+    const [meta, storageUrl] = await Promise.all([
+      saveMediaBlob(file, "cover"),
+      uploadCover(file, tempId).catch(() => null),
+    ]);
+    setCoverMeta({ ...meta, storageUrl });
     setCoverUrl(URL.createObjectURL(file));
     setBusy(false);
   };
@@ -208,10 +217,12 @@ export default function StudioSubmit({ authUser, draft = null, onSubmitted, onDr
     audioFileName: audioMeta?.name ?? null,
     audioFileType: audioMeta?.type ?? null,
     audioFileSize: audioMeta?.size ?? null,
+    audioStorageUrl: audioMeta?.storageUrl ?? null,
     coverBlobId: coverMeta?.id ?? null,
     coverFileName: coverMeta?.name ?? null,
     coverFileType: coverMeta?.type ?? null,
     coverFileSize: coverMeta?.size ?? null,
+    coverStorageUrl: coverMeta?.storageUrl ?? null,
     bg,
   });
 
@@ -393,7 +404,7 @@ export default function StudioSubmit({ authUser, draft = null, onSubmitted, onDr
                         {busy ? "Đang xử lý..." : "Kéo thả file audio hoặc bấm để chọn"}
                       </div>
                       <div style={{ fontSize: 10, color: TEXT.tertiary, marginTop: 2 }}>
-                        Lưu trong trình duyệt (IndexedDB) — thời lượng tự nhận diện
+                        Upload lên Supabase Storage — thời lượng tự nhận diện
                       </div>
                     </>
                   )}

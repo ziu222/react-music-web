@@ -4,7 +4,7 @@ import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faC
 import { C, BG, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
-import PlaylistCover from "../components/PlaylistCover";
+import PlaylistCover from "../components/ui/PlaylistCover";
 
 const FILTER_TABS = ["Danh sách phát", "Album", "Nghệ sĩ"];
 

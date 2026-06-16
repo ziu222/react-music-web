@@ -1,10 +1,8 @@
-/* ── Frontend-only auth/session model ─────────────────────────────
- * Ba trạng thái người nghe:
- *   - guest:   không có session
- *   - free:    đã đăng nhập, plan "free"
- *   - premium: đã đăng nhập, plan "premium"
- * Session và entitlement (gói theo email) được mock trong localStorage.
- * Role groundwork cho các phase sau: listener | artist | admin.
+/* ── Auth/session model ────────────────────────────────────────────
+ * Supabase Auth là nguồn sự thật cho identity (JWT, session token).
+ * public.users table lưu metadata: role, plan, status, name, color.
+ * localStorage cache session để đọc đồng bộ khi mount, Supabase
+ * sẽ refresh token ngầm khi cần.
  */
 
 const SESSION_KEY = "melodies_session";
@@ -82,4 +80,41 @@ export function applyEntitlement(user) {
   if (!user?.email) return user;
   const owned = loadEntitlements()[user.email.toLowerCase()];
   return owned === PLAN_PREMIUM ? { ...user, plan: PLAN_PREMIUM } : user;
+}
+
+/* ── Supabase session restore ──
+ * Gọi async khi app mount để đồng bộ session từ Supabase về localStorage.
+ * Trả về user object nếu có session hợp lệ, null nếu không.
+ */
+export async function restoreSessionFromSupabase() {
+  let supabase;
+  try {
+    supabase = (await import("../lib/supabase/supabase.js")).supabase;
+  } catch { return null; }
+  if (!supabase) return null;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
+
+  const { data: meta } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", session.user.id)
+    .single();
+
+  if (!meta) return null;
+
+  const user = normalizeUser(applyEntitlement({
+    id: session.user.id,
+    email: session.user.email,
+    name: meta.name,
+    initial: meta.initial,
+    color: meta.color,
+    role: meta.role,
+    plan: meta.plan,
+    status: meta.status,
+    joinedAt: meta.joined_at,
+  }));
+  saveSession(user);
+  return user;
 }

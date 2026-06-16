@@ -11,7 +11,7 @@ import {
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { FilterPills } from "../../components/console/ConsoleUi";
 import { TrendBarChart, ProgressBar } from "../../components/console/Charts";
-import { getArtistAnalytics, formatCompact } from "../../lib/artistStats";
+import { getArtistAnalytics, formatCompact } from "../../lib/artist/artistStats";
 
 const PERIOD_PILLS = [
   { key: "7", label: "7 ngày" },

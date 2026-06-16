@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeadphones, faHeart, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { C, TEXT } from "../../constants/theme";
 import { StatusBadge, SearchInput, FilterPills } from "../../components/console/ConsoleUi";
-import { getArtistAnalytics, formatCompact } from "../../lib/artistStats";
-import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/mediaStore";
+import { getArtistAnalytics, formatCompact } from "../../lib/artist/artistStats";
+import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
 
 const STATUS_PILLS = [
   { key: "all", label: "Tất cả" },

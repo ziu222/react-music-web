@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faChevronRight, faMicrophoneLines } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, C } from "../../constants/theme";
 import { SearchInput, FilterPills } from "../../components/console/ConsoleUi";
-import { getPendingRequests } from "../../lib/upgradeRequests";
+import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 
 const ROLE_PILLS = [
   { key: "all", label: "Tất cả" },

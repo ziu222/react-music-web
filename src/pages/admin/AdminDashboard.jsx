@@ -8,15 +8,14 @@ import {
   faMicrophoneLines,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
-import users from "../../data/users";
 import { StatCard, ActionChip } from "../../components/console/ConsoleUi";
-import { loadAuditLog, ACTION_LABELS } from "../../lib/auditLog";
-import { formatNotificationTime } from "../../lib/notifications";
+import { loadAuditLog, ACTION_LABELS } from "../../lib/user/auditLog";
+import { formatNotificationTime } from "../../lib/social/notifications";
 import { actionColor } from "./AdminAudit";
-import { getPendingRequests } from "../../lib/upgradeRequests";
+import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 
 export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNavigateUsers }) {
-  const activeUsers = (allUsers ?? users).filter((u) => !u.deleted);
+  const activeUsers = (allUsers ?? []).filter((u) => !u.deleted);
   const listeners = activeUsers.filter((u) => u.role === "listener");
   const premiumCount = activeUsers.filter((u) => u.plan === "premium").length;
   const upgradeRequestCount = getPendingRequests().length;
@@ -29,7 +28,7 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
     { number: pendingCount, label: "Chờ duyệt", icon: faListCheck, accent: "#fbbf24" },
   ];
 
-  const recentUsers = [...users]
+  const recentUsers = [...(allUsers ?? [])]
     .sort((a, b) => new Date(b.joinedAt) - new Date(a.joinedAt))
     .slice(0, 3);
 

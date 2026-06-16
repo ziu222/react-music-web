@@ -1,37 +1,40 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
-import songs from "./data/songs";
 import playlistsSeed from "./data/playlists";
-import Splash from "./components/Splash";
-import Loader from "./components/Loader";
-import Player from "./components/Player";
-import Sidebar from "./components/Sidebar";
-import AuthModal from "./components/AuthModal";
-import AuthGateModal from "./components/AuthGateModal";
-import NavbarUserActions from "./components/NavbarUserActions";
+import Splash from "./components/ui/Splash";
+import Loader from "./components/ui/Loader";
+import Player from "./components/player/Player";
+import Sidebar from "./components/nav/Sidebar";
+import AuthModal from "./components/modals/AuthModal";
+import AuthGateModal from "./components/modals/AuthGateModal";
+import NavbarUserActions from "./components/nav/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
-import ArtistUpgradeModal from "./components/ArtistUpgradeModal";
+import ArtistUpgradeModal from "./components/modals/ArtistUpgradeModal";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
-const PremiumModal = lazy(() => import("./components/PremiumModal"));
-const SettingsModal = lazy(() => import("./components/SettingsModal"));
+const PremiumModal = lazy(() => import("./components/modals/PremiumModal"));
+const SettingsModal = lazy(() => import("./components/modals/SettingsModal"));
 import {
   loadSession, saveSession, clearSession,
   normalizeUser, applyEntitlement, saveEntitlement, isPremiumUser,
+  restoreSessionFromSupabase,
   PLAN_PREMIUM,
 } from "./auth/session";
-import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/settings";
-import { loadNotifications, saveNotifications, createNotification } from "./lib/notifications";
-import { syncFromSupabase } from "./lib/syncFromSupabase";
-import { applyUserOverride } from "./lib/userOverrides";
-import { logAdminAction } from "./lib/auditLog";
-import { applySongOverrides } from "./lib/songOverrides";
-import { getApprovedSubmissions } from "./lib/submissions";
-import { getMediaBlobUrl } from "./lib/mediaStore";
-import { getArtistAnalytics } from "./lib/artistStats";
-import { incrementPlay, incrementLike, decrementLike } from "./lib/playLog";
-import { addFollower, removeFollower } from "./lib/followerIndex";
+import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/user/settings";
+import { loadNotifications, saveNotifications, createNotification } from "./lib/social/notifications";
+import { syncFromSupabase } from "./lib/supabase/syncFromSupabase";
+import { applyUserOverride } from "./lib/user/userOverrides";
+import { logAdminAction } from "./lib/user/auditLog";
+import { applySongOverrides } from "./lib/music/songOverrides";
+import { getApprovedSubmissions } from "./lib/artist/submissions";
+import { getMediaBlobUrl } from "./lib/music/mediaStore";
+import { getArtistAnalytics } from "./lib/artist/artistStats";
+import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
+import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
+import { subscribeToNotifications } from "./lib/supabase/realtime";
+import { loadLikedIdsLocal, saveLikedIdsLocal, saveLibraryToSupabase } from "./lib/supabase/librarySync";
+import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -68,7 +71,12 @@ export default function App() {
   const [shuffleQueue, setShuffleQueue] = useState([]);
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
-  const [likedIds, setLikedIds] = useState(new Set());
+  const [likedIds, setLikedIds] = useState(() => new Set(loadLikedIdsLocal()));
+  const [catalogSongs, setCatalogSongs] = useState([]);
+  useEffect(() => {
+    fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
+  }, []);
+
   // Bài approved của nghệ sĩ được merge vào catalog — audio đọc từ IndexedDB
   const [communitySongs, setCommunitySongs] = useState([]);
   useEffect(() => {
@@ -114,8 +122,8 @@ export default function App() {
   // Bài bị admin gỡ biến mất khỏi app — tính lại khi rời màn admin
   const list = useMemo(() => {
     void screen;
-    return [...applySongOverrides(songs), ...applySongOverrides(communitySongs)];
-  }, [screen, communitySongs]);
+    return [...applySongOverrides(catalogSongs), ...applySongOverrides(communitySongs)];
+  }, [screen, catalogSongs, communitySongs]);
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(() => loadSession());
@@ -159,7 +167,15 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
     catch (err) { void err; }
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPlaylists]);
+
+  useEffect(() => {
+    saveLikedIdsLocal(likedIds);
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [likedIds]);
 
   useEffect(() => {
     try { localStorage.setItem("melodies_followed_artists", JSON.stringify([...followedArtists])); }
@@ -177,17 +193,59 @@ export default function App() {
 
   const isPremium = isPremiumUser(authUser);
 
-  // Persist mock session so reload giữ trạng thái đăng nhập/gói
+  // Restore Supabase session on mount (token còn hạn → tự động đăng nhập lại)
+  useEffect(() => {
+    if (!authUser) {
+      restoreSessionFromSupabase()
+        .then(user => { if (user) setAuthUser(user); })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist session và clear Supabase session khi logout
   useEffect(() => {
     if (authUser) saveSession(authUser);
-    else clearSession();
+    else {
+      clearSession();
+      import("./lib/supabase/supabase.js")
+        .then(({ supabase }) => supabase?.auth.signOut())
+        .catch(() => {});
+    }
   }, [authUser]);
 
-  // Sync from Supabase whenever user logs in (or on first load if session exists)
+  // Sync from Supabase whenever user logs in — hydrate liked songs + playlists
   useEffect(() => {
-    if (authUser?.email) {
-      syncFromSupabase(authUser.email).catch(() => {});
-    }
+    if (!authUser?.email) return;
+    syncFromSupabase(authUser.email)
+      .then((library) => {
+        if (!library) return;
+        if (Array.isArray(library.liked_ids) && library.liked_ids.length > 0) {
+          setLikedIds(new Set(library.liked_ids));
+        }
+        if (Array.isArray(library.playlists) && library.playlists.length > 0) {
+          setUserPlaylists(prev => {
+            const seedIds = new Set(prev.filter(pl => !pl.isPersonal).map(pl => pl.id));
+            const personal = library.playlists.filter(pl => !seedIds.has(pl.id));
+            return [...prev.filter(pl => !pl.isPersonal), ...personal];
+          });
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.email]);
+
+  // Realtime: push notifications from Supabase (admin broadcast, song approved, etc.)
+  useEffect(() => {
+    if (!authUser?.email) return;
+    const key = authUser.email.toLowerCase();
+    return subscribeToNotifications(key, (items) => {
+      setNotifState(s => {
+        if (s.key !== key) return s;
+        return { ...s, value: items };
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.email]);
 
   /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
@@ -927,7 +985,7 @@ export default function App() {
       <div data-theme={settings.themeMode}>
         <PageAdmin
           authUser={authUser}
-          songs={songs}
+          songs={list}
           onExit={() => setScreen("app")}
           onImpersonate={handleImpersonate}
         />
