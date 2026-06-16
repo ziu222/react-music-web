@@ -1386,7 +1386,11 @@ export default function App() {
         onAction={(action) => {
           if (action === "start_artist_signup") {
             setSupportOpen(false);
-            setArtistUpgradeOpen(true);
+            if (!authUser) {
+              setAuthMode("login");
+            } else {
+              setArtistUpgradeOpen(true);
+            }
           }
         }}
       />

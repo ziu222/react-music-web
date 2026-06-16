@@ -258,72 +258,8 @@ export default function PageProfile({
           <StatCard icon={faHeart} accent="#fb7185" value={likedCount} label="Bài đã thích" />
         </div>
 
-        {stats.topGenres.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <SectionTitle>Thể loại yêu thích</SectionTitle>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {stats.topGenres.map(genre => (
-                <span
-                  key={genre}
-                  style={{
-                    borderRadius: 9999,
-                    padding: "6px 16px",
-                    background: "var(--overlay-1)",
-                    border: `1px solid ${BORDER}`,
-                    fontSize: 13,
-                    color: TEXT.mid,
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "var(--overlay-1)"; }}
-                >
-                  {genre}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {stats.topArtists.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <SectionTitle>Nghệ sĩ yêu thích</SectionTitle>
-            {stats.topArtists.map(artist => (
-              <div
-                key={artist}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-1)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: "var(--overlay-2)",
-                    color: TEXT.mid,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <FontAwesomeIcon icon={faMicrophone} style={{ fontSize: 14 }} />
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: TEXT.strong }}>{artist}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* ── Artist Upgrade Section ── */}
-        {user.role === "listener" && (
+        {user.role !== "artist" && user.role !== "admin" && (
           <div style={{ marginBottom: 32 }}>
             <SectionTitle>Trở thành Nghệ sĩ</SectionTitle>
 
@@ -496,6 +432,71 @@ export default function PageProfile({
             )}
           </div>
         )}
+
+        {stats.topGenres.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <SectionTitle>Thể loại yêu thích</SectionTitle>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {stats.topGenres.map(genre => (
+                <span
+                  key={genre}
+                  style={{
+                    borderRadius: 9999,
+                    padding: "6px 16px",
+                    background: "var(--overlay-1)",
+                    border: `1px solid ${BORDER}`,
+                    fontSize: 13,
+                    color: TEXT.mid,
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "var(--overlay-1)"; }}
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {stats.topArtists.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <SectionTitle>Nghệ sĩ yêu thích</SectionTitle>
+            {stats.topArtists.map(artist => (
+              <div
+                key={artist}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    background: "var(--overlay-2)",
+                    color: TEXT.mid,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <FontAwesomeIcon icon={faMicrophone} style={{ fontSize: 14 }} />
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: TEXT.strong }}>{artist}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
 
         {recentSongs.length > 0 && (
           <div style={{ marginBottom: 32 }}>

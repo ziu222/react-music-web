@@ -126,7 +126,7 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
   };
 
   const handleSubmit = async () => {
-    if (!ok2 || busy) return;
+    if (!ok2 || busy || !authUser) return;
     setBusy(true);
     try {
       const validLinks = sampleLinks.filter(l => l.trim().length > 5);
@@ -186,36 +186,52 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
 
         {/* Header */}
         <div style={{
-          display:"flex", alignItems:"center", gap:12,
-          padding:"20px 24px 16px",
-          borderBottom:"1px solid rgba(255,255,255,0.07)",
+          position:"relative",
+          padding:"28px 24px 22px",
+          background:`linear-gradient(135deg, #1a0e08 0%, #251209 60%, #1c1919 100%)`,
+          borderBottom:"1px solid rgba(249,115,22,0.18)",
           flexShrink:0,
+          overflow:"hidden",
         }}>
+          {/* background glow */}
           <div style={{
-            width:38, height:38, borderRadius:10, flexShrink:0,
-            background:`linear-gradient(135deg, ${DS.primaryDim}, ${DS.primary})`,
-            display:"flex", alignItems:"center", justifyContent:"center",
-            boxShadow:`0 4px 14px ${DS.primary}44`,
-          }}>
-            <FontAwesomeIcon icon={faMicrophone} style={{ color:"#fff", fontSize:15 }} />
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:DS.textPrimary, lineHeight:1.2 }}>
-              Đăng ký Nghệ sĩ
-            </div>
-            <div style={{ fontSize:11, color:DS.textMuted, marginTop:2 }}>Melodies Studio</div>
-          </div>
+            position:"absolute", top:-40, left:-40, width:200, height:200,
+            borderRadius:"50%",
+            background:`radial-gradient(circle, ${DS.primary}18 0%, transparent 70%)`,
+            pointerEvents:"none",
+          }} />
+          {/* close button */}
           <button onClick={handleClose} style={{
-            background:"none", border:"none", cursor:"pointer",
-            color:DS.textMuted, fontSize:16, width:30, height:30,
+            position:"absolute", top:12, right:12,
+            background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.10)",
+            cursor:"pointer", color:DS.textMuted, fontSize:14,
+            width:28, height:28, borderRadius:6,
             display:"flex", alignItems:"center", justifyContent:"center",
-            borderRadius:6, transition:"all 0.15s",
+            transition:"all 0.15s",
           }}
-            onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.08)";e.currentTarget.style.color=DS.textPrimary;}}
-            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=DS.textMuted;}}
+            onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color=DS.textPrimary;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color=DS.textMuted;}}
           >
             <FontAwesomeIcon icon={faXmark} />
           </button>
+          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+            <div style={{
+              width:52, height:52, borderRadius:14, flexShrink:0,
+              background:`linear-gradient(135deg, ${DS.primaryDim}, ${DS.primary})`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              boxShadow:`0 6px 20px ${DS.primary}55`,
+            }}>
+              <FontAwesomeIcon icon={faMicrophone} style={{ color:"#fff", fontSize:20 }} />
+            </div>
+            <div>
+              <div style={{ fontSize:17, fontWeight:800, color:DS.textPrimary, lineHeight:1.2, letterSpacing:"-0.01em" }}>
+                Đăng ký Nghệ sĩ
+              </div>
+              <div style={{ fontSize:12, color:DS.textMuted, marginTop:4 }}>
+                Upload nhạc · Analytics · Fan base riêng của bạn
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Step bar */}
@@ -297,7 +313,8 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
                 <FieldLabel>Giới thiệu bản thân * ({bio.length}/500)</FieldLabel>
                 <textarea
                   value={bio}
-                  onChange={e => setBio(e.target.value.slice(0,500))}
+                  onChange={e => setBio(e.target.value)}
+                  maxLength={500}
                   placeholder="Bạn là ai? Phong cách âm nhạc của bạn? Điều gì truyền cảm hứng? (ít nhất 20 ký tự)"
                   rows={4}
                   style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }}
