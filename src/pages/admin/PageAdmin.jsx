@@ -7,6 +7,7 @@ import {
   faCompactDisc,
   faBullhorn,
   faClockRotateLeft,
+  faTicket,
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
@@ -18,6 +19,7 @@ import AdminUsers from "./AdminUsers";
 import AdminReview from "./AdminReview";
 import AdminContent from "./AdminContent";
 import AdminBroadcast from "./AdminBroadcast";
+import AdminPromo from "./AdminPromo";
 import AdminAudit from "./AdminAudit";
 
 const HEADERS = {
@@ -26,6 +28,7 @@ const HEADERS = {
   review: { title: "Duyệt bài hát", subtitle: "Phê duyệt bài hát do nghệ sĩ gửi lên" },
   content: { title: "Nội dung", subtitle: "Quản lý catalog bài hát" },
   broadcast: { title: "Thông báo hệ thống", subtitle: "Gửi thông báo đến toàn bộ người dùng" },
+  promo: { title: "Mã khuyến mãi", subtitle: "Tạo và quản lý mã premium" },
   audit: { title: "Nhật ký", subtitle: "Lịch sử hành động quản trị" },
 };
 
@@ -48,6 +51,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
     { key: "review", label: "Duyệt bài hát", icon: faListCheck, badge: pendingCount },
     { key: "content", label: "Nội dung", icon: faCompactDisc },
     { key: "broadcast", label: "Thông báo", icon: faBullhorn },
+    { key: "promo", label: "Mã KM", icon: faTicket },
     { key: "audit", label: "Nhật ký", icon: faClockRotateLeft },
   ];
 
@@ -73,13 +77,14 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
         />
       )}
       {adminTab === "users" && (
-        <AdminUsers users={allUsers} onOpenUser={(u) => setSelectedUserId(u.id)} />
+        <AdminUsers users={allUsers} onOpenUser={(u) => setSelectedUserId(u.id)} authUser={authUser} onRefresh={refreshUsers} />
       )}
       {adminTab === "review" && (
         <AdminReview subs={subs} setSubs={setSubs} authUser={authUser} />
       )}
       {adminTab === "content" && <AdminContent songs={songs} authUser={authUser} />}
       {adminTab === "broadcast" && <AdminBroadcast authUser={authUser} allUsers={allUsers} />}
+      {adminTab === "promo" && <AdminPromo authUser={authUser} />}
       {adminTab === "audit" && <AdminAudit />}
 
       <UserDetailModal
