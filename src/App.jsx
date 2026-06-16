@@ -11,6 +11,7 @@ import AuthModal from "./components/AuthModal";
 import AuthGateModal from "./components/AuthGateModal";
 import NavbarUserActions from "./components/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
+import ArtistUpgradeModal from "./components/ArtistUpgradeModal";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/PremiumModal"));
@@ -28,6 +29,8 @@ import { applySongOverrides } from "./lib/songOverrides";
 import { getApprovedSubmissions } from "./lib/submissions";
 import { getMediaBlobUrl } from "./lib/mediaStore";
 import { getArtistAnalytics } from "./lib/artistStats";
+import { incrementPlay, incrementLike, decrementLike } from "./lib/playLog";
+import { addFollower, removeFollower } from "./lib/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -120,6 +123,7 @@ export default function App() {
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [artistUpgradeOpen, setArtistUpgradeOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
@@ -410,6 +414,7 @@ export default function App() {
     setCur(s);
     setPlaying(true);
     setProg(0);
+    incrementPlay(s.id);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
   }, []);
 
@@ -632,7 +637,10 @@ export default function App() {
       next.has(artistName) ? next.delete(artistName) : next.add(artistName);
       return next;
     });
-    if (!isFollowing) {
+    if (isFollowing) {
+      removeFollower(artistName, authUser?.email);
+    } else {
+      addFollower(artistName, authUser?.email);
       pushNotification("social", `Đang theo dõi ${artistName}`, "Nghệ sĩ đã được thêm vào thư viện của bạn.");
     }
   };
@@ -694,7 +702,13 @@ export default function App() {
   const toggleLike = (id) => {
     setLikedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        decrementLike(id);
+      } else {
+        next.add(id);
+        incrementLike(id);
+      }
       return next;
     });
   };
@@ -1323,6 +1337,7 @@ export default function App() {
                   onPlay={playWithAuth}
                   cur={cur}
                   onOpenPremium={() => setPremiumOpen(true)}
+                  onOpenArtistUpgrade={(prefill) => { setArtistUpgradeOpen(true); }}
                 />
               )}
             </>
@@ -1368,6 +1383,18 @@ export default function App() {
         hasPlayer={Boolean(cur)}
         open={supportOpen}
         onOpenChange={setSupportOpen}
+        onAction={(action) => {
+          if (action === "start_artist_signup") {
+            setSupportOpen(false);
+            setArtistUpgradeOpen(true);
+          }
+        }}
+      />
+
+      <ArtistUpgradeModal
+        open={artistUpgradeOpen}
+        onClose={() => setArtistUpgradeOpen(false)}
+        authUser={authUser}
       />
 
       {queueFeedback && (

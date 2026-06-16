@@ -63,7 +63,12 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
       <ConsoleHeader title={HEADERS[adminTab].title} subtitle={HEADERS[adminTab].subtitle} />
 
       {adminTab === "dashboard" && (
-        <AdminDashboard songs={songs} pendingCount={pendingCount} allUsers={allUsers} />
+        <AdminDashboard
+          songs={songs}
+          pendingCount={pendingCount}
+          allUsers={allUsers}
+          onNavigateUsers={() => setAdminTab("users")}
+        />
       )}
       {adminTab === "users" && (
         <AdminUsers users={allUsers} onOpenUser={(u) => setSelectedUserId(u.id)} />

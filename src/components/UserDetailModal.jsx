@@ -8,11 +8,19 @@ import {
   faBan,
   faLockOpen,
   faTrash,
+  faMicrophoneLines,
+  faCheck,
+  faCircleInfo,
+  faFileAudio,
+  faLink,
 } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../constants/theme";
 import { listenerStats } from "../data/listenerStats";
 import { setUserOverride } from "../lib/userOverrides";
 import { logAdminAction } from "../lib/auditLog";
+import { getRequest, requestMoreInfo, resolveUpgradeRequest } from "../lib/upgradeRequests";
+import { createNotification, loadNotifications, saveNotifications } from "../lib/notifications";
+import { getMediaBlobUrl } from "../lib/mediaStore";
 
 const ROLE_CHIPS = {
   listener: { label: "Listener", color: null },
@@ -79,6 +87,11 @@ export default function UserDetailModal({
   const [banForm, setBanForm] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [upgradeReq, setUpgradeReq] = useState(null);
+  const [sampleAudioUrls, setSampleAudioUrls] = useState([]);
+  const [adminInfoNote, setAdminInfoNote] = useState("");
+  const [adminRejectReason, setAdminRejectReason] = useState("");
+  const [upgradeAction, setUpgradeAction] = useState(null); // "info" | "reject" | null
 
   useEffect(() => {
     if (!user) return undefined;
@@ -93,6 +106,21 @@ export default function UserDetailModal({
     setBanForm(false);
     setBanReason("");
     setConfirmDelete(false);
+    setUpgradeAction(null);
+    setAdminInfoNote("");
+    setAdminRejectReason("");
+    if (user) {
+      const req = getRequest(user.email);
+      setUpgradeReq(req);
+      if (req?.sampleBlobIds?.length) {
+        Promise.all(req.sampleBlobIds.map((id) => getMediaBlobUrl(id))).then(setSampleAudioUrls);
+      } else {
+        setSampleAudioUrls([]);
+      }
+    } else {
+      setUpgradeReq(null);
+      setSampleAudioUrls([]);
+    }
   }, [user?.id]);
 
   useEffect(() => {
@@ -104,6 +132,41 @@ export default function UserDetailModal({
   if (!user) return null;
 
   const isSelf = user.email === currentAdmin?.email;
+
+  const approveUpgrade = () => {
+    resolveUpgradeRequest(user.email, true);
+    setUserOverride(user.email, { role: "artist" });
+    logAdminAction(currentAdmin, "approve_artist_signup", user.name, `→ ${upgradeReq?.artistName}`);
+    const notif = createNotification("system", "Chúc mừng! Bạn đã trở thành Nghệ sĩ 🎉",
+      `Tài khoản Nghệ sĩ "${upgradeReq?.artistName}" đã được kích hoạt. Đăng nhập lại để dùng Melodies Studio.`);
+    saveNotifications(user.email, [notif, ...loadNotifications(user.email)]);
+    setUpgradeReq(null);
+    onChanged();
+  };
+
+  const sendInfoRequest = () => {
+    if (!adminInfoNote.trim()) return;
+    requestMoreInfo(user.email, adminInfoNote.trim());
+    logAdminAction(currentAdmin, "request_info_artist_signup", user.name, adminInfoNote.trim());
+    const notif = createNotification("system", "Admin cần thêm thông tin",
+      `Yêu cầu đăng ký Nghệ sĩ của bạn cần bổ sung: ${adminInfoNote.trim()}`);
+    saveNotifications(user.email, [notif, ...loadNotifications(user.email)]);
+    setUpgradeReq(getRequest(user.email));
+    setUpgradeAction(null);
+    setAdminInfoNote("");
+  };
+
+  const sendReject = () => {
+    if (!adminRejectReason.trim()) return;
+    resolveUpgradeRequest(user.email, false, adminRejectReason.trim());
+    logAdminAction(currentAdmin, "reject_artist_signup", user.name, adminRejectReason.trim());
+    const notif = createNotification("system", "Đơn đăng ký Nghệ sĩ chưa được duyệt",
+      `Lý do: ${adminRejectReason.trim()}`);
+    saveNotifications(user.email, [notif, ...loadNotifications(user.email)]);
+    setUpgradeReq(null);
+    setUpgradeAction(null);
+    setAdminRejectReason("");
+  };
   const isPremium = user.plan === "premium";
   const isBanned = user.status === "banned";
   const roleChip = ROLE_CHIPS[user.role] ?? ROLE_CHIPS.listener;
@@ -295,6 +358,128 @@ export default function UserDetailModal({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {upgradeReq && (upgradeReq.status === "pending" || upgradeReq.status === "info_requested") && (
+          <div style={{ padding: "16px 24px 0", borderTop: "1px solid var(--island-border)", marginTop: 16 }}>
+            <SectionLabel>Đơn đăng ký Nghệ sĩ</SectionLabel>
+
+            <div style={{ fontSize: 11, color: "var(--island-faint)", marginBottom: 10 }}>
+              {upgradeReq.status === "info_requested"
+                ? "Đã yêu cầu bổ sung · " + (upgradeReq.listenerReply ? "Đã phản hồi" : "Chờ phản hồi")
+                : "Đang chờ xét duyệt"}
+            </div>
+
+            {[
+              ["Tên nghệ sĩ", upgradeReq.artistName],
+              ["Thể loại", upgradeReq.genre],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", gap: 10, fontSize: 12, marginBottom: 6 }}>
+                <span style={{ width: 80, flexShrink: 0, color: "var(--island-faint)" }}>{k}</span>
+                <span style={{ color: "var(--island-text)", fontWeight: 600 }}>{v}</span>
+              </div>
+            ))}
+            <div style={{ fontSize: 12, color: "var(--island-text)", marginBottom: 10, lineHeight: 1.6,
+              padding: "8px 10px", background: "var(--overlay-1)", borderRadius: 6, maxHeight: 80, overflowY: "auto" }}>
+              {upgradeReq.bio}
+            </div>
+
+            {upgradeReq.status === "info_requested" && upgradeReq.adminNote && (
+              <div style={{ fontSize: 11, color: "#f59e0b", marginBottom: 6 }}>
+                Câu hỏi của admin: {upgradeReq.adminNote}
+              </div>
+            )}
+            {upgradeReq.listenerReply && (
+              <div style={{ fontSize: 11, color: "#34d399", marginBottom: 10 }}>
+                Phản hồi: {upgradeReq.listenerReply}
+              </div>
+            )}
+
+            {sampleAudioUrls.filter(Boolean).map((url, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <FontAwesomeIcon icon={faFileAudio} style={{ color: C[400], fontSize: 12, flexShrink: 0 }} />
+                <audio controls src={url} style={{ flex: 1, height: 28, minWidth: 160 }} />
+              </div>
+            ))}
+            {upgradeReq.sampleLinks?.filter((l) => l.trim()).map((link, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, marginBottom: 4 }}>
+                <FontAwesomeIcon icon={faLink} style={{ color: "var(--island-faint)", fontSize: 10 }} />
+                <span style={{ color: C[400], wordBreak: "break-all" }}>{link}</span>
+              </div>
+            ))}
+
+            {upgradeAction === "info" && (
+              <div style={{ marginTop: 10 }}>
+                <textarea value={adminInfoNote} onChange={(e) => setAdminInfoNote(e.target.value)}
+                  placeholder="Nhập câu hỏi / yêu cầu bổ sung..." rows={2} autoFocus
+                  style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 6,
+                    background: "rgba(252,249,245,0.08)", border: "1.5px solid #f59e0b66",
+                    color: "var(--island-text)", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  <button onClick={() => { setUpgradeAction(null); setAdminInfoNote(""); }}
+                    style={{ flex: 1, background: "transparent", border: "1px solid var(--island-border)",
+                      color: "var(--island-muted)", borderRadius: 9999, padding: "6px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                    Hủy
+                  </button>
+                  <button onClick={sendInfoRequest} disabled={!adminInfoNote.trim()}
+                    style={{ flex: 2, background: "#f59e0b", border: "none", color: "#000",
+                      borderRadius: 9999, padding: "6px 10px", fontSize: 11, fontWeight: 700,
+                      cursor: adminInfoNote.trim() ? "pointer" : "not-allowed", opacity: adminInfoNote.trim() ? 1 : 0.5 }}>
+                    Gửi yêu cầu bổ sung
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {upgradeAction === "reject" && (
+              <div style={{ marginTop: 10 }}>
+                <textarea value={adminRejectReason} onChange={(e) => setAdminRejectReason(e.target.value)}
+                  placeholder="Lý do từ chối (bắt buộc)..." rows={2} autoFocus
+                  style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 6,
+                    background: "rgba(252,249,245,0.08)", border: "1.5px solid rgba(239,68,68,0.4)",
+                    color: "var(--island-text)", fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit" }} />
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  <button onClick={() => { setUpgradeAction(null); setAdminRejectReason(""); }}
+                    style={{ flex: 1, background: "transparent", border: "1px solid var(--island-border)",
+                      color: "var(--island-muted)", borderRadius: 9999, padding: "6px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                    Hủy
+                  </button>
+                  <button onClick={sendReject} disabled={!adminRejectReason.trim()}
+                    style={{ flex: 2, background: "#ef4444", border: "none", color: "#fff",
+                      borderRadius: 9999, padding: "6px 10px", fontSize: 11, fontWeight: 700,
+                      cursor: adminRejectReason.trim() ? "pointer" : "not-allowed", opacity: adminRejectReason.trim() ? 1 : 0.5 }}>
+                    Xác nhận từ chối
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {upgradeAction === null && (
+              <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+                <button onClick={approveUpgrade}
+                  style={{ flex: 1, background: "#34d399", border: "none", color: "#08110d",
+                    borderRadius: 9999, padding: "7px 10px", fontSize: 11, fontWeight: 700,
+                    cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <FontAwesomeIcon icon={faCheck} style={{ fontSize: 10 }} />
+                  Duyệt
+                </button>
+                <button onClick={() => setUpgradeAction("info")}
+                  style={{ flex: 1.4, background: "transparent", border: "1px solid #f59e0b",
+                    color: "#f59e0b", borderRadius: 9999, padding: "7px 10px", fontSize: 11,
+                    fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <FontAwesomeIcon icon={faCircleInfo} style={{ fontSize: 10 }} />
+                  Yêu cầu thêm TT
+                </button>
+                <button onClick={() => setUpgradeAction("reject")}
+                  style={{ flex: 1, background: "transparent", border: "1px solid #ef4444",
+                    color: "#ef4444", borderRadius: 9999, padding: "7px 10px", fontSize: 11,
+                    fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <FontAwesomeIcon icon={faXmark} style={{ fontSize: 10 }} />
+                  Từ chối
+                </button>
+              </div>
+            )}
           </div>
         )}
 
