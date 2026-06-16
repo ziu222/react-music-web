@@ -27,12 +27,9 @@ import { syncFromSupabase } from "./lib/supabase/syncFromSupabase";
 import { applyUserOverride } from "./lib/user/userOverrides";
 import { logAdminAction } from "./lib/user/auditLog";
 import { applySongOverrides } from "./lib/music/songOverrides";
-import { getApprovedSubmissions } from "./lib/artist/submissions";
-import { getMediaBlobUrl } from "./lib/music/mediaStore";
-import { getArtistAnalytics } from "./lib/artist/artistStats";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
-import { subscribeToNotifications } from "./lib/supabase/realtime";
+import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
 import { loadLikedIdsLocal, saveLikedIdsLocal, saveLibraryToSupabase } from "./lib/supabase/librarySync";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
@@ -77,53 +74,18 @@ export default function App() {
     fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
   }, []);
 
-  // Bài approved của nghệ sĩ được merge vào catalog — audio đọc từ IndexedDB
-  const [communitySongs, setCommunitySongs] = useState([]);
+  // Realtime: khi admin approve bài mới → refetch toàn catalog
   useEffect(() => {
-    if (screen !== "app") return undefined;
-    let alive = true;
-    (async () => {
-      const approved = getApprovedSubmissions();
-      const merged = await Promise.all(
-        approved.map(async (sub) => {
-          const [audioUrl, coverUrl] = await Promise.all([
-            getMediaBlobUrl(sub.audioBlobId),
-            getMediaBlobUrl(sub.coverBlobId),
-          ]);
-          const stats = getArtistAnalytics(sub.artistEmail, [sub]).songStats[sub.id];
-          return {
-            id: sub.id,
-            title: sub.title,
-            artist:
-              sub.artistName +
-              (sub.contributors?.length
-                ? " ft. " + sub.contributors.map((c) => c.name).join(", ")
-                : ""),
-            album: sub.album,
-            genre: sub.genre,
-            duration: sub.duration,
-            durationSecs: sub.durationSecs,
-            plays: stats?.plays ?? 0,
-            bg: sub.bg,
-            coverUrl,
-            audioUrl,
-            explicit: sub.explicit ?? false,
-            community: true,
-          };
-        })
-      );
-      if (alive) setCommunitySongs(merged);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [screen]);
+    return subscribeToSongs(() => {
+      fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
+    });
+  }, []);
 
-  // Bài bị admin gỡ biến mất khỏi app — tính lại khi rời màn admin
+  // Bài bị admin gỡ biến mất — tính lại khi rời màn admin
   const list = useMemo(() => {
     void screen;
-    return [...applySongOverrides(catalogSongs), ...applySongOverrides(communitySongs)];
-  }, [screen, catalogSongs, communitySongs]);
+    return applySongOverrides(catalogSongs);
+  }, [screen, catalogSongs]);
   const [search, setSearch] = useState("");
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(() => loadSession());

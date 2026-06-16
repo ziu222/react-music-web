@@ -59,3 +59,7 @@ supabase/config.toml
 
 # Binary audio assets — served locally, not tracked in git
 public/audio/
+
+/e2e/
+/playwright-report/
+/test-results/
