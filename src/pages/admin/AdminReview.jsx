@@ -6,9 +6,10 @@ import {
   faCircleCheck,
   faFileAudio,
   faShieldHalved,
+  faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { BG, TEXT, BORDER } from "../../constants/theme";
-import { reviewSubmission } from "../../lib/artist/submissions";
+import { reviewSubmission, undoRejectSubmission } from "../../lib/artist/submissions";
 import { getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
 import { insertApprovedSong } from "../../lib/supabase/storageUpload";
 import { logAdminAction } from "../../lib/user/auditLog";
@@ -103,6 +104,18 @@ export default function AdminReview({ subs, setSubs, authUser }) {
     logAdminAction(authUser, "reject_song", rejectTarget.title, reason);
     setRejectTarget(null);
     setRejectReason("");
+  };
+
+  const undoReject = (sub) => {
+    setSubs(undoRejectSubmission(sub.id));
+    const key = sub.artistEmail.toLowerCase();
+    const notif = createNotification(
+      "system",
+      "Bài hát đang được xét duyệt lại",
+      `"${sub.title}" đã được đưa trở lại hàng chờ duyệt.`
+    );
+    saveNotifications(key, [notif, ...loadNotifications(key)]);
+    logAdminAction(authUser, "undo_reject", sub.title, "Đưa lại pending");
   };
 
   return (
@@ -330,6 +343,33 @@ export default function AdminReview({ subs, setSubs, authUser }) {
                   <div style={{ fontSize: 11, color: TEXT.tertiary }}>{sub.artistName}</div>
                 </div>
                 <StatusBadge status={sub.status} />
+                {sub.status === "rejected" && (
+                  <button
+                    onClick={() => undoReject(sub)}
+                    title="Hoàn tác từ chối — đưa lại hàng chờ duyệt"
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--island-border)",
+                      color: "var(--island-muted)",
+                      borderRadius: 9999,
+                      padding: "4px 10px",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      opacity: 0.6,
+                      transition: "opacity 0.15s",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faRotateLeft} style={{ fontSize: 10 }} />
+                    Hoàn tác
+                  </button>
+                )}
                 <div
                   style={{
                     fontSize: 11,

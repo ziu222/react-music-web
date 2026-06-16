@@ -1,11 +1,4 @@
-/* ── Artist song submissions storage (frontend-only) ──────────────
- * Lưu trong localStorage key `melodies_submissions`, mảng global
- * dùng chung: artist upload bài lên nền tảng, admin duyệt / từ chối,
- * bài approved được merge vào catalog cho listener nghe.
- *
- * Blob audio/artwork KHÔNG nằm ở đây — lưu trong IndexedDB qua
- * src/lib/mediaStore.js, submission chỉ giữ blobId + metadata nhẹ.
- */
+import { supabase } from "../supabase/supabase";
 
 const STORE_KEY = "melodies_submissions";
 
@@ -82,8 +75,6 @@ const SEED_SUBMISSIONS = [
   },
 ];
 
-/* Submission cũ (trước khi mở rộng model) được bổ sung field mặc định
- * để UI mới không phải null-check từng field. */
 function normalize(sub) {
   return {
     ...SUBMISSION_DEFAULTS,
@@ -92,6 +83,8 @@ function normalize(sub) {
     ...sub,
   };
 }
+
+// ── localStorage (cache + offline fallback) ───────────────────
 
 function readStore() {
   try {
@@ -105,8 +98,94 @@ function readStore() {
 
 function saveStore(list) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); }
-  catch (err) { void err; }
+  catch { /* quota exceeded */ }
 }
+
+// ── Supabase sync helpers ─────────────────────────────────────
+
+function toRow(sub) {
+  return {
+    id:               sub.id,
+    artist_email:     sub.artistEmail,
+    artist_name:      sub.artistName,
+    title:            sub.title,
+    album:            sub.album ?? null,
+    genre:            sub.genre ?? null,
+    duration:         sub.duration ?? null,
+    duration_secs:    sub.durationSecs ?? null,
+    bg:               sub.bg ?? null,
+    status:           sub.status,
+    explicit:         sub.explicit ?? false,
+    language:         sub.language ?? "Tiếng Việt",
+    lyrics_text:      sub.lyricsText ?? null,
+    contributors:     sub.contributors ?? [],
+    copyright_owner:  sub.copyrightOwner ?? null,
+    rights_confirmed: sub.rightsConfirmed ?? false,
+    audio_blob_id:    sub.audioBlobId ?? null,
+    audio_file_name:  sub.audioFileName ?? null,
+    audio_file_type:  sub.audioFileType ?? null,
+    audio_file_size:  sub.audioFileSize ?? null,
+    cover_blob_id:    sub.coverBlobId ?? null,
+    cover_file_name:  sub.coverFileName ?? null,
+    cover_file_type:  sub.coverFileType ?? null,
+    cover_file_size:  sub.coverFileSize ?? null,
+    reject_reason:    sub.rejectReason ?? null,
+    submitted_at:     sub.submittedAt ?? null,
+    reviewed_at:      sub.reviewedAt ?? null,
+    approved_at:      sub.approvedAt ?? null,
+    created_at:       sub.createdAt ?? new Date().toISOString(),
+    updated_at:       sub.updatedAt ?? new Date().toISOString(),
+  };
+}
+
+function fromRow(row) {
+  return normalize({
+    id:              row.id,
+    artistEmail:     row.artist_email,
+    artistName:      row.artist_name,
+    title:           row.title,
+    album:           row.album,
+    genre:           row.genre,
+    duration:        row.duration,
+    durationSecs:    row.duration_secs,
+    bg:              row.bg,
+    status:          row.status,
+    explicit:        row.explicit,
+    language:        row.language,
+    lyricsText:      row.lyrics_text,
+    contributors:    row.contributors ?? [],
+    copyrightOwner:  row.copyright_owner,
+    rightsConfirmed: row.rights_confirmed,
+    audioBlobId:     row.audio_blob_id,
+    audioFileName:   row.audio_file_name,
+    audioFileType:   row.audio_file_type,
+    audioFileSize:   row.audio_file_size,
+    coverBlobId:     row.cover_blob_id,
+    coverFileName:   row.cover_file_name,
+    coverFileType:   row.cover_file_type,
+    coverFileSize:   row.cover_file_size,
+    rejectReason:    row.reject_reason,
+    submittedAt:     row.submitted_at,
+    reviewedAt:      row.reviewed_at,
+    approvedAt:      row.approved_at,
+    createdAt:       row.created_at,
+    updatedAt:       row.updated_at,
+  });
+}
+
+// Suppress unused warning — fromRow used by future Supabase read path
+void fromRow;
+
+function upsertToSupabase(sub) {
+  if (!supabase) return;
+  supabase
+    .from("submissions")
+    .upsert(toRow(sub))
+    .then()
+    .catch(() => {});
+}
+
+// ── Public API ────────────────────────────────────────────────
 
 export function loadSubmissions() {
   const stored = readStore();
@@ -116,7 +195,6 @@ export function loadSubmissions() {
   return seeds;
 }
 
-/* Tạo submission mới. opts.draft = true → lưu nháp, chưa gửi duyệt. */
 export function addSubmission(data, opts = {}) {
   const now = new Date().toISOString();
   const submission = normalize({
@@ -129,6 +207,7 @@ export function addSubmission(data, opts = {}) {
   });
   const list = [submission, ...loadSubmissions()];
   saveStore(list);
+  upsertToSupabase(submission);
   return submission;
 }
 
@@ -137,10 +216,11 @@ export function updateSubmission(id, patch) {
     s.id === id ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s
   );
   saveStore(list);
+  const updated = list.find((s) => s.id === id);
+  if (updated) upsertToSupabase(updated);
   return list;
 }
 
-/* Nháp → gửi duyệt. */
 export function submitDraft(id) {
   const now = new Date().toISOString();
   return updateSubmission(id, {
@@ -161,6 +241,16 @@ export function reviewSubmission(id, status, reason) {
   });
 }
 
+/* Hoàn tác từ chối — đưa bài rejected về lại pending để admin re-review */
+export function undoRejectSubmission(id) {
+  return updateSubmission(id, {
+    status: "pending",
+    rejectReason: null,
+    reviewedAt: null,
+    submittedAt: new Date().toISOString(),
+  });
+}
+
 export function resubmit(id) {
   return updateSubmission(id, {
     status: "pending",
@@ -170,15 +260,15 @@ export function resubmit(id) {
   });
 }
 
-/* Xóa submission (dùng cho nháp). Blob trong IndexedDB do caller xóa
- * qua deleteMediaBlob vì store này không đụng tới media. */
 export function deleteSubmission(id) {
   const list = loadSubmissions().filter((s) => s.id !== id);
   saveStore(list);
+  if (supabase) {
+    supabase.from("submissions").delete().eq("id", id).then().catch(() => {});
+  }
   return list;
 }
 
-/* Bài approved của mọi nghệ sĩ — nguồn merge vào catalog listener. */
 export function getApprovedSubmissions() {
   return loadSubmissions().filter((s) => s.status === "approved");
 }

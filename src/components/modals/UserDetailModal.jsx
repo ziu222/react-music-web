@@ -13,12 +13,13 @@ import {
   faCircleInfo,
   faFileAudio,
   faLink,
+  faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../../constants/theme";
 import { listenerStats } from "../../data/listenerStats";
 import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
-import { getRequest, requestMoreInfo, resolveUpgradeRequest } from "../../lib/artist/upgradeRequests";
+import { getRequest, requestMoreInfo, resolveUpgradeRequest, undoRejectUpgradeRequest } from "../../lib/artist/upgradeRequests";
 import { createNotification, loadNotifications, saveNotifications } from "../../lib/social/notifications";
 import { getMediaBlobUrl } from "../../lib/music/mediaStore";
 
@@ -163,9 +164,18 @@ export default function UserDetailModal({
     const notif = createNotification("system", "Đơn đăng ký Nghệ sĩ chưa được duyệt",
       `Lý do: ${adminRejectReason.trim()}`);
     saveNotifications(user.email, [notif, ...loadNotifications(user.email)]);
-    setUpgradeReq(null);
+    setUpgradeReq(getRequest(user.email));
     setUpgradeAction(null);
     setAdminRejectReason("");
+  };
+
+  const undoRejectArtist = () => {
+    undoRejectUpgradeRequest(user.email);
+    logAdminAction(currentAdmin, "undo_reject", user.name, "Hoàn tác từ chối đơn artist");
+    const notif = createNotification("system", "Đơn đăng ký Nghệ sĩ đang được xét duyệt lại",
+      "Đơn của bạn đã được đưa trở lại hàng chờ xét duyệt.");
+    saveNotifications(user.email, [notif, ...loadNotifications(user.email)]);
+    setUpgradeReq(getRequest(user.email));
   };
   const isPremium = user.plan === "premium";
   const isBanned = user.status === "banned";
@@ -480,6 +490,44 @@ export default function UserDetailModal({
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {upgradeReq && upgradeReq.status === "rejected" && (
+          <div style={{ padding: "16px 24px 0", borderTop: "1px solid var(--island-border)", marginTop: 16 }}>
+            <SectionLabel>Đơn đăng ký Nghệ sĩ — Đã từ chối</SectionLabel>
+            <div style={{ fontSize: 11, color: "#fb7185", marginBottom: 10 }}>
+              Lý do: {upgradeReq.rejectReason ?? "Không rõ"}
+            </div>
+            {[
+              ["Tên nghệ sĩ", upgradeReq.artistName],
+              ["Thể loại", upgradeReq.genre],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", gap: 10, fontSize: 12, marginBottom: 6 }}>
+                <span style={{ width: 80, flexShrink: 0, color: "var(--island-faint)" }}>{k}</span>
+                <span style={{ color: "var(--island-text)", fontWeight: 600 }}>{v}</span>
+              </div>
+            ))}
+            <button
+              onClick={undoRejectArtist}
+              style={{
+                marginTop: 8,
+                background: "transparent",
+                border: "1px solid var(--island-border)",
+                color: "var(--island-muted)",
+                borderRadius: 9999,
+                padding: "7px 16px",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <FontAwesomeIcon icon={faRotateLeft} style={{ fontSize: 11 }} />
+              Hoàn tác từ chối — xét duyệt lại
+            </button>
           </div>
         )}
 

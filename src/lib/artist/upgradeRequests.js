@@ -77,6 +77,20 @@ export function resolveUpgradeRequest(email, approved, noteOrReason) {
   pushToSupabase(email, data[email]);
 }
 
+/* Hoàn tác từ chối đơn artist — đưa về pending để admin re-review */
+export function undoRejectUpgradeRequest(email) {
+  const data = load();
+  if (!data[email] || data[email].status !== "rejected") return;
+  data[email] = {
+    ...data[email],
+    status: "pending",
+    rejectReason: null,
+    resolvedAt: null,
+  };
+  save(data);
+  pushToSupabase(email, data[email]);
+}
+
 export function withdrawUpgradeRequest(email) {
   const data = load();
   delete data[email];
