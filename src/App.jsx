@@ -28,6 +28,7 @@ import { applySongOverrides } from "./lib/songOverrides";
 import { getApprovedSubmissions } from "./lib/submissions";
 import { getMediaBlobUrl } from "./lib/mediaStore";
 import { getArtistAnalytics } from "./lib/artistStats";
+import { incrementPlay, incrementLike, decrementLike } from "./lib/playLog";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
@@ -410,6 +411,7 @@ export default function App() {
     setCur(s);
     setPlaying(true);
     setProg(0);
+    incrementPlay(s.id);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
   }, []);
 
@@ -694,7 +696,13 @@ export default function App() {
   const toggleLike = (id) => {
     setLikedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        decrementLike(id);
+      } else {
+        next.add(id);
+        incrementLike(id);
+      }
       return next;
     });
   };

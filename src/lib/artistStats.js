@@ -1,7 +1,8 @@
-/* ── Artist analytics giả lập (frontend-only) ─────────────────────
- * Số liệu sinh deterministic từ email nghệ sĩ (seeded PRNG) nên ổn
- * định giữa các lần reload — không cần backend, không cần lưu trữ.
+/* ── Artist analytics (frontend-only) ─────────────────────────────
+ * Seeded PRNG cho baseline ổn định. Real play/like từ playLog.js
+ * được overlay lên trên — dữ liệu thực luôn thắng seeded.
  */
+import { getPlayCounts } from "./playLog";
 
 function hashStr(str) {
   let h = 2166136261;
@@ -57,13 +58,17 @@ export function getArtistAnalytics(email, subs = []) {
     });
   }
 
+  const realCounts = getPlayCounts();
   const songStats = {};
   subs
     .filter((s) => s.status === "approved")
     .forEach((s) => {
       const r = mulberry32(hashStr(email + "::" + s.id));
-      const plays = 4000 + Math.round(r() * 260000);
-      const likes = Math.round(plays * (0.035 + r() * 0.05));
+      const seededPlays = 4000 + Math.round(r() * 260000);
+      const seededLikes = Math.round(seededPlays * (0.035 + r() * 0.05));
+      const realEntry = realCounts[s.id];
+      const plays = realEntry ? seededPlays + realEntry.plays : seededPlays;
+      const likes = realEntry ? seededLikes + realEntry.likes : seededLikes;
       songStats[s.id] = { plays, likes, saves: Math.round(likes * (0.5 + r() * 0.3)) };
     });
 
