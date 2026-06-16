@@ -46,6 +46,8 @@ export async function setUserOverride(email, patch) {
     if (patch.status    !== undefined) dbPatch.status     = patch.status;
     if (patch.banReason !== undefined) dbPatch.ban_reason = patch.banReason;
     if (patch.deleted   !== undefined) dbPatch.deleted    = patch.deleted;
+    if (patch.verified   !== undefined) dbPatch.verified   = patch.verified;
+    if (patch.suspended  !== undefined) dbPatch.suspended  = patch.suspended;
 
     if (Object.keys(dbPatch).length) {
       supabase.from("users").update(dbPatch).eq("email", key).then().catch(() => {});

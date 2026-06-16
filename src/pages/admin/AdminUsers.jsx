@@ -218,8 +218,16 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
                 </InlinePill>
               )}
             </div>
-            <div style={{ width: 86, flexShrink: 0 }}>
+            <div style={{ width: 86, flexShrink: 0, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
               <InlinePill color={roleChip.color}>{roleChip.label}</InlinePill>
+              {user.verified && (
+                <span style={{ fontSize: 9, fontWeight: 800, background: "#3b82f6", color: "#fff",
+                  borderRadius: 4, padding: "1px 5px", letterSpacing: "0.04em" }}>✓ Verified</span>
+              )}
+              {user.suspended && (
+                <span style={{ fontSize: 9, fontWeight: 800, background: "#f59e0b", color: "#0a0a08",
+                  borderRadius: 4, padding: "1px 5px" }}>Suspended</span>
+              )}
             </div>
             <div
               style={{

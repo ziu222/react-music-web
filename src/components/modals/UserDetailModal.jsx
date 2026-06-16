@@ -753,6 +753,35 @@ export default function UserDetailModal({
             </div>
           )}
 
+          {user.role === "artist" && (
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <button
+                onClick={() => { act(user.verified ? "unverify_artist" : "verify_artist", { verified: !user.verified }, ""); }}
+                style={{
+                  flex: 1, background: "transparent",
+                  border: "1px solid " + (user.verified ? "#3b82f6" : "var(--island-border)"),
+                  color: user.verified ? "#3b82f6" : "var(--island-muted)",
+                  borderRadius: 9999, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                {user.verified ? "✓ Verified" : "Xác minh Nghệ sĩ"}
+              </button>
+              <button
+                onClick={() => { act(user.suspended ? "unsuspend_artist" : "suspend_artist", { suspended: !user.suspended }, ""); }}
+                style={{
+                  flex: 1, background: "transparent",
+                  border: "1px solid " + (user.suspended ? "#f59e0b" : "var(--island-border)"),
+                  color: user.suspended ? "#f59e0b" : "var(--island-muted)",
+                  borderRadius: 9999, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                {user.suspended ? "Bỏ tạm dừng" : "Tạm dừng Upload"}
+              </button>
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 8 }}>
             {isBanned ? (
               <button
