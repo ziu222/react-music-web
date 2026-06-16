@@ -33,6 +33,7 @@ import { getArtistAnalytics } from "./lib/artist/artistStats";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
 import { subscribeToNotifications } from "./lib/supabase/realtime";
+import { loadLikedIdsLocal, saveLikedIdsLocal, saveLibraryToSupabase } from "./lib/supabase/librarySync";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -70,7 +71,7 @@ export default function App() {
   const [shuffleQueue, setShuffleQueue] = useState([]);
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
-  const [likedIds, setLikedIds] = useState(new Set());
+  const [likedIds, setLikedIds] = useState(() => new Set(loadLikedIdsLocal()));
   const [catalogSongs, setCatalogSongs] = useState([]);
   useEffect(() => {
     fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
@@ -166,7 +167,15 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
     catch (err) { void err; }
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPlaylists]);
+
+  useEffect(() => {
+    saveLikedIdsLocal(likedIds);
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [likedIds]);
 
   useEffect(() => {
     try { localStorage.setItem("melodies_followed_artists", JSON.stringify([...followedArtists])); }
@@ -205,11 +214,25 @@ export default function App() {
     }
   }, [authUser]);
 
-  // Sync from Supabase whenever user logs in
+  // Sync from Supabase whenever user logs in — hydrate liked songs + playlists
   useEffect(() => {
-    if (authUser?.email) {
-      syncFromSupabase(authUser.email).catch(() => {});
-    }
+    if (!authUser?.email) return;
+    syncFromSupabase(authUser.email)
+      .then((library) => {
+        if (!library) return;
+        if (Array.isArray(library.liked_ids) && library.liked_ids.length > 0) {
+          setLikedIds(new Set(library.liked_ids));
+        }
+        if (Array.isArray(library.playlists) && library.playlists.length > 0) {
+          setUserPlaylists(prev => {
+            const seedIds = new Set(prev.filter(pl => !pl.isPersonal).map(pl => pl.id));
+            const personal = library.playlists.filter(pl => !seedIds.has(pl.id));
+            return [...prev.filter(pl => !pl.isPersonal), ...personal];
+          });
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.email]);
 
   // Realtime: push notifications from Supabase (admin broadcast, song approved, etc.)

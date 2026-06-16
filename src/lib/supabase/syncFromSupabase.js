@@ -2,12 +2,16 @@ import { syncPlayCountsFromSupabase } from "../music/playLog";
 import { syncFollowsFromSupabase } from "../social/followerIndex";
 import { syncUpgradeRequestsFromSupabase } from "../artist/upgradeRequests";
 import { syncNotificationsFromSupabase } from "../social/notifications";
+import { loadLibraryFromSupabase, saveLikedIdsLocal } from "./librarySync";
 
 export async function syncFromSupabase(userEmail) {
-  await Promise.allSettled([
+  const [library] = await Promise.allSettled([
+    loadLibraryFromSupabase(userEmail),
     syncPlayCountsFromSupabase(),
     syncFollowsFromSupabase(),
     syncUpgradeRequestsFromSupabase(),
     syncNotificationsFromSupabase(userEmail),
   ]);
+  // Return library data so App.jsx can hydrate state
+  return library.status === "fulfilled" ? library.value : null;
 }
