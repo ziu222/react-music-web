@@ -1,8 +1,4 @@
-/* ── Notification storage/helper (frontend-only) ──────────────────
- * Thông báo lưu theo user key (email hoặc "guest") trong localStorage.
- * Type: system | library | premium | social — dùng để phân loại icon
- * và cho phép bật/tắt từng nhóm trong Settings.
- */
+import { supabase } from "./supabase";
 
 const STORE_KEY = "melodies_notifications";
 const MAX_PER_USER = 30;
@@ -16,46 +12,22 @@ export const NOTIFICATION_TYPES = {
 
 function readStore() {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
+    const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
     return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
+  } catch { return {}; }
 }
 
 function writeStore(store) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
-  catch (err) { void err; }
+  catch {}
 }
 
 function seedNotifications() {
   const now = Date.now();
   return [
-    {
-      id: "seed-mix",
-      type: "library",
-      title: "Mix hằng ngày của bạn đã sẵn sàng",
-      body: "Gợi ý mới dựa trên những bài bạn vừa nghe.",
-      time: now - 4 * 3600_000,
-      read: false,
-    },
-    {
-      id: "seed-newmusic",
-      type: "social",
-      title: "Nhạc mới dành cho bạn",
-      body: "Gợi ý US-UK và V-Pop vừa được cập nhật.",
-      time: now - 9 * 3600_000,
-      read: false,
-    },
-    {
-      id: "seed-welcome",
-      type: "system",
-      title: "Chào mừng đến Melodies",
-      body: "Khám phá trang chủ, tìm kiếm và thư viện của bạn.",
-      time: now - 26 * 3600_000,
-      read: true,
-    },
+    { id: "seed-mix",      type: "library", title: "Mix hằng ngày của bạn đã sẵn sàng",  body: "Gợi ý mới dựa trên những bài bạn vừa nghe.",          time: now - 4  * 3600_000, read: false },
+    { id: "seed-newmusic", type: "social",  title: "Nhạc mới dành cho bạn",               body: "Gợi ý US-UK và V-Pop vừa được cập nhật.",             time: now - 9  * 3600_000, read: false },
+    { id: "seed-welcome",  type: "system",  title: "Chào mừng đến Melodies",              body: "Khám phá trang chủ, tìm kiếm và thư viện của bạn.",  time: now - 26 * 3600_000, read: true  },
   ];
 }
 
@@ -71,9 +43,17 @@ export function loadNotifications(userKey) {
 }
 
 export function saveNotifications(userKey, list) {
+  const trimmed = list.slice(0, MAX_PER_USER);
   const store = readStore();
-  store[userKey] = list.slice(0, MAX_PER_USER);
+  store[userKey] = trimmed;
   writeStore(store);
+  if (supabase) {
+    supabase
+      .from("notifications")
+      .upsert({ user_key: userKey, items: trimmed, updated_at: new Date().toISOString() })
+      .then()
+      .catch(() => {});
+  }
 }
 
 let counter = 0;
@@ -82,8 +62,7 @@ export function createNotification(type, title, body) {
   return {
     id: `n-${Date.now()}-${counter}`,
     type: NOTIFICATION_TYPES[type] ? type : "system",
-    title,
-    body,
+    title, body,
     time: Date.now(),
     read: false,
   };
@@ -99,4 +78,18 @@ export function formatNotificationTime(time) {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days} ngày trước`;
   return new Date(time).toLocaleDateString("vi-VN");
+}
+
+export async function syncNotificationsFromSupabase(userKey) {
+  if (!supabase || !userKey) return;
+  const { data } = await supabase
+    .from("notifications")
+    .select("items")
+    .eq("user_key", userKey)
+    .maybeSingle();
+  if (data?.items?.length) {
+    const store = readStore();
+    store[userKey] = data.items;
+    writeStore(store);
+  }
 }
