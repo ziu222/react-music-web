@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUsers,
@@ -6,20 +7,47 @@ import {
   faHeadphones,
   faListCheck,
   faMicrophoneLines,
-  faCompactDisc,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { StatCard, ActionChip } from "../../components/console/ConsoleUi";
+import { Sparkline, MiniBars } from "../../components/ui/Charts";
 import { loadAuditLog, ACTION_LABELS } from "../../lib/user/auditLog";
+import { getDailyTotals } from "../../lib/music/playSnapshots";
 import { formatNotificationTime } from "../../lib/social/notifications";
 import { actionColor } from "./AdminAudit";
 import { getPendingRequests } from "../../lib/artist/upgradeRequests";
+
+function compactNum(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return String(n ?? 0);
+}
 
 export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNavigateUsers }) {
   const activeUsers = (allUsers ?? []).filter((u) => !u.deleted);
   const listeners = activeUsers.filter((u) => u.role === "listener");
   const premiumCount = activeUsers.filter((u) => u.plan === "premium").length;
   const upgradeRequestCount = getPendingRequests().length;
+
+  const [dailyTotals, setDailyTotals] = useState([]);
+  useEffect(() => { getDailyTotals().then(setDailyTotals).catch(() => {}); }, []);
+
+  // Phân bố thể loại (theo số bài)
+  const genreBars = (() => {
+    const map = new Map();
+    (songs ?? []).forEach((s) => map.set(s.genre || "Khác", (map.get(s.genre || "Khác") ?? 0) + 1));
+    return [...map.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([label, value]) => ({ label, value, display: value + " bài" }));
+  })();
+
+  // Top bài hát theo lượt nghe
+  const topSongs = [...(songs ?? [])]
+    .sort((a, b) => (b.plays ?? 0) - (a.plays ?? 0))
+    .slice(0, 5)
+    .map((s, i) => ({ label: s.title, value: s.plays ?? 0, display: compactNum(s.plays), highlight: i === 0 }));
 
   const statCards = [
     { number: activeUsers.length, label: "Người dùng", icon: faUsers, accent: C[500] },
@@ -185,22 +213,25 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
         ))}
       </div>
 
-      <div
-        style={{
-          background: BG.el,
-          borderRadius: 10,
-          border: "1px solid " + BORDER,
-          minHeight: 140,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: 8,
-        }}
-      >
-        <FontAwesomeIcon icon={faCompactDisc} style={{ fontSize: 28, color: TEXT.tertiary }} />
-        <div style={{ fontSize: 13, color: TEXT.tertiary }}>
-          Biểu đồ hoạt động — sắp ra mắt
+      <div style={{ background: BG.card, border: "1px solid " + BORDER, borderRadius: 10, padding: 18, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
+          Xu hướng lượt nghe (toàn hệ thống)
+        </div>
+        <Sparkline data={dailyTotals.map((d) => d.plays)} color={C[500]} />
+      </div>
+
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+        <div style={{ flex: 1, minWidth: 280, background: BG.card, border: "1px solid " + BORDER, borderRadius: 10, padding: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 14 }}>
+            Top bài hát
+          </div>
+          <MiniBars items={topSongs} color={C[500]} />
+        </div>
+        <div style={{ flex: 1, minWidth: 280, background: BG.card, border: "1px solid " + BORDER, borderRadius: 10, padding: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 14 }}>
+            Phân bố thể loại
+          </div>
+          <MiniBars items={genreBars} color="#60a5fa" />
         </div>
       </div>
     </div>
