@@ -10,6 +10,19 @@ import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
 import SongDetailDrawer from "../../components/modals/SongDetailDrawer";
 import { getSongImage } from "../../data/media";
 
+function bulkBtn(accent) {
+  return {
+    background: "transparent",
+    border: "1px solid " + (accent || "var(--border)"),
+    color: accent || TEXT.secondary,
+    borderRadius: 9999,
+    padding: "5px 12px",
+    fontSize: 11,
+    fontWeight: 600,
+    cursor: "pointer",
+  };
+}
+
 export default function AdminContent({ songs, authUser }) {
   const [hiddenIds, setHiddenIds] = useState(() => loadSongOverrides().hiddenIds);
   const [search, setSearch] = useState("");
@@ -19,6 +32,7 @@ export default function AdminContent({ songs, authUser }) {
   const [page, setPage] = useState(0);
   const [viewMode, setViewMode] = useState("songs"); // "songs" | "albums"
   const [albumFilter, setAlbumFilter] = useState(null);
+  const [selected, setSelected] = useState(() => new Set());
 
   // Ghi snapshot tổng lượt nghe theo ngày (1 lần/ngày) để dựng chart
   useEffect(() => { recordDailySnapshot(songs); }, [songs]);
@@ -96,6 +110,47 @@ export default function AdminContent({ songs, authUser }) {
     setDetailTarget((t) => (t && t.id === song.id ? { ...t, lyricsText: text } : t));
   };
 
+  // ── Bulk actions ──────────────────────────────────────────────
+  const clearSel = () => setSelected(new Set());
+  const toggleSel = (id) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const allSelected = filtered.length > 0 && filtered.every((s) => selected.has(s.id));
+  const toggleAll = () => (allSelected ? clearSel() : setSelected(new Set(filtered.map((s) => s.id))));
+
+  const bulkFeature = (featured) => {
+    [...selected].forEach((id) => {
+      if (supabase) supabase.from("songs").update({ featured }).eq("id", id).then().catch(() => {});
+      applyLocal(id, { featured });
+    });
+    logAdminAction(authUser, featured ? "feature_song" : "unfeature_song", selected.size + " bài", "bulk");
+    clearSel();
+  };
+
+  const bulkHide = (hide) => {
+    let next = hiddenIds;
+    [...selected].forEach((id) => {
+      if (next.includes(id) !== hide) next = toggleSongHidden(id);
+    });
+    setHiddenIds(next);
+    logAdminAction(authUser, hide ? "hide_song" : "unhide_song", selected.size + " bài", "bulk");
+    clearSel();
+  };
+
+  const bulkGenre = () => {
+    const g = window.prompt(`Đổi thể loại cho ${selected.size} bài thành:`);
+    if (!g?.trim()) return;
+    [...selected].forEach((id) => {
+      if (supabase) supabase.from("songs").update({ genre: g.trim() }).eq("id", id).then().catch(() => {});
+      applyLocal(id, { genre: g.trim() });
+    });
+    logAdminAction(authUser, "edit_metadata", selected.size + " bài", "bulk genre → " + g.trim());
+    clearSel();
+  };
+
   return (
     <div>
       <div
@@ -114,7 +169,7 @@ export default function AdminContent({ songs, authUser }) {
         </div>
         <SearchInput
           value={search}
-          onChange={(v) => { setSearch(v); setPage(0); }}
+          onChange={(v) => { setSearch(v); setPage(0); clearSel(); }}
           placeholder="Tìm theo tên, nghệ sĩ, album..."
           width={260}
         />
@@ -122,7 +177,7 @@ export default function AdminContent({ songs, authUser }) {
           {[["songs", "Bài hát"], ["albums", "Album"]].map(([k, l]) => (
             <button
               key={k}
-              onClick={() => { setViewMode(k); setAlbumFilter(null); setPage(0); }}
+              onClick={() => { setViewMode(k); setAlbumFilter(null); setPage(0); clearSel(); }}
               style={{
                 background: viewMode === k ? "#fff" : "transparent",
                 border: "1px solid " + (viewMode === k ? "#fff" : "var(--border)"),
@@ -159,7 +214,7 @@ export default function AdminContent({ songs, authUser }) {
           {albumGroups.map((al) => (
             <div
               key={al.album}
-              onClick={() => { setAlbumFilter(al.album); setViewMode("songs"); setPage(0); }}
+              onClick={() => { setAlbumFilter(al.album); setViewMode("songs"); setPage(0); clearSel(); }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--overlay-1)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card, #181818)"; }}
               style={{
@@ -191,6 +246,24 @@ export default function AdminContent({ songs, authUser }) {
         </div>
       )}
 
+      {viewMode === "songs" && selected.size > 0 && (
+        <div
+          style={{
+            display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+            background: "var(--overlay-1)", border: "1px solid var(--border)",
+            borderRadius: 10, padding: "10px 14px", marginBottom: 12,
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid }}>Đã chọn {selected.size}</span>
+          <button onClick={() => bulkFeature(true)} style={bulkBtn("#fbbf24")}>★ Feature</button>
+          <button onClick={() => bulkFeature(false)} style={bulkBtn()}>Bỏ feature</button>
+          <button onClick={() => bulkHide(true)} style={bulkBtn("#ef4444")}>Gỡ bài</button>
+          <button onClick={() => bulkHide(false)} style={bulkBtn("#34d399")}>Khôi phục</button>
+          <button onClick={bulkGenre} style={bulkBtn()}>Đổi thể loại</button>
+          <button onClick={clearSel} style={{ ...bulkBtn(), marginLeft: "auto" }}>Bỏ chọn</button>
+        </div>
+      )}
+
       {viewMode === "songs" && filtered.length > 0 && (
         <div
           style={{
@@ -207,6 +280,9 @@ export default function AdminContent({ songs, authUser }) {
             marginBottom: 4,
           }}
         >
+          <div style={{ width: 22, flexShrink: 0 }}>
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} />
+          </div>
           <div style={{ width: 36, flexShrink: 0 }}>Ảnh</div>
           <div style={{ flex: 1.4, minWidth: 140 }}>Tiêu đề &amp; nghệ sĩ</div>
           <div style={{ flex: 1, minWidth: 110 }}>Album</div>
@@ -239,6 +315,14 @@ export default function AdminContent({ songs, authUser }) {
               cursor: "pointer",
             }}
           >
+            <div style={{ width: 22, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={selected.has(song.id)}
+                onChange={() => toggleSel(song.id)}
+                style={{ cursor: "pointer" }}
+              />
+            </div>
             <div
               style={{
                 width: 36,
