@@ -651,11 +651,11 @@ export default function UserDetailModal({
               <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
                 {GRANT_DURATIONS.map((d) => (
                   <button key={d.key} onClick={() => setPremiumDuration(d.key)} style={{
-                    background: premiumDuration === d.key ? "#fbbf24" : "transparent",
-                    border: "1px solid #fbbf24",
-                    color: premiumDuration === d.key ? "#0a0a08" : "#fbbf24",
-                    borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600,
-                    cursor: "pointer",
+                    background: premiumDuration === d.key ? "rgba(255,255,255,0.14)" : "transparent",
+                    border: "1px solid var(--island-border)",
+                    color: premiumDuration === d.key ? "var(--island-text)" : "var(--island-muted)",
+                    borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 500,
+                    cursor: "pointer", transition: "all 0.15s",
                   }}>{d.label}</button>
                 ))}
               </div>

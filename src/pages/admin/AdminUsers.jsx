@@ -100,13 +100,7 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
         padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
       }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid, flexShrink: 0 }}>Bulk grant Premium:</div>
-        {GRANT_DURATIONS.map((d) => (
-          <button key={d.key} onClick={() => setBulkDuration(d.key)} style={{
-            background: bulkDuration === d.key ? "#fbbf24" : "transparent",
-            border: "1px solid #fbbf24", color: bulkDuration === d.key ? "#0a0a08" : "#fbbf24",
-            borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer",
-          }}>{d.label}</button>
-        ))}
+        <FilterPills options={GRANT_DURATIONS} active={bulkDuration} onSelect={setBulkDuration} />
         <button onClick={() => {
           const listeners = filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener");
           listeners.forEach((u) => grantPremium(authUser?.email, u.email, bulkDuration, "bulk grant"));

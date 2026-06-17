@@ -4,6 +4,7 @@ import { faTicket, faPlus, faBan, faCopy } from "@fortawesome/free-solid-svg-ico
 import { TEXT, BORDER, BG } from "../../constants/theme";
 import { createPromoCode, loadPromoCodes, deactivatePromoCode, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
 import { logAdminAction } from "../../lib/user/auditLog";
+import { FilterPills } from "../../components/console/ConsoleUi";
 
 export default function AdminPromo({ authUser }) {
   const [codes, setCodes] = useState(() => loadPromoCodes());
@@ -38,13 +39,7 @@ export default function AdminPromo({ authUser }) {
           Tạo mã khuyến mãi
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-          {GRANT_DURATIONS.map((d) => (
-            <button key={d.key} onClick={() => setDuration(d.key)} style={{
-              background: duration === d.key ? "#fbbf24" : "transparent",
-              border: "1px solid #fbbf24", color: duration === d.key ? "#0a0a08" : "#fbbf24",
-              borderRadius: 9999, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-            }}>{d.label}</button>
-          ))}
+          <FilterPills options={GRANT_DURATIONS} active={duration} onSelect={setDuration} />
         </div>
         <div style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "center" }}>
           <label style={{ fontSize: 12, color: TEXT.secondary, flexShrink: 0 }}>Số lần dùng tối đa:</label>
