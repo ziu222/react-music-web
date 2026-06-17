@@ -24,8 +24,8 @@ const PLAN_PILLS = [
 
 const ROLE_CHIPS = {
   listener: { label: "Listener", color: null },
-  artist: { label: "Nghệ sĩ", color: "#a78bfa" },
-  admin: { label: "Admin", color: "#34d399" },
+  artist: { label: "Nghệ sĩ", color: "#8aa4c8" },
+  admin: { label: "Admin", color: "#f97316" },
 };
 
 function InlinePill({ color, children }) {
@@ -109,7 +109,7 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
           setTimeout(() => setBulkDone(null), 4000);
           onRefresh?.();
         }} style={{
-          background: "#fbbf24", border: "none", color: "#0a0a08", borderRadius: 9999,
+          background: "#f97316", border: "none", color: "#fff", borderRadius: 9999,
           padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", marginLeft: "auto",
         }}>
           Áp dụng cho Listeners ({filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener").length})
@@ -169,8 +169,9 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                background: user.color,
-                color: "#fff",
+                background: "var(--overlay-2)",
+                border: "1px solid var(--border)",
+                color: TEXT.mid,
                 fontSize: 12,
                 fontWeight: 700,
                 display: "flex",
