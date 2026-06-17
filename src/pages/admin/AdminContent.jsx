@@ -93,8 +93,8 @@ export default function AdminContent({ songs, authUser }) {
           <div style={{ flex: 1.4, minWidth: 140 }}>Tiêu đề &amp; nghệ sĩ</div>
           <div style={{ flex: 1, minWidth: 110 }}>Album</div>
           <div style={{ width: 76, flexShrink: 0 }}>Thể loại</div>
-          <div style={{ width: 50, flexShrink: 0, textAlign: "right" }}>Lượt nghe</div>
-          <div style={{ width: 170, flexShrink: 0, textAlign: "right" }}>Thao tác</div>
+          <div style={{ width: 56, flexShrink: 0, textAlign: "right" }}>Lượt nghe</div>
+          <div style={{ width: 260, flexShrink: 0, textAlign: "right" }}>Thao tác</div>
         </div>
       )}
 
@@ -182,7 +182,7 @@ export default function AdminContent({ songs, authUser }) {
             </div>
             <div
               style={{
-                width: 50,
+                width: 56,
                 flexShrink: 0,
                 fontSize: 11,
                 color: TEXT.tertiary,
@@ -193,7 +193,7 @@ export default function AdminContent({ songs, authUser }) {
             </div>
             <div
               style={{
-                width: 170,
+                width: 260,
                 flexShrink: 0,
                 display: "flex",
                 justifyContent: "flex-end",
@@ -201,7 +201,6 @@ export default function AdminContent({ songs, authUser }) {
                 alignItems: "center",
               }}
             >
-              {hidden && <ActionChip color="#ef4444" label="Đã gỡ" />}
               <button
                 onClick={() => { setEditTarget(song); setEditForm({ title: song.title, genre: song.genre, explicit: song.explicit ?? false }); }}
                 style={{
