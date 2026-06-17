@@ -140,6 +140,20 @@ export default function AdminContent({ songs, authUser }) {
     clearSel();
   };
 
+  // Đổi tên album = cập nhật songs.album cho toàn bộ bài trong nhóm
+  const renameAlbum = () => {
+    const cur = albumFilter;
+    const name = window.prompt("Đổi tên album:", cur);
+    if (!name?.trim() || name.trim() === cur) return;
+    const ids = songs.map(merge).filter((s) => albumOf(s) === cur).map((s) => s.id);
+    ids.forEach((id) => {
+      if (supabase) supabase.from("songs").update({ album: name.trim() }).eq("id", id).then().catch(() => {});
+      applyLocal(id, { album: name.trim() });
+    });
+    logAdminAction(authUser, "edit_metadata", ids.length + " bài", "rename album → " + name.trim());
+    setAlbumFilter(name.trim());
+  };
+
   const bulkGenre = () => {
     const g = window.prompt(`Đổi thể loại cho ${selected.size} bài thành:`);
     if (!g?.trim()) return;
@@ -192,15 +206,26 @@ export default function AdminContent({ songs, authUser }) {
       </div>
 
       {viewMode === "songs" && albumFilter && (
-        <button
-          onClick={() => { setAlbumFilter(null); setViewMode("albums"); }}
-          style={{
-            background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
-            borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer", marginBottom: 12,
-          }}
-        >
-          ← Tất cả album · <span style={{ color: TEXT.strong, fontWeight: 600 }}>{albumFilter}</span>
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          <button
+            onClick={() => { setAlbumFilter(null); setViewMode("albums"); clearSel(); }}
+            style={{
+              background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+              borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
+            }}
+          >
+            ← Tất cả album · <span style={{ color: TEXT.strong, fontWeight: 600 }}>{albumFilter}</span>
+          </button>
+          <button
+            onClick={renameAlbum}
+            style={{
+              background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+              borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
+            }}
+          >
+            Sửa tên album
+          </button>
+        </div>
       )}
 
       {viewMode === "albums" && (
