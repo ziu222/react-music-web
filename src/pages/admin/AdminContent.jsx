@@ -1,32 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEyeSlash, faRotateLeft, faStarHalfStroke } from "@fortawesome/free-solid-svg-icons";
+import { faEyeSlash, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
 import { TEXT } from "../../constants/theme";
 import { supabase } from "../../lib/supabase/supabase";
 import { loadSongOverrides, toggleSongHidden } from "../../lib/music/songOverrides";
+import { recordDailySnapshot } from "../../lib/music/playSnapshots";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
+import SongDetailDrawer from "../../components/modals/SongDetailDrawer";
 import { getSongImage } from "../../data/media";
 
 export default function AdminContent({ songs, authUser }) {
   const [hiddenIds, setHiddenIds] = useState(() => loadSongOverrides().hiddenIds);
   const [search, setSearch] = useState("");
-  const [editTarget, setEditTarget] = useState(null);
-  const [editForm, setEditForm] = useState({});
+  const [detailTarget, setDetailTarget] = useState(null);
+  const [detailTab, setDetailTab] = useState("overview");
+  const [localEdits, setLocalEdits] = useState({});
   const [page, setPage] = useState(0);
+
+  // Ghi snapshot tổng lượt nghe theo ngày (1 lần/ngày) để dựng chart
+  useEffect(() => { recordDailySnapshot(songs); }, [songs]);
+
+  const merge = (s) => (localEdits[s.id] ? { ...s, ...localEdits[s.id] } : s);
 
   const PAGE_SIZE = 12;
   const q = search.trim().toLowerCase();
-  const filtered = songs.filter(
+  const filtered = songs.map(merge).filter(
     (s) =>
       !q ||
       s.title.toLowerCase().includes(q) ||
       s.artist.toLowerCase().includes(q) ||
-      s.album.toLowerCase().includes(q)
+      (s.album || "").toLowerCase().includes(q)
   );
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+
+  const applyLocal = (id, patch) => setLocalEdits((m) => ({ ...m, [id]: { ...(m[id] ?? {}), ...patch } }));
+
+  const openDetail = (song, tab = "overview") => {
+    setDetailTab(tab);
+    setDetailTarget(song);
+  };
 
   const toggle = (song, hide) => {
     setHiddenIds(toggleSongHidden(song.id));
@@ -37,18 +52,30 @@ export default function AdminContent({ songs, authUser }) {
     if (supabase) {
       supabase.from("songs").update({ featured }).eq("id", song.id).then().catch(() => {});
     }
+    applyLocal(song.id, { featured });
     logAdminAction(authUser, featured ? "feature_song" : "unfeature_song", song.title, song.artist);
   };
 
-  const saveMetadata = () => {
-    if (!editTarget || !supabase) return;
-    const patch = {};
-    if (editForm.title) patch.title = editForm.title;
-    if (editForm.genre) patch.genre = editForm.genre;
-    if (editForm.explicit !== undefined) patch.explicit = editForm.explicit;
-    supabase.from("songs").update(patch).eq("id", editTarget.id).then().catch(() => {});
-    logAdminAction(authUser, "edit_metadata", editTarget.title, JSON.stringify(patch));
-    setEditTarget(null);
+  // Lưu metadata từ drawer (form camelCase → cột songs)
+  const saveMetadata = (song, form) => {
+    const patch = {
+      title: form.title,
+      album: form.album,
+      genre: form.genre,
+      language: form.language,
+      explicit: form.explicit,
+    };
+    if (supabase) supabase.from("songs").update(patch).eq("id", song.id).then().catch(() => {});
+    applyLocal(song.id, patch);
+    logAdminAction(authUser, "edit_metadata", form.title, JSON.stringify(patch));
+    setDetailTarget((t) => (t && t.id === song.id ? { ...t, ...patch } : t));
+  };
+
+  const saveLyrics = (song, text) => {
+    if (supabase) supabase.from("songs").update({ lyrics_text: text }).eq("id", song.id).then().catch(() => {});
+    applyLocal(song.id, { lyricsText: text });
+    logAdminAction(authUser, "edit_metadata", song.title, "lyrics updated");
+    setDetailTarget((t) => (t && t.id === song.id ? { ...t, lyricsText: text } : t));
   };
 
   return (
@@ -104,6 +131,7 @@ export default function AdminContent({ songs, authUser }) {
         return (
           <div
             key={song.id}
+            onClick={() => openDetail(song)}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "var(--overlay-1)";
             }}
@@ -117,6 +145,7 @@ export default function AdminContent({ songs, authUser }) {
               padding: "8px 12px",
               borderRadius: 8,
               transition: "background 0.12s",
+              cursor: "pointer",
             }}
           >
             <div
@@ -202,7 +231,7 @@ export default function AdminContent({ songs, authUser }) {
               }}
             >
               <button
-                onClick={() => { setEditTarget(song); setEditForm({ title: song.title, genre: song.genre, explicit: song.explicit ?? false }); }}
+                onClick={(e) => { e.stopPropagation(); openDetail(song, "metadata"); }}
                 style={{
                   background: "transparent", border: "1px solid var(--border)",
                   color: TEXT.tertiary, borderRadius: 9999, padding: "5px 12px",
@@ -212,7 +241,7 @@ export default function AdminContent({ songs, authUser }) {
                 Sửa
               </button>
               <button
-                onClick={() => featureSong(song, !song.featured)}
+                onClick={(e) => { e.stopPropagation(); featureSong(song, !song.featured); }}
                 title={song.featured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
                 style={{
                   background: "transparent",
@@ -226,7 +255,7 @@ export default function AdminContent({ songs, authUser }) {
               </button>
               {hidden ? (
                 <button
-                  onClick={() => toggle(song, false)}
+                  onClick={(e) => { e.stopPropagation(); toggle(song, false); }}
                   style={{
                     background: "transparent",
                     border: "1px solid #34d399",
@@ -246,7 +275,7 @@ export default function AdminContent({ songs, authUser }) {
                 </button>
               ) : (
                 <button
-                  onClick={() => toggle(song, true)}
+                  onClick={(e) => { e.stopPropagation(); toggle(song, true); }}
                   style={{
                     background: "transparent",
                     border: "1px solid #ef4444",
@@ -337,34 +366,19 @@ export default function AdminContent({ songs, authUser }) {
         </div>
       )}
 
-      {editTarget && (
-        <>
-          <div onClick={() => setEditTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1100 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-            width: 340, background: "var(--island-menu)", borderRadius: 10, padding: 22,
-            zIndex: 1101, boxShadow: "var(--shadow-modal)", boxSizing: "border-box" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--island-text)", marginBottom: 14 }}>
-              Sửa metadata — {editTarget.title}
-            </div>
-            {[["Tên bài", "title"], ["Thể loại", "genre"]].map(([label, key]) => (
-              <div key={key} style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 11, color: "var(--island-muted)", display: "block", marginBottom: 4 }}>{label}</label>
-                <input value={editForm[key] || ""} onChange={(e) => setEditForm(f => ({ ...f, [key]: e.target.value }))}
-                  style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid var(--island-border)",
-                    borderRadius: 6, padding: "7px 10px", color: "var(--island-text)", fontSize: 13,
-                    outline: "none", boxSizing: "border-box" }} />
-              </div>
-            ))}
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--island-muted)", marginBottom: 14, cursor: "pointer" }}>
-              <input type="checkbox" checked={editForm.explicit || false} onChange={(e) => setEditForm(f => ({ ...f, explicit: e.target.checked }))} />
-              Nội dung nhạy cảm (Explicit)
-            </label>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setEditTarget(null)} style={{ background: "transparent", border: "1px solid var(--island-border)", color: "var(--island-muted)", borderRadius: 9999, padding: "7px 16px", fontSize: 12, cursor: "pointer" }}>Hủy</button>
-              <button onClick={saveMetadata} style={{ background: "var(--color-coral-500, #f97316)", border: "none", color: "#fff", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Lưu</button>
-            </div>
-          </div>
-        </>
+      {detailTarget && (
+        <SongDetailDrawer
+          key={detailTarget.id}
+          song={merge(detailTarget)}
+          allSongs={songs.map(merge)}
+          hidden={hiddenIds.includes(detailTarget.id)}
+          initialTab={detailTab}
+          onClose={() => setDetailTarget(null)}
+          onSaveMetadata={(form) => saveMetadata(detailTarget, form)}
+          onSaveLyrics={(text) => saveLyrics(detailTarget, text)}
+          onToggleHidden={() => toggle(detailTarget, !hiddenIds.includes(detailTarget.id))}
+          onFeature={() => featureSong(detailTarget, !merge(detailTarget).featured)}
+        />
       )}
     </div>
   );
