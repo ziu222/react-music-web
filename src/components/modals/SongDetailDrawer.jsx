@@ -22,6 +22,15 @@ function compactNum(n) {
   return String(n ?? 0);
 }
 
+// Parse LRC: mỗi dòng "[mm:ss.xx] lời" → { timed, label, text }
+function parseLrc(text) {
+  return (text || "").split("\n").map((raw) => {
+    const m = raw.match(/^\s*\[(\d{1,2}):(\d{2})(?:[.:](\d{1,2}))?\]\s*(.*)$/);
+    if (!m) return { raw, timed: false, text: raw };
+    return { raw, timed: true, label: `${+m[1]}:${m[2]}`, text: m[4] };
+  });
+}
+
 export default function SongDetailDrawer({
   song,
   allSongs = [],
@@ -36,6 +45,7 @@ export default function SongDetailDrawer({
   const [tab, setTab] = useState(initialTab);
   const [form, setForm] = useState({});
   const [lyrics, setLyrics] = useState("");
+  const [lyricsMode, setLyricsMode] = useState("plain"); // "plain" | "lrc"
   const [snapshots, setSnapshots] = useState([]);
 
   useEffect(() => {
@@ -48,7 +58,9 @@ export default function SongDetailDrawer({
       language: song.language ?? "",
       explicit: song.explicit ?? false,
     });
-    setLyrics(song.lyricsText ?? "");
+    const lx = song.lyricsText ?? "";
+    setLyrics(lx);
+    setLyricsMode(/\[\d{1,2}:\d{2}/.test(lx) ? "lrc" : "plain");
     setSnapshots([]);
     getSnapshots(song.id).then(setSnapshots).catch(() => {});
   }, [song, initialTab]);
@@ -186,13 +198,64 @@ export default function SongDetailDrawer({
 
           {tab === "lyrics" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <label style={{ fontSize: 11, color: TEXT.tertiary }}>Lời bài hát</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label style={{ fontSize: 11, color: TEXT.tertiary, marginRight: "auto" }}>Lời bài hát</label>
+                {[["plain", "Thường"], ["lrc", "LRC · timestamp"]].map(([k, l]) => (
+                  <button
+                    key={k}
+                    onClick={() => setLyricsMode(k)}
+                    style={{
+                      background: lyricsMode === k ? "var(--overlay-2)" : "transparent",
+                      border: "1px solid " + (lyricsMode === k ? "transparent" : BORDER),
+                      color: lyricsMode === k ? TEXT.strong : TEXT.secondary,
+                      borderRadius: 9999, padding: "4px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer",
+                    }}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+
+              {lyricsMode === "lrc" && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => setLyrics((l) => (l && !l.endsWith("\n") ? l + "\n" : l) + "[00:00.00] ")}
+                    style={{ ...btn(), flex: "none", padding: "5px 12px", fontSize: 11 }}
+                  >
+                    + Dòng [mm:ss]
+                  </button>
+                  <span style={{ fontSize: 11, color: TEXT.tertiary, alignSelf: "center" }}>
+                    {parseLrc(lyrics).filter((l) => l.timed).length} dòng có timestamp
+                  </span>
+                </div>
+              )}
+
               <textarea
                 value={lyrics}
                 onChange={(e) => setLyrics(e.target.value)}
-                placeholder="Nhập lời bài hát…"
-                style={{ ...inputStyle, minHeight: 280, resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }}
+                placeholder={lyricsMode === "lrc" ? "[00:12.50] Dòng lời…" : "Nhập lời bài hát…"}
+                style={{
+                  ...inputStyle, minHeight: lyricsMode === "lrc" ? 200 : 300,
+                  resize: "vertical", fontFamily: lyricsMode === "lrc" ? "monospace" : "inherit", lineHeight: 1.6,
+                }}
               />
+
+              {lyricsMode === "lrc" && (
+                <div>
+                  <div style={sectionLabel}>Xem trước</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: 200, overflowY: "auto" }}>
+                    {parseLrc(lyrics).filter((l) => l.text || l.timed).map((l, i) => (
+                      <div key={i} style={{ display: "flex", gap: 10, fontSize: 13, padding: "3px 0" }}>
+                        <span style={{ width: 48, flexShrink: 0, color: l.timed ? "#f97316" : "var(--text-tertiary)", fontFamily: "monospace", fontSize: 11 }}>
+                          {l.timed ? l.label : "—"}
+                        </span>
+                        <span style={{ color: l.text ? TEXT.primary : TEXT.tertiary }}>{l.text || "(trống)"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <button onClick={() => onSaveLyrics?.(lyrics)} style={primaryBtn}>Lưu lyrics</button>
             </div>
           )}
