@@ -17,21 +17,39 @@ export default function AdminContent({ songs, authUser }) {
   const [detailTab, setDetailTab] = useState("overview");
   const [localEdits, setLocalEdits] = useState({});
   const [page, setPage] = useState(0);
+  const [viewMode, setViewMode] = useState("songs"); // "songs" | "albums"
+  const [albumFilter, setAlbumFilter] = useState(null);
 
   // Ghi snapshot tổng lượt nghe theo ngày (1 lần/ngày) để dựng chart
   useEffect(() => { recordDailySnapshot(songs); }, [songs]);
 
   const merge = (s) => (localEdits[s.id] ? { ...s, ...localEdits[s.id] } : s);
+  const albumOf = (s) => s.album || "(Không có album)";
 
   const PAGE_SIZE = 12;
   const q = search.trim().toLowerCase();
+  const matchesSearch = (s) =>
+    !q ||
+    s.title.toLowerCase().includes(q) ||
+    s.artist.toLowerCase().includes(q) ||
+    (s.album || "").toLowerCase().includes(q);
+
   const filtered = songs.map(merge).filter(
-    (s) =>
-      !q ||
-      s.title.toLowerCase().includes(q) ||
-      s.artist.toLowerCase().includes(q) ||
-      (s.album || "").toLowerCase().includes(q)
+    (s) => matchesSearch(s) && (!albumFilter || albumOf(s) === albumFilter)
   );
+
+  // Gom theo album cho view "Album"
+  const albumGroups = (() => {
+    const map = new Map();
+    songs.map(merge).filter(matchesSearch).forEach((s) => {
+      const key = albumOf(s);
+      const g = map.get(key) || { album: key, artist: s.artist, cover: getSongImage(s), bg: s.bg, count: 0, plays: 0 };
+      g.count += 1;
+      g.plays += s.plays || 0;
+      map.set(key, g);
+    });
+    return [...map.values()].sort((a, b) => b.plays - a.plays);
+  })();
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
@@ -90,7 +108,9 @@ export default function AdminContent({ songs, authUser }) {
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: TEXT.mid }}>
-          {songs.length} bài hát · {hiddenIds.length} đã gỡ
+          {viewMode === "albums"
+            ? `${albumGroups.length} album`
+            : `${songs.length} bài hát · ${hiddenIds.length} đã gỡ`}
         </div>
         <SearchInput
           value={search}
@@ -98,9 +118,80 @@ export default function AdminContent({ songs, authUser }) {
           placeholder="Tìm theo tên, nghệ sĩ, album..."
           width={260}
         />
+        <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+          {[["songs", "Bài hát"], ["albums", "Album"]].map(([k, l]) => (
+            <button
+              key={k}
+              onClick={() => { setViewMode(k); setAlbumFilter(null); setPage(0); }}
+              style={{
+                background: viewMode === k ? "#fff" : "transparent",
+                border: "1px solid " + (viewMode === k ? "#fff" : "var(--border)"),
+                color: viewMode === k ? "#0a0a08" : TEXT.secondary,
+                borderRadius: 9999, padding: "5px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {filtered.length > 0 && (
+      {viewMode === "songs" && albumFilter && (
+        <button
+          onClick={() => { setAlbumFilter(null); setViewMode("albums"); }}
+          style={{
+            background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+            borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer", marginBottom: 12,
+          }}
+        >
+          ← Tất cả album · <span style={{ color: TEXT.strong, fontWeight: 600 }}>{albumFilter}</span>
+        </button>
+      )}
+
+      {viewMode === "albums" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {albumGroups.map((al) => (
+            <div
+              key={al.album}
+              onClick={() => { setAlbumFilter(al.album); setViewMode("songs"); setPage(0); }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--overlay-1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card, #181818)"; }}
+              style={{
+                background: "var(--bg-card, #181818)",
+                border: "1px solid var(--border)",
+                borderRadius: 10,
+                padding: 12,
+                cursor: "pointer",
+                transition: "background 0.12s",
+              }}
+            >
+              <div style={{ width: "100%", aspectRatio: "1", borderRadius: 8, background: al.bg, overflow: "hidden", marginBottom: 10 }}>
+                {al.cover && <img src={al.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT.strong, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {al.album}
+              </div>
+              <div style={{ fontSize: 12, color: TEXT.secondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {al.artist}
+              </div>
+              <div style={{ fontSize: 11, color: TEXT.tertiary, marginTop: 4 }}>
+                {al.count} bài · {(al.plays / 1e6).toFixed(0)}M lượt nghe
+              </div>
+            </div>
+          ))}
+          {albumGroups.length === 0 && (
+            <div style={{ padding: 24, color: TEXT.tertiary, fontSize: 13 }}>Không có album nào</div>
+          )}
+        </div>
+      )}
+
+      {viewMode === "songs" && filtered.length > 0 && (
         <div
           style={{
             display: "flex",
@@ -125,7 +216,7 @@ export default function AdminContent({ songs, authUser }) {
         </div>
       )}
 
-      {paged.map((song) => {
+      {viewMode === "songs" && paged.map((song) => {
         const hidden = hiddenIds.includes(song.id);
         const cover = getSongImage(song);
         return (
@@ -299,13 +390,13 @@ export default function AdminContent({ songs, authUser }) {
         );
       })}
 
-      {filtered.length === 0 && (
+      {viewMode === "songs" && filtered.length === 0 && (
         <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
           Không tìm thấy bài hát nào
         </div>
       )}
 
-      {pageCount > 1 && (
+      {viewMode === "songs" && pageCount > 1 && (
         <div
           style={{
             display: "flex",
