@@ -13,7 +13,9 @@ export default function AdminContent({ songs, authUser }) {
   const [search, setSearch] = useState("");
   const [editTarget, setEditTarget] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [page, setPage] = useState(0);
 
+  const PAGE_SIZE = 12;
   const q = search.trim().toLowerCase();
   const filtered = songs.filter(
     (s) =>
@@ -22,6 +24,9 @@ export default function AdminContent({ songs, authUser }) {
       s.artist.toLowerCase().includes(q) ||
       s.album.toLowerCase().includes(q)
   );
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   const toggle = (song, hide) => {
     setHiddenIds(toggleSongHidden(song.id));
@@ -62,13 +67,38 @@ export default function AdminContent({ songs, authUser }) {
         </div>
         <SearchInput
           value={search}
-          onChange={setSearch}
+          onChange={(v) => { setSearch(v); setPage(0); }}
           placeholder="Tìm theo tên, nghệ sĩ, album..."
           width={260}
         />
       </div>
 
-      {filtered.map((song) => {
+      {filtered.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "0 12px 8px",
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: TEXT.tertiary,
+            borderBottom: "1px solid var(--border)",
+            marginBottom: 4,
+          }}
+        >
+          <div style={{ width: 36, flexShrink: 0 }}>Ảnh</div>
+          <div style={{ flex: 1.4, minWidth: 140 }}>Tiêu đề &amp; nghệ sĩ</div>
+          <div style={{ flex: 1, minWidth: 110 }}>Album</div>
+          <div style={{ width: 76, flexShrink: 0 }}>Thể loại</div>
+          <div style={{ width: 50, flexShrink: 0, textAlign: "right" }}>Lượt nghe</div>
+          <div style={{ width: 170, flexShrink: 0, textAlign: "right" }}>Thao tác</div>
+        </div>
+      )}
+
+      {paged.map((song) => {
         const hidden = hiddenIds.includes(song.id);
         const cover = getSongImage(song);
         return (
@@ -172,6 +202,29 @@ export default function AdminContent({ songs, authUser }) {
               }}
             >
               {hidden && <ActionChip color="#ef4444" label="Đã gỡ" />}
+              <button
+                onClick={() => { setEditTarget(song); setEditForm({ title: song.title, genre: song.genre, explicit: song.explicit ?? false }); }}
+                style={{
+                  background: "transparent", border: "1px solid var(--border)",
+                  color: TEXT.tertiary, borderRadius: 9999, padding: "5px 12px",
+                  fontSize: 11, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Sửa
+              </button>
+              <button
+                onClick={() => featureSong(song, !song.featured)}
+                title={song.featured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
+                style={{
+                  background: "transparent",
+                  border: "1px solid " + (song.featured ? "#fbbf24" : "var(--border)"),
+                  color: song.featured ? "#fbbf24" : TEXT.tertiary,
+                  borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600,
+                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
+                }}
+              >
+                ★ {song.featured ? "Nổi bật" : "Feature"}
+              </button>
               {hidden ? (
                 <button
                   onClick={() => toggle(song, false)}
@@ -180,7 +233,7 @@ export default function AdminContent({ songs, authUser }) {
                     border: "1px solid #34d399",
                     color: "#34d399",
                     borderRadius: 9999,
-                    padding: "5px 14px",
+                    padding: "5px 12px",
                     fontSize: 11,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -200,7 +253,7 @@ export default function AdminContent({ songs, authUser }) {
                     border: "1px solid #ef4444",
                     color: "#ef4444",
                     borderRadius: 9999,
-                    padding: "5px 14px",
+                    padding: "5px 12px",
                     fontSize: 11,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -213,29 +266,6 @@ export default function AdminContent({ songs, authUser }) {
                   Gỡ bài
                 </button>
               )}
-              <button
-                onClick={() => featureSong(song, !song.featured)}
-                title={song.featured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
-                style={{
-                  background: "transparent",
-                  border: "1px solid " + (song.featured ? "#fbbf24" : "var(--border)"),
-                  color: song.featured ? "#fbbf24" : TEXT.tertiary,
-                  borderRadius: 9999, padding: "5px 10px", fontSize: 11,
-                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-              >
-                ★ {song.featured ? "Nổi bật" : "Feature"}
-              </button>
-              <button
-                onClick={() => { setEditTarget(song); setEditForm({ title: song.title, genre: song.genre, explicit: song.explicit ?? false }); }}
-                style={{
-                  background: "transparent", border: "1px solid var(--border)",
-                  color: TEXT.tertiary, borderRadius: 9999, padding: "5px 10px",
-                  fontSize: 11, cursor: "pointer",
-                }}
-              >
-                Sửa
-              </button>
             </div>
           </div>
         );
@@ -244,6 +274,67 @@ export default function AdminContent({ songs, authUser }) {
       {filtered.length === 0 && (
         <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
           Không tìm thấy bài hát nào
+        </div>
+      )}
+
+      {pageCount > 1 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 16,
+            paddingTop: 12,
+            borderTop: "1px solid var(--border)",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <div style={{ fontSize: 12, color: TEXT.tertiary }}>
+            Hiển thị {safePage * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE + PAGE_SIZE, filtered.length)} trên {filtered.length} bài hát
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              style={{
+                background: "transparent", border: "1px solid var(--border)",
+                color: safePage === 0 ? TEXT.tertiary : TEXT.secondary,
+                borderRadius: 9999, width: 30, height: 30, fontSize: 12,
+                cursor: safePage === 0 ? "default" : "pointer", opacity: safePage === 0 ? 0.4 : 1,
+              }}
+            >
+              ‹
+            </button>
+            {Array.from({ length: pageCount }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                style={{
+                  background: i === safePage ? "#fff" : "transparent",
+                  border: "1px solid " + (i === safePage ? "#fff" : "var(--border)"),
+                  color: i === safePage ? "#0a0a08" : TEXT.secondary,
+                  borderRadius: 9999, minWidth: 30, height: 30, padding: "0 8px",
+                  fontSize: 12, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              disabled={safePage === pageCount - 1}
+              style={{
+                background: "transparent", border: "1px solid var(--border)",
+                color: safePage === pageCount - 1 ? TEXT.tertiary : TEXT.secondary,
+                borderRadius: 9999, width: 30, height: 30, fontSize: 12,
+                cursor: safePage === pageCount - 1 ? "default" : "pointer",
+                opacity: safePage === pageCount - 1 ? 0.4 : 1,
+              }}
+            >
+              ›
+            </button>
+          </div>
         </div>
       )}
 
