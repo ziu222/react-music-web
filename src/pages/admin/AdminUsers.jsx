@@ -152,6 +152,7 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
         return (
           <div
             key={user.id}
+            data-testid="admin-user-row"
             onClick={() => onOpenUser(user)}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "var(--overlay-1)";

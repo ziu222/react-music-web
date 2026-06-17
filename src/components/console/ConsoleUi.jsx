@@ -128,6 +128,8 @@ const STATUS_STYLES = {
   pending: { label: "Chờ duyệt", color: "#fbbf24" },
   approved: { label: "Đã duyệt", color: "#34d399" },
   rejected: { label: "Từ chối", color: "#fb7185" },
+  resolved: { label: "Đã xử lý", color: "#34d399" },
+  dismissed: { label: "Bỏ qua", color: "#94a3b8" },
 };
 
 export function StatusBadge({ status }) {
