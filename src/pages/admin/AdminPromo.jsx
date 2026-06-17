@@ -55,7 +55,7 @@ export default function AdminPromo({ authUser }) {
               padding: "6px 10px", color: TEXT.primary, fontSize: 12, outline: "none", fontFamily: "monospace" }} />
         </div>
         <button onClick={create} style={{
-          background: "#fbbf24", border: "none", color: "#0a0a08", borderRadius: 9999,
+          background: "#f97316", border: "none", color: "#fff", borderRadius: 9999,
           padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer",
           display: "inline-flex", alignItems: "center", gap: 6,
         }}>
@@ -78,7 +78,7 @@ export default function AdminPromo({ authUser }) {
           background: BG.card, border: "1px solid " + BORDER, borderRadius: 8, marginBottom: 8,
           opacity: p.active ? 1 : 0.45,
         }}>
-          <FontAwesomeIcon icon={faTicket} style={{ color: "#fbbf24", fontSize: 14, flexShrink: 0 }} />
+          <FontAwesomeIcon icon={faTicket} style={{ color: "#f97316", fontSize: 14, flexShrink: 0 }} />
           <div style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 700, color: TEXT.strong, letterSpacing: "0.12em", flex: 1 }}>
             {p.code}
           </div>
