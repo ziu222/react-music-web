@@ -4,7 +4,7 @@ import { faFlag, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, BORDER, BG } from "../../constants/theme";
 import { loadReports, resolveReport, dismissReport } from "../../lib/social/reports";
 import { logAdminAction } from "../../lib/user/auditLog";
-import { StatusBadge } from "../../components/console/ConsoleUi";
+import { StatusBadge, FilterPills } from "../../components/console/ConsoleUi";
 
 export default function AdminReports({ authUser }) {
   const [reports, setReports] = useState(() => loadReports());
@@ -13,6 +13,13 @@ export default function AdminReports({ authUser }) {
   const [note, setNote] = useState("");
 
   const filtered = reports.filter((r) => filter === "all" || r.status === filter);
+  const pendingCount = reports.filter((r) => r.status === "pending").length;
+  const FILTER_PILLS = [
+    { key: "pending", label: pendingCount ? `Chờ xử lý (${pendingCount})` : "Chờ xử lý" },
+    { key: "resolved", label: "Đã xử lý" },
+    { key: "dismissed", label: "Bỏ qua" },
+    { key: "all", label: "Tất cả" },
+  ];
 
   const resolve = (r) => {
     const n = note.trim() || "Đã xử lý";
@@ -30,21 +37,7 @@ export default function AdminReports({ authUser }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {["pending", "resolved", "dismissed", "all"].map((s) => (
-          <button key={s} onClick={() => setFilter(s)} style={{
-            background: filter === s ? "var(--color-coral-500, #f97316)" : "transparent",
-            border: "1px solid var(--border)", color: filter === s ? "#fff" : TEXT.secondary,
-            borderRadius: 9999, padding: "5px 14px", fontSize: 11, fontWeight: 600, cursor: "pointer",
-          }}>
-            {s === "pending" ? "Chờ xử lý" : s === "resolved" ? "Đã xử lý" : s === "dismissed" ? "Bỏ qua" : "Tất cả"}
-            {s === "pending" && reports.filter((r) => r.status === "pending").length > 0 && (
-              <span style={{ marginLeft: 6, background: "#ef4444", color: "#fff", borderRadius: 9999,
-                padding: "0 6px", fontSize: 10, fontWeight: 800 }}>
-                {reports.filter((r) => r.status === "pending").length}
-              </span>
-            )}
-          </button>
-        ))}
+        <FilterPills options={FILTER_PILLS} active={filter} onSelect={setFilter} />
       </div>
 
       {filtered.length === 0 && (

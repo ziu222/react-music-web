@@ -5,6 +5,7 @@ import { TEXT, C } from "../../constants/theme";
 import { SearchInput, FilterPills } from "../../components/console/ConsoleUi";
 import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 import { grantPremium, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
+import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
 
 const ROLE_PILLS = [
@@ -24,8 +25,8 @@ const PLAN_PILLS = [
 
 const ROLE_CHIPS = {
   listener: { label: "Listener", color: null },
-  artist: { label: "Nghệ sĩ", color: "#a78bfa" },
-  admin: { label: "Admin", color: "#34d399" },
+  artist: { label: "Nghệ sĩ", color: "#8aa4c8" },
+  admin: { label: "Admin", color: "#f97316" },
 };
 
 function InlinePill({ color, children }) {
@@ -100,22 +101,18 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
         padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
       }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid, flexShrink: 0 }}>Bulk grant Premium:</div>
-        {GRANT_DURATIONS.map((d) => (
-          <button key={d.key} onClick={() => setBulkDuration(d.key)} style={{
-            background: bulkDuration === d.key ? "#fbbf24" : "transparent",
-            border: "1px solid #fbbf24", color: bulkDuration === d.key ? "#0a0a08" : "#fbbf24",
-            borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer",
-          }}>{d.label}</button>
-        ))}
-        <button onClick={() => {
+        <FilterPills options={GRANT_DURATIONS} active={bulkDuration} onSelect={setBulkDuration} />
+        <button onClick={async () => {
           const listeners = filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener");
+          // grantPremium → lưu lịch sử subscription; setUserOverride → cập nhật plan thật (users table + cache)
           listeners.forEach((u) => grantPremium(authUser?.email, u.email, bulkDuration, "bulk grant"));
+          await Promise.all(listeners.map((u) => setUserOverride(u.email, { plan: "premium" })));
           logAdminAction(authUser, "change_plan", listeners.length + " listeners", "bulk → premium " + GRANT_DURATIONS.find(d=>d.key===bulkDuration)?.label);
           setBulkDone(listeners.length);
           setTimeout(() => setBulkDone(null), 4000);
           onRefresh?.();
         }} style={{
-          background: "#fbbf24", border: "none", color: "#0a0a08", borderRadius: 9999,
+          background: "#f97316", border: "none", color: "#fff", borderRadius: 9999,
           padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", marginLeft: "auto",
         }}>
           Áp dụng cho Listeners ({filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener").length})
@@ -175,8 +172,9 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                background: user.color,
-                color: "#fff",
+                background: "var(--overlay-2)",
+                border: "1px solid var(--border)",
+                color: TEXT.mid,
                 fontSize: 12,
                 fontWeight: 700,
                 display: "flex",
