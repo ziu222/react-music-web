@@ -5,6 +5,7 @@ import { TEXT, C } from "../../constants/theme";
 import { SearchInput, FilterPills } from "../../components/console/ConsoleUi";
 import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 import { grantPremium, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
+import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
 
 const ROLE_PILLS = [
@@ -101,9 +102,11 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
       }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid, flexShrink: 0 }}>Bulk grant Premium:</div>
         <FilterPills options={GRANT_DURATIONS} active={bulkDuration} onSelect={setBulkDuration} />
-        <button onClick={() => {
+        <button onClick={async () => {
           const listeners = filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener");
+          // grantPremium → lưu lịch sử subscription; setUserOverride → cập nhật plan thật (users table + cache)
           listeners.forEach((u) => grantPremium(authUser?.email, u.email, bulkDuration, "bulk grant"));
+          await Promise.all(listeners.map((u) => setUserOverride(u.email, { plan: "premium" })));
           logAdminAction(authUser, "change_plan", listeners.length + " listeners", "bulk → premium " + GRANT_DURATIONS.find(d=>d.key===bulkDuration)?.label);
           setBulkDone(listeners.length);
           setTimeout(() => setBulkDone(null), 4000);

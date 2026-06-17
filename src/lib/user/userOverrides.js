@@ -72,6 +72,8 @@ export async function getAllUsersWithOverrides() {
         status: r.status,
         banReason: r.ban_reason ?? null,
         deleted: r.deleted ?? false,
+        verified: r.verified ?? false,
+        suspended: r.suspended ?? false,
         joinedAt: r.joined_at,
       }));
     }
