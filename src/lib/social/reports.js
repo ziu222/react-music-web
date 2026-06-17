@@ -50,6 +50,33 @@ export function loadReports() {
   return readStore();
 }
 
+function fromRow(r) {
+  return {
+    id: r.id,
+    reporterEmail: r.reporter_email,
+    songId: r.song_id,
+    songTitle: r.song_title,
+    reason: r.reason,
+    status: r.status,
+    adminNote: r.admin_note ?? null,
+    createdAt: r.created_at,
+    resolvedAt: r.resolved_at ?? null,
+  };
+}
+
+/* Fetch toàn bộ report từ Supabase (admin đọc cross-user, không chỉ localStorage). */
+export async function fetchReports() {
+  if (!supabase) return readStore();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error || !data) return readStore();
+  const mapped = data.map(fromRow);
+  saveStore(mapped);
+  return mapped;
+}
+
 export function resolveReport(id, adminNote) {
   const list = readStore().map((r) =>
     r.id === id ? { ...r, status: "resolved", adminNote, resolvedAt: new Date().toISOString() } : r
