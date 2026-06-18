@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFlag } from "@fortawesome/free-solid-svg-icons";
 import { loadSession } from "../../auth/session";
 import { submitReport, REPORT_REASONS } from "../../lib/social/reports";
+import { overlayVariants, modalVariants } from "../../lib/ui/consoleMotion";
 
 /* Nút báo cáo vi phạm cho 1 bài hát — tự quản modal + gọi submitReport.
  * Hiện khi hover row (giống nút like/queue). */
@@ -46,18 +48,26 @@ export default function ReportButton({ song, visible }) {
         <FontAwesomeIcon icon={faFlag} />
       </button>
 
-      {open && (
-        <>
-          <div
-            className="overlay-fade-in"
+      <AnimatePresence>
+        {open && [
+          <motion.div
+            key="rb-bg"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             onClick={(e) => { e.stopPropagation(); setOpen(false); }}
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300 }}
-          />
-          <div
-            className="modal-pop-in"
+          />,
+          <motion.div
+            key="rb-modal"
+            variants={modalVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             onClick={(e) => e.stopPropagation()}
             style={{
-              position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+              position: "fixed", top: "50%", left: "50%",
               width: 340, maxWidth: "92vw", background: "var(--island-menu, #282828)",
               borderRadius: 12, padding: 22, zIndex: 1301, boxShadow: "rgba(0,0,0,0.6) 0 16px 48px",
               boxSizing: "border-box",
@@ -119,9 +129,9 @@ export default function ReportButton({ song, visible }) {
                 </div>
               </>
             )}
-          </div>
-        </>
-      )}
+          </motion.div>,
+        ]}
+      </AnimatePresence>
     </>
   );
 }

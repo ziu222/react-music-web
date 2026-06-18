@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faEyeSlash, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, BORDER } from "../../constants/theme";
+import { overlayVariants, drawerVariants } from "../../lib/ui/consoleMotion";
 import { ActionChip } from "../console/ConsoleUi";
 import { Sparkline, MiniBars, StatTile } from "../ui/Charts";
 import { getSnapshots } from "../../lib/music/playSnapshots";
@@ -89,19 +91,31 @@ export default function SongDetailDrawer({
     };
   }, [song, allSongs, counts]);
 
-  if (!song) return null;
-  const cover = getSongImage(song);
+  const cover = song ? getSongImage(song) : null;
 
   return (
-    <>
-      <div className="overlay-fade-in" onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1200 }} />
-      <div
-        className="drawer-panel-in"
-        style={{
-          position: "fixed",
-          top: 0,
-          right: 0,
-          bottom: 0,
+    <AnimatePresence>
+      {song && [
+        <motion.div
+          key="drawer-bg"
+          variants={overlayVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          onClick={onClose}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1200 }}
+        />,
+        <motion.div
+          key="drawer-panel"
+          variants={drawerVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
           width: 460,
           maxWidth: "92vw",
           background: "var(--bg-card, #181818)",
@@ -286,8 +300,9 @@ export default function SongDetailDrawer({
             </div>
           )}
         </div>
-      </div>
-    </>
+        </motion.div>,
+      ]}
+    </AnimatePresence>
   );
 }
 

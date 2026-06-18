@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFlag, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, BORDER, BG } from "../../constants/theme";
+import { overlayVariants, modalVariants } from "../../lib/ui/consoleMotion";
 import { loadReports, fetchReports, resolveReport, dismissReport } from "../../lib/social/reports";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { StatusBadge, FilterPills } from "../../components/console/ConsoleUi";
@@ -94,10 +96,10 @@ export default function AdminReports({ authUser }) {
         </div>
       ))}
 
-      {noteTarget && (
-        <>
-          <div className="overlay-fade-in" onClick={() => setNoteTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1100 }} />
-          <div className="modal-pop-in" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+      <AnimatePresence>
+        {noteTarget && [
+          <motion.div key="nt-bg" variants={overlayVariants} initial="initial" animate="animate" exit="exit" onClick={() => setNoteTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1100 }} />,
+          <motion.div key="nt-modal" variants={modalVariants} initial="initial" animate="animate" exit="exit" style={{ position: "fixed", top: "50%", left: "50%",
             width: 340, background: "var(--island-menu)", borderRadius: 10, padding: 22,
             zIndex: 1101, boxShadow: "var(--shadow-modal)", boxSizing: "border-box" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--island-text)", marginBottom: 12 }}>
@@ -115,9 +117,9 @@ export default function AdminReports({ authUser }) {
               <button onClick={() => resolve(noteTarget)} style={{ background: "#34d399", border: "none",
                 color: "#08110d", borderRadius: 9999, padding: "7px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Xác nhận</button>
             </div>
-          </div>
-        </>
-      )}
+          </motion.div>,
+        ]}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { C, TEXT, BORDER } from "../../constants/theme";
+import { pageVariants } from "../../lib/ui/consoleMotion";
 
 /* Khung màn hình console standalone (admin / artist studio):
  * sidebar 230px (brand + nav + user chip + nút thoát) + main cuộn riêng. */
@@ -16,6 +18,7 @@ export default function ConsoleShell({
   children,
 }) {
   return (
+    <MotionConfig reducedMotion="user">
     <div
       style={{
         display: "flex",
@@ -193,10 +196,19 @@ export default function ConsoleShell({
           boxSizing: "border-box",
         }}
       >
-        <div key={activeTab} className="console-tab-content">
-          {children}
-        </div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
+    </MotionConfig>
   );
 }
