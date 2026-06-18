@@ -579,20 +579,17 @@ export default function AdminContent({ songs, authUser }) {
         </div>
       )}
 
-      {detailTarget && (
-        <SongDetailDrawer
-          key={detailTarget.id}
-          song={merge(detailTarget)}
-          allSongs={songs.map(merge)}
-          hidden={hiddenIds.includes(detailTarget.id)}
-          initialTab={detailTab}
-          onClose={() => setDetailTarget(null)}
-          onSaveMetadata={(form) => saveMetadata(detailTarget, form)}
-          onSaveLyrics={(text) => saveLyrics(detailTarget, text)}
-          onToggleHidden={() => toggle(detailTarget, !hiddenIds.includes(detailTarget.id))}
-          onFeature={() => featureSong(detailTarget, !merge(detailTarget).featured)}
-        />
-      )}
+      <SongDetailDrawer
+        song={detailTarget ? merge(detailTarget) : null}
+        allSongs={songs.map(merge)}
+        hidden={detailTarget ? hiddenIds.includes(detailTarget.id) : false}
+        initialTab={detailTab}
+        onClose={() => setDetailTarget(null)}
+        onSaveMetadata={(form) => saveMetadata(detailTarget, form)}
+        onSaveLyrics={(text) => saveLyrics(detailTarget, text)}
+        onToggleHidden={() => toggle(detailTarget, !hiddenIds.includes(detailTarget.id))}
+        onFeature={() => featureSong(detailTarget, !merge(detailTarget).featured)}
+      />
     </div>
   );
 }
