@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
 import { TEXT } from "../../constants/theme";
+import { staggerContainer, cardVariants, rowVariants } from "../../lib/ui/consoleMotion";
 import { supabase } from "../../lib/supabase/supabase";
 import { loadSongOverrides, toggleSongHidden } from "../../lib/music/songOverrides";
 import { recordDailySnapshot } from "../../lib/music/playSnapshots";
@@ -229,17 +231,22 @@ export default function AdminContent({ songs, authUser }) {
       )}
 
       {viewMode === "albums" && (
-        <div
+        <motion.div
+          key={"albums-" + q}
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
             gap: 16,
           }}
         >
-          {albumGroups.map((al, i) => (
-            <div
+          {albumGroups.map((al) => (
+            <motion.div
               key={al.album}
-              className="hover-lift card-rise-in"
+              variants={cardVariants}
+              whileHover={{ y: -3 }}
               onClick={() => { setAlbumFilter(al.album); setViewMode("songs"); setPage(0); clearSel(); }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--overlay-1)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card, #181818)"; }}
@@ -249,7 +256,6 @@ export default function AdminContent({ songs, authUser }) {
                 borderRadius: 10,
                 padding: 12,
                 cursor: "pointer",
-                animationDelay: `${Math.min(i, 12) * 35}ms`,
               }}
             >
               <div style={{ width: "100%", aspectRatio: "1", borderRadius: 8, background: al.bg, overflow: "hidden", marginBottom: 10 }}>
@@ -264,12 +270,12 @@ export default function AdminContent({ songs, authUser }) {
               <div style={{ fontSize: 11, color: TEXT.tertiary, marginTop: 4 }}>
                 {al.count} bài · {(al.plays / 1e6).toFixed(0)}M lượt nghe
               </div>
-            </div>
+            </motion.div>
           ))}
           {albumGroups.length === 0 && (
             <div style={{ padding: 24, color: TEXT.tertiary, fontSize: 13 }}>Không có album nào</div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {viewMode === "songs" && selected.size > 0 && (
@@ -319,12 +325,15 @@ export default function AdminContent({ songs, authUser }) {
         </div>
       )}
 
-      {viewMode === "songs" && paged.map((song) => {
+      {viewMode === "songs" && (
+       <motion.div key={"songs-" + safePage} variants={staggerContainer} initial="initial" animate="animate">
+       {paged.map((song) => {
         const hidden = hiddenIds.includes(song.id);
         const cover = getSongImage(song);
         return (
-          <div
+          <motion.div
             key={song.id}
+            variants={rowVariants}
             onClick={() => openDetail(song)}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "var(--overlay-1)";
@@ -497,9 +506,11 @@ export default function AdminContent({ songs, authUser }) {
                 </button>
               )}
             </div>
-          </div>
+          </motion.div>
         );
       })}
+       </motion.div>
+      )}
 
       {viewMode === "songs" && filtered.length === 0 && (
         <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>

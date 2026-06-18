@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faChevronRight, faMicrophoneLines } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, C } from "../../constants/theme";
+import { staggerContainer, rowVariants } from "../../lib/ui/consoleMotion";
 import { SearchInput, FilterPills } from "../../components/console/ConsoleUi";
 import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 import { grantPremium, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
@@ -142,13 +144,20 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
         <div style={{ width: 20, flexShrink: 0 }} />
       </div>
 
+      <motion.div
+        key={"users-" + roleFilter + planFilter + search}
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
       {filtered.map((user) => {
         const dimmed = user.status === "banned" || user.deleted;
         const roleChip = ROLE_CHIPS[user.role] ?? ROLE_CHIPS.listener;
         const hasRequest = pendingRequestEmails.has(user.email);
         return (
-          <div
+          <motion.div
             key={user.id}
+            variants={rowVariants}
             data-testid="admin-user-row"
             onClick={() => onOpenUser(user)}
             onMouseEnter={(e) => {
@@ -272,9 +281,10 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
                 style={{ fontSize: 10, color: TEXT.tertiary }}
               />
             </div>
-          </div>
+          </motion.div>
         );
       })}
+      </motion.div>
 
       {filtered.length === 0 && (
         <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
