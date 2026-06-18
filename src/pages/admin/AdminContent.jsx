@@ -10,6 +10,19 @@ import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
 import SongDetailDrawer from "../../components/modals/SongDetailDrawer";
 import { getSongImage } from "../../data/media";
 
+function bulkBtn(accent) {
+  return {
+    background: "transparent",
+    border: "1px solid " + (accent || "var(--border)"),
+    color: accent || TEXT.secondary,
+    borderRadius: 9999,
+    padding: "5px 12px",
+    fontSize: 11,
+    fontWeight: 600,
+    cursor: "pointer",
+  };
+}
+
 export default function AdminContent({ songs, authUser }) {
   const [hiddenIds, setHiddenIds] = useState(() => loadSongOverrides().hiddenIds);
   const [search, setSearch] = useState("");
@@ -17,21 +30,40 @@ export default function AdminContent({ songs, authUser }) {
   const [detailTab, setDetailTab] = useState("overview");
   const [localEdits, setLocalEdits] = useState({});
   const [page, setPage] = useState(0);
+  const [viewMode, setViewMode] = useState("songs"); // "songs" | "albums"
+  const [albumFilter, setAlbumFilter] = useState(null);
+  const [selected, setSelected] = useState(() => new Set());
 
   // Ghi snapshot tổng lượt nghe theo ngày (1 lần/ngày) để dựng chart
   useEffect(() => { recordDailySnapshot(songs); }, [songs]);
 
   const merge = (s) => (localEdits[s.id] ? { ...s, ...localEdits[s.id] } : s);
+  const albumOf = (s) => s.album || "(Không có album)";
 
   const PAGE_SIZE = 12;
   const q = search.trim().toLowerCase();
+  const matchesSearch = (s) =>
+    !q ||
+    s.title.toLowerCase().includes(q) ||
+    s.artist.toLowerCase().includes(q) ||
+    (s.album || "").toLowerCase().includes(q);
+
   const filtered = songs.map(merge).filter(
-    (s) =>
-      !q ||
-      s.title.toLowerCase().includes(q) ||
-      s.artist.toLowerCase().includes(q) ||
-      (s.album || "").toLowerCase().includes(q)
+    (s) => matchesSearch(s) && (!albumFilter || albumOf(s) === albumFilter)
   );
+
+  // Gom theo album cho view "Album"
+  const albumGroups = (() => {
+    const map = new Map();
+    songs.map(merge).filter(matchesSearch).forEach((s) => {
+      const key = albumOf(s);
+      const g = map.get(key) || { album: key, artist: s.artist, cover: getSongImage(s), bg: s.bg, count: 0, plays: 0 };
+      g.count += 1;
+      g.plays += s.plays || 0;
+      map.set(key, g);
+    });
+    return [...map.values()].sort((a, b) => b.plays - a.plays);
+  })();
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
@@ -78,6 +110,61 @@ export default function AdminContent({ songs, authUser }) {
     setDetailTarget((t) => (t && t.id === song.id ? { ...t, lyricsText: text } : t));
   };
 
+  // ── Bulk actions ──────────────────────────────────────────────
+  const clearSel = () => setSelected(new Set());
+  const toggleSel = (id) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const allSelected = filtered.length > 0 && filtered.every((s) => selected.has(s.id));
+  const toggleAll = () => (allSelected ? clearSel() : setSelected(new Set(filtered.map((s) => s.id))));
+
+  const bulkFeature = (featured) => {
+    [...selected].forEach((id) => {
+      if (supabase) supabase.from("songs").update({ featured }).eq("id", id).then().catch(() => {});
+      applyLocal(id, { featured });
+    });
+    logAdminAction(authUser, featured ? "feature_song" : "unfeature_song", selected.size + " bài", "bulk");
+    clearSel();
+  };
+
+  const bulkHide = (hide) => {
+    let next = hiddenIds;
+    [...selected].forEach((id) => {
+      if (next.includes(id) !== hide) next = toggleSongHidden(id);
+    });
+    setHiddenIds(next);
+    logAdminAction(authUser, hide ? "hide_song" : "unhide_song", selected.size + " bài", "bulk");
+    clearSel();
+  };
+
+  // Đổi tên album = cập nhật songs.album cho toàn bộ bài trong nhóm
+  const renameAlbum = () => {
+    const cur = albumFilter;
+    const name = window.prompt("Đổi tên album:", cur);
+    if (!name?.trim() || name.trim() === cur) return;
+    const ids = songs.map(merge).filter((s) => albumOf(s) === cur).map((s) => s.id);
+    ids.forEach((id) => {
+      if (supabase) supabase.from("songs").update({ album: name.trim() }).eq("id", id).then().catch(() => {});
+      applyLocal(id, { album: name.trim() });
+    });
+    logAdminAction(authUser, "edit_metadata", ids.length + " bài", "rename album → " + name.trim());
+    setAlbumFilter(name.trim());
+  };
+
+  const bulkGenre = () => {
+    const g = window.prompt(`Đổi thể loại cho ${selected.size} bài thành:`);
+    if (!g?.trim()) return;
+    [...selected].forEach((id) => {
+      if (supabase) supabase.from("songs").update({ genre: g.trim() }).eq("id", id).then().catch(() => {});
+      applyLocal(id, { genre: g.trim() });
+    });
+    logAdminAction(authUser, "edit_metadata", selected.size + " bài", "bulk genre → " + g.trim());
+    clearSel();
+  };
+
   return (
     <div>
       <div
@@ -90,17 +177,119 @@ export default function AdminContent({ songs, authUser }) {
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: TEXT.mid }}>
-          {songs.length} bài hát · {hiddenIds.length} đã gỡ
+          {viewMode === "albums"
+            ? `${albumGroups.length} album`
+            : `${songs.length} bài hát · ${hiddenIds.length} đã gỡ`}
         </div>
         <SearchInput
           value={search}
-          onChange={(v) => { setSearch(v); setPage(0); }}
+          onChange={(v) => { setSearch(v); setPage(0); clearSel(); }}
           placeholder="Tìm theo tên, nghệ sĩ, album..."
           width={260}
         />
+        <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+          {[["songs", "Bài hát"], ["albums", "Album"]].map(([k, l]) => (
+            <button
+              key={k}
+              onClick={() => { setViewMode(k); setAlbumFilter(null); setPage(0); clearSel(); }}
+              style={{
+                background: viewMode === k ? "#fff" : "transparent",
+                border: "1px solid " + (viewMode === k ? "#fff" : "var(--border)"),
+                color: viewMode === k ? "#0a0a08" : TEXT.secondary,
+                borderRadius: 9999, padding: "5px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {filtered.length > 0 && (
+      {viewMode === "songs" && albumFilter && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          <button
+            onClick={() => { setAlbumFilter(null); setViewMode("albums"); clearSel(); }}
+            style={{
+              background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+              borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
+            }}
+          >
+            ← Tất cả album · <span style={{ color: TEXT.strong, fontWeight: 600 }}>{albumFilter}</span>
+          </button>
+          <button
+            onClick={renameAlbum}
+            style={{
+              background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+              borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
+            }}
+          >
+            Sửa tên album
+          </button>
+        </div>
+      )}
+
+      {viewMode === "albums" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {albumGroups.map((al) => (
+            <div
+              key={al.album}
+              onClick={() => { setAlbumFilter(al.album); setViewMode("songs"); setPage(0); clearSel(); }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--overlay-1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card, #181818)"; }}
+              style={{
+                background: "var(--bg-card, #181818)",
+                border: "1px solid var(--border)",
+                borderRadius: 10,
+                padding: 12,
+                cursor: "pointer",
+                transition: "background 0.12s",
+              }}
+            >
+              <div style={{ width: "100%", aspectRatio: "1", borderRadius: 8, background: al.bg, overflow: "hidden", marginBottom: 10 }}>
+                {al.cover && <img src={al.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT.strong, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {al.album}
+              </div>
+              <div style={{ fontSize: 12, color: TEXT.secondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {al.artist}
+              </div>
+              <div style={{ fontSize: 11, color: TEXT.tertiary, marginTop: 4 }}>
+                {al.count} bài · {(al.plays / 1e6).toFixed(0)}M lượt nghe
+              </div>
+            </div>
+          ))}
+          {albumGroups.length === 0 && (
+            <div style={{ padding: 24, color: TEXT.tertiary, fontSize: 13 }}>Không có album nào</div>
+          )}
+        </div>
+      )}
+
+      {viewMode === "songs" && selected.size > 0 && (
+        <div
+          style={{
+            display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+            background: "var(--overlay-1)", border: "1px solid var(--border)",
+            borderRadius: 10, padding: "10px 14px", marginBottom: 12,
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid }}>Đã chọn {selected.size}</span>
+          <button onClick={() => bulkFeature(true)} style={bulkBtn("#fbbf24")}>★ Feature</button>
+          <button onClick={() => bulkFeature(false)} style={bulkBtn()}>Bỏ feature</button>
+          <button onClick={() => bulkHide(true)} style={bulkBtn("#ef4444")}>Gỡ bài</button>
+          <button onClick={() => bulkHide(false)} style={bulkBtn("#34d399")}>Khôi phục</button>
+          <button onClick={bulkGenre} style={bulkBtn()}>Đổi thể loại</button>
+          <button onClick={clearSel} style={{ ...bulkBtn(), marginLeft: "auto" }}>Bỏ chọn</button>
+        </div>
+      )}
+
+      {viewMode === "songs" && filtered.length > 0 && (
         <div
           style={{
             display: "flex",
@@ -116,6 +305,9 @@ export default function AdminContent({ songs, authUser }) {
             marginBottom: 4,
           }}
         >
+          <div style={{ width: 22, flexShrink: 0 }}>
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} />
+          </div>
           <div style={{ width: 36, flexShrink: 0 }}>Ảnh</div>
           <div style={{ flex: 1.4, minWidth: 140 }}>Tiêu đề &amp; nghệ sĩ</div>
           <div style={{ flex: 1, minWidth: 110 }}>Album</div>
@@ -125,7 +317,7 @@ export default function AdminContent({ songs, authUser }) {
         </div>
       )}
 
-      {paged.map((song) => {
+      {viewMode === "songs" && paged.map((song) => {
         const hidden = hiddenIds.includes(song.id);
         const cover = getSongImage(song);
         return (
@@ -148,6 +340,14 @@ export default function AdminContent({ songs, authUser }) {
               cursor: "pointer",
             }}
           >
+            <div style={{ width: 22, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={selected.has(song.id)}
+                onChange={() => toggleSel(song.id)}
+                style={{ cursor: "pointer" }}
+              />
+            </div>
             <div
               style={{
                 width: 36,
@@ -299,13 +499,13 @@ export default function AdminContent({ songs, authUser }) {
         );
       })}
 
-      {filtered.length === 0 && (
+      {viewMode === "songs" && filtered.length === 0 && (
         <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
           Không tìm thấy bài hát nào
         </div>
       )}
 
-      {pageCount > 1 && (
+      {viewMode === "songs" && pageCount > 1 && (
         <div
           style={{
             display: "flex",

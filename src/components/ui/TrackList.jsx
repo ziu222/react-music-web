@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPlus, faHeart, faXmark } from "@fortawesome/free-solid-svg-icons";
 import EqBars from "../player/EqBars";
+import ReportButton from "./ReportButton";
 import { C, R, TEXT, BORDER } from "../../constants/theme";
 import { getSongImage, getPrimaryArtist } from "../../data/media";
 import { formatPlays } from "../../data/derived";
@@ -32,6 +33,7 @@ export default function TrackList({
     "54px",
     "34px",
     "34px",
+    "34px",
     ...(onRemove ? ["34px"] : []),
   ].join(" ");
 
@@ -56,6 +58,7 @@ export default function TrackList({
           {showAlbum && <span>Album</span>}
           {showPlays && <span style={{ textAlign: "right" }}>Lượt phát</span>}
           <span style={{ textAlign: "right" }}>Time</span>
+          <span />
           <span />
           <span />
           {onRemove && <span />}
@@ -272,6 +275,9 @@ function Row({
       >
         <FontAwesomeIcon icon={faHeart} />
       </button>
+
+      {/* Report */}
+      <ReportButton song={song} visible={hov} />
 
       {/* Remove from playlist */}
       {onRemove && (

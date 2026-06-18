@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPlus, faHeart } from "@fortawesome/free-solid-svg-icons";
 import EqBars from "../player/EqBars";
+import ReportButton from "./ReportButton";
 import { C, R } from "../../constants/theme";
 import { getSongImage } from "../../data/media";
 
@@ -187,6 +188,9 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
       >
         <FontAwesomeIcon icon={faHeart} />
       </button>
+
+      {/* Report */}
+      <ReportButton song={song} visible={hov} />
     </div>
   );
 }

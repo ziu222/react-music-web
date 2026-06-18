@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFlag, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, BORDER, BG } from "../../constants/theme";
-import { loadReports, resolveReport, dismissReport } from "../../lib/social/reports";
+import { loadReports, fetchReports, resolveReport, dismissReport } from "../../lib/social/reports";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { StatusBadge, FilterPills } from "../../components/console/ConsoleUi";
 
 export default function AdminReports({ authUser }) {
   const [reports, setReports] = useState(() => loadReports());
   const [filter, setFilter] = useState("pending");
+
+  // Đồng bộ từ Supabase để thấy report của mọi user (không chỉ localStorage)
+  useEffect(() => { fetchReports().then(setReports).catch(() => {}); }, []);
   const [noteTarget, setNoteTarget] = useState(null);
   const [note, setNote] = useState("");
 

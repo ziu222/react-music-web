@@ -34,6 +34,19 @@ export function recordDailySnapshot(songs) {
     .catch(() => {});
 }
 
+/** Tổng plays toàn hệ thống theo ngày (cho dashboard). */
+export async function getDailyTotals(limitDays = 30) {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("play_snapshots").select("day,plays");
+  if (error || !data) return [];
+  const map = new Map();
+  data.forEach((r) => map.set(r.day, (map.get(r.day) ?? 0) + (r.plays ?? 0)));
+  return [...map.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .slice(-limitDays)
+    .map(([day, plays]) => ({ day, plays }));
+}
+
 /** Lấy chuỗi snapshot theo ngày của 1 bài (tăng dần). */
 export async function getSnapshots(songId, limitDays = 30) {
   if (!supabase) return [];
