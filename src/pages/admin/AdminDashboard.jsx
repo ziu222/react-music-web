@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUsers,
@@ -11,6 +12,7 @@ import {
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import { StatCard, ActionChip } from "../../components/console/ConsoleUi";
 import { Sparkline, MiniBars } from "../../components/ui/Charts";
+import { staggerContainer, cardVariants } from "../../lib/ui/consoleMotion";
 import { loadAuditLog, ACTION_LABELS } from "../../lib/user/auditLog";
 import { getDailyTotals } from "../../lib/music/playSnapshots";
 import { formatNotificationTime } from "../../lib/social/notifications";
@@ -64,15 +66,18 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
   const recentAudit = loadAuditLog().slice(0, 5);
 
   return (
-    <div>
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 20 }}>
+    <motion.div variants={staggerContainer} initial="initial" animate="animate">
+      <motion.div variants={staggerContainer} style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 20 }}>
         {statCards.map((card) => (
-          <StatCard key={card.label} {...card} />
+          <motion.div key={card.label} variants={cardVariants} style={{ flex: 1, minWidth: 150, display: "flex" }}>
+            <StatCard {...card} />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {upgradeRequestCount > 0 && (
-        <div
+        <motion.div
+          variants={cardVariants}
           onClick={onNavigateUsers}
           style={{
             background: `${C[500]}12`, border: `1px solid ${C[500]}44`,
@@ -103,10 +108,11 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
           }}>
             {upgradeRequestCount}
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div
+      <motion.div
+        variants={cardVariants}
         style={{
           background: BG.card,
           border: "1px solid " + BORDER,
@@ -169,9 +175,10 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
-      <div
+      <motion.div
+        variants={cardVariants}
         style={{
           background: BG.card,
           border: "1px solid " + BORDER,
@@ -211,16 +218,16 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
-      <div style={{ background: BG.card, border: "1px solid " + BORDER, borderRadius: 10, padding: 18, marginBottom: 20 }}>
+      <motion.div variants={cardVariants} style={{ background: BG.card, border: "1px solid " + BORDER, borderRadius: 10, padding: 18, marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
           Xu hướng lượt nghe (toàn hệ thống)
         </div>
         <Sparkline data={dailyTotals.map((d) => d.plays)} color={C[500]} />
-      </div>
+      </motion.div>
 
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+      <motion.div variants={cardVariants} style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
         <div style={{ flex: 1, minWidth: 280, background: BG.card, border: "1px solid " + BORDER, borderRadius: 10, padding: 18 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 14 }}>
             Top bài hát
@@ -233,7 +240,7 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
           </div>
           <MiniBars items={genreBars} color="#60a5fa" />
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
