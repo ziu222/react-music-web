@@ -44,6 +44,15 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
     getAllUsersWithOverrides().then(setAllUsers).catch(() => {});
   };
 
+  // onChanged({email, patch}) → optimistic update tức thì; onChanged() → refetch reconcile
+  const handleUserChanged = (opt) => {
+    if (opt?.email && opt?.patch) {
+      setAllUsers((prev) => prev.map((u) => (u.email === opt.email ? { ...u, ...opt.patch } : u)));
+    } else {
+      refreshUsers();
+    }
+  };
+
   useEffect(() => { refreshUsers(); }, []);
 
   const pendingCount = subs.filter((s) => s.status === "pending").length;
@@ -100,7 +109,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
         }
         currentAdmin={authUser}
         onClose={() => setSelectedUserId(null)}
-        onChanged={refreshUsers}
+        onChanged={handleUserChanged}
         onImpersonate={onImpersonate}
       />
     </ConsoleShell>
