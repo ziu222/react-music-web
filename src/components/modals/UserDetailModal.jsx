@@ -139,15 +139,16 @@ export default function UserDetailModal({
 
   const isSelf = user.email === currentAdmin?.email;
 
-  const approveUpgrade = () => {
+  const approveUpgrade = async () => {
     resolveUpgradeRequest(user.email, true);
-    setUserOverride(user.email, { role: "artist" }).catch(() => {});
+    onChanged({ email: user.email, patch: { role: "artist" } }); // optimistic
     logAdminAction(currentAdmin, "approve_artist_signup", user.name, `→ ${upgradeReq?.artistName}`);
     const notif = createNotification("system", "Chúc mừng! Bạn đã trở thành Nghệ sĩ 🎉",
       `Tài khoản Nghệ sĩ "${upgradeReq?.artistName}" đã được kích hoạt. Đăng nhập lại để dùng Melodies Studio.`);
     saveNotifications(user.email, [notif, ...loadNotifications(user.email)]);
     setUpgradeReq(null);
-    onChanged();
+    await setUserOverride(user.email, { role: "artist" });
+    onChanged(); // reconcile sau commit
   };
 
   const sendInfoRequest = () => {
@@ -187,10 +188,11 @@ export default function UserDetailModal({
   const roleChip = ROLE_CHIPS[user.role] ?? ROLE_CHIPS.listener;
   const stats = listenerStats.find((s) => s.userId === user.id);
 
-  const act = (action, patch, detail) => {
-    setUserOverride(user.email, patch).catch(() => {});
+  const act = async (action, patch, detail) => {
+    onChanged({ email: user.email, patch }); // optimistic update tức thì (không refetch)
     logAdminAction(currentAdmin, action, user.name, detail);
-    onChanged();
+    await setUserOverride(user.email, patch); // chờ DB commit
+    onChanged(); // reconcile: refetch sau khi đã commit → không race
   };
 
   const dangerBtn = {

@@ -78,11 +78,13 @@ export function MiniBars({ items = [], color = ACCENT }) {
           </div>
           <div style={{ flex: 1, height: 10, background: "var(--overlay-1, rgba(255,255,255,0.07))", borderRadius: 9999, overflow: "hidden" }}>
             <div
+              className="bar-grow"
               style={{
                 width: `${(it.value / max) * 100}%`,
                 height: "100%",
                 background: it.highlight ? color : "var(--overlay-2, rgba(255,255,255,0.18))",
                 borderRadius: 9999,
+                animationDelay: `${i * 50}ms`,
               }}
             />
           </div>

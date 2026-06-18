@@ -49,10 +49,12 @@ export default function ReportButton({ song, visible }) {
       {open && (
         <>
           <div
+            className="overlay-fade-in"
             onClick={(e) => { e.stopPropagation(); setOpen(false); }}
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300 }}
           />
           <div
+            className="modal-pop-in"
             onClick={(e) => e.stopPropagation()}
             style={{
               position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",

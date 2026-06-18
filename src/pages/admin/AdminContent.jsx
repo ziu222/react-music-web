@@ -236,9 +236,10 @@ export default function AdminContent({ songs, authUser }) {
             gap: 16,
           }}
         >
-          {albumGroups.map((al) => (
+          {albumGroups.map((al, i) => (
             <div
               key={al.album}
+              className="hover-lift card-rise-in"
               onClick={() => { setAlbumFilter(al.album); setViewMode("songs"); setPage(0); clearSel(); }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--overlay-1)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card, #181818)"; }}
@@ -248,7 +249,7 @@ export default function AdminContent({ songs, authUser }) {
                 borderRadius: 10,
                 padding: 12,
                 cursor: "pointer",
-                transition: "background 0.12s",
+                animationDelay: `${Math.min(i, 12) * 35}ms`,
               }}
             >
               <div style={{ width: "100%", aspectRatio: "1", borderRadius: 8, background: al.bg, overflow: "hidden", marginBottom: 10 }}>
@@ -273,6 +274,7 @@ export default function AdminContent({ songs, authUser }) {
 
       {viewMode === "songs" && selected.size > 0 && (
         <div
+          className="slide-down-in"
           style={{
             display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
             background: "var(--overlay-1)", border: "1px solid var(--border)",

@@ -50,7 +50,9 @@ export async function setUserOverride(email, patch) {
     if (patch.suspended  !== undefined) dbPatch.suspended  = patch.suspended;
 
     if (Object.keys(dbPatch).length) {
-      supabase.from("users").update(dbPatch).eq("email", key).then().catch(() => {});
+      // Await để caller biết khi nào write commit → refetch sau đó không bị race
+      const { error } = await supabase.from("users").update(dbPatch).eq("email", key);
+      if (error) console.error("[setUserOverride] cập nhật users thất bại:", error.message);
     }
   }
 
