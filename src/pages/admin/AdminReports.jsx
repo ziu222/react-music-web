@@ -96,8 +96,8 @@ export default function AdminReports({ authUser }) {
 
       {noteTarget && (
         <>
-          <div onClick={() => setNoteTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1100 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+          <div className="overlay-fade-in" onClick={() => setNoteTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1100 }} />
+          <div className="modal-pop-in" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
             width: 340, background: "var(--island-menu)", borderRadius: 10, padding: 22,
             zIndex: 1101, boxShadow: "var(--shadow-modal)", boxSizing: "border-box" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--island-text)", marginBottom: 12 }}>

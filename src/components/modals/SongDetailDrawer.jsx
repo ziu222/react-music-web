@@ -94,8 +94,9 @@ export default function SongDetailDrawer({
 
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1200 }} />
+      <div className="overlay-fade-in" onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1200 }} />
       <div
+        className="drawer-panel-in"
         style={{
           position: "fixed",
           top: 0,

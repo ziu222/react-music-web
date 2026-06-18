@@ -250,6 +250,38 @@ body {
   animation: consoleTabIn 0.28s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
+/* ── Admin motion: drawer, modal, bulk bar, cards, charts ─────────── */
+@keyframes drawerSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.drawer-panel-in { animation: drawerSlideIn 0.32s cubic-bezier(0.2, 0, 0, 1) both; }
+
+.overlay-fade-in { animation: fadeIn 0.25s ease both; }
+
+@keyframes modalPopIn {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.94); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.modal-pop-in { animation: modalPopIn 0.3s cubic-bezier(0.2, 0, 0, 1) both; }
+
+@keyframes slideDownIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.slide-down-in { animation: slideDownIn 0.22s cubic-bezier(0.2, 0, 0, 1) both; }
+
+@keyframes cardRiseIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-rise-in { animation: cardRiseIn 0.34s cubic-bezier(0.2, 0, 0, 1) both; }
+
+/* Hover lift cho card (album, stat) — transform + brighten */
+.hover-lift { transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1), background 0.16s ease; }
+.hover-lift:hover { transform: translateY(-3px); }
+
+/* Bar mọc cho MiniBars (chart reveal) */
+@keyframes barGrow { from { transform: scaleX(0.04); } to { transform: scaleX(1); } }
+.bar-grow { transform-origin: left center; animation: barGrow 0.5s cubic-bezier(0.2, 0, 0, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-panel-in, .overlay-fade-in, .modal-pop-in,
+  .slide-down-in, .card-rise-in, .bar-grow { animation: none !important; }
+  .hover-lift:hover { transform: none; }
+}
+
 /* Hero dẫn đầu choreography — vào trước, đổ bóng theo sau */
 @keyframes studioHeroIn {
   from { opacity: 0; transform: translateY(16px); }
