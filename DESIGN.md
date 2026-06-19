@@ -371,6 +371,7 @@ Use subtle product animations:
 - Sidebar width transition: 220-280ms cubic-bezier.
 - Active filter pill: left/width transition around 180ms.
 - View switcher indicator: transform 180-220ms.
+- Discovery SongCard hover: coral glow ring added to base shadow — `0 0 0 6px color-mix(in srgb, #f97316 22%, transparent)`; transition `box-shadow 150ms, background 150ms, transform 200ms`. Coral only — do not tint the green/white play buttons. Respect `prefers-reduced-motion`.
 
 Avoid:
 
@@ -378,6 +379,48 @@ Avoid:
 - Marketing-style reveal animations.
 - Layout-shifting hover states.
 - Long transitions over 300ms for common controls.
+
+## Plan Badges & SongCard
+
+Plan badge chip (navbar + profile):
+
+- Shared chip sizing: `fontSize: 9`, `fontWeight: 800`, uppercase, `letterSpacing: 0.5`, `borderRadius: 9999`, `padding: "2px 8px"`.
+- Premium: gradient `linear-gradient(90deg, ${C[600]}, ${G[500]})` (token `--grad-premium` if available), white text, crown icon.
+- Free: `var(--overlay-2)` background, `var(--text-mid)` text, no crown, no border.
+- Keep existing Vietnamese copy (`Premium` / `Free`).
+
+Discovery SongCard (`Card.jsx`):
+
+- Title may wrap to **2 lines** then ellipsis (`-webkit-box` + `WebkitLineClamp: 2`, `lineHeight: 1.4`, reserve `minHeight: calc(13px * 1.4 * 2)` to avoid layout shift). Keep `fontSize: 13`, `fontWeight: 600`.
+- Artist subtitle stays single-line ellipsis. `TrackRow` is unchanged.
+
+## Component Architecture
+
+### Primitives (`src/components/primitives/`)
+UI atoms with CSS Modules — no logic, no data fetching.
+
+- **Badge** — chip with `variant="premium"` (gradient) or `variant="free"` (neutral flat).
+- **PlanBadge** — wraps Badge with a `premium` boolean. Premium shows crown icon + gradient; Free is plain neutral chip with no crown, no border, no gradient.
+- **PlayButton** — circular play/pause button. `variant="coral"` default. Hover adds `--glow-coral-play` ring. `tabIndex=-1` by default (overlay role inside a focusable card).
+
+### Music Components (`src/components/music/`)
+Domain components for music content.
+
+- **SongCard** — discovery shelf card. Uses `PlayButton` internally. Title clamps 2 lines.
+- **TrackRow** / **TrackList** — dense list view. Single-line title only — do NOT apply 2-line clamp to rows.
+
+### Layout Helpers (`src/components/layout/`)
+Shell/structure — no music domain knowledge.
+
+- **HorizontalShelf** — scrollable row with arrow buttons. Relies on `.hscroll` + `.hs-arrow` global utilities.
+
+### Component Rules
+- **Plan badge** is the only gradient UI element across the app.
+- **Free badge**: neutral `var(--overlay-2)` bg, `var(--text-mid)` text, no crown, no border.
+- **SongCard title** clamps to 2 lines then ellipsis (`-webkit-line-clamp: 2`, `lineHeight 1.4`, `minHeight` reserves 2 lines to prevent layout shift).
+- **TrackRow title** stays single-line ellipsis — do not apply 2-line clamp to list views.
+- **Coral PlayButton** hover adds `--glow-coral-play` ring. Green/white play buttons (player bar) are unchanged.
+- **Inline styles** only for dynamic values (width prop, playing-state color, `song.bg` fallback). Static visual style belongs in the CSS Module.
 
 ## Scrollbar Rules
 

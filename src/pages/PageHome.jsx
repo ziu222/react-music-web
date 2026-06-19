@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronLeft, faChevronRight, faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
-import Card from "../components/ui/Card";
+import { faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
+import SongCard from "../components/music/SongCard";
+import HorizontalShelf from "../components/layout/HorizontalShelf";
 import { getSongImage, artistImages, getPrimaryArtist } from "../data/media";
 
 const ARTIST_COLORS = [
@@ -31,78 +32,6 @@ function getGreeting() {
   return "Chào buổi tối";
 }
 
-/* ── shared layout helpers ─────────────────────────────────────── */
-function HScroll({ children }) {
-  const ref = useRef(null);
-  const [hov, setHov] = useState(false);
-  const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(false);
-
-  const update = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    setCanLeft(el.scrollLeft > 4);
-    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  }, []);
-
-  useEffect(() => {
-    update();
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [update, children]);
-
-  const nudge = (dir) => {
-    const el = ref.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * Math.max(el.clientWidth - 140, 240), behavior: "smooth" });
-  };
-
-  return (
-    <div
-      style={{ position: "relative" }}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-    >
-      <div
-        ref={ref}
-        className="hscroll"
-        onScroll={update}
-        style={{
-          display: "flex",
-          gap: 16,
-          overflowX: "auto",
-          padding: "4px 0 8px",
-          scrollbarWidth: "none",
-          scrollSnapType: "x proximity",
-          WebkitOverflowScrolling: "touch",
-        }}
-      >
-        {children}
-      </div>
-      <button
-        type="button"
-        aria-label="Cuộn sang trái"
-        onClick={() => nudge(-1)}
-        className={`hs-arrow${hov && canLeft ? " is-visible" : ""}`}
-        style={{ left: 6 }}
-      >
-        <FontAwesomeIcon icon={faChevronLeft} style={{ fontSize: 12 }} />
-      </button>
-      <button
-        type="button"
-        aria-label="Cuộn sang phải"
-        onClick={() => nudge(1)}
-        className={`hs-arrow${hov && canRight ? " is-visible" : ""}`}
-        style={{ right: 6 }}
-      >
-        <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: 12 }} />
-      </button>
-    </div>
-  );
-}
 
 function SectionHeader({ title }) {
   const [hov, setHov] = useState(false);
@@ -555,22 +484,22 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
       {/* Những bài hát thịnh hành */}
       <section className="home-section" style={{ "--stagger": stagger++, marginBottom: 44 }}>
         <SectionHeader title="Những bài hát thịnh hành" />
-        <HScroll>
+        <HorizontalShelf>
           {trending.map(s => (
-            <Card key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+            <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
           ))}
-        </HScroll>
+        </HorizontalShelf>
       </section>
 
       {/* Được tạo cho bạn */}
       {madeForYou.length > 0 && (
         <section className="home-section" style={{ "--stagger": stagger++, marginBottom: 44 }}>
           <SectionHeader title="Được tạo cho bạn" />
-          <HScroll>
+          <HorizontalShelf>
             {madeForYou.map(s => (
-              <Card key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+              <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
             ))}
-          </HScroll>
+          </HorizontalShelf>
         </section>
       )}
 
@@ -578,11 +507,11 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
       {usuk.length > 0 && (
         <section className="home-section" style={{ "--stagger": stagger++, marginBottom: 44 }}>
           <SectionHeader title="Top US-UK" />
-          <HScroll>
+          <HorizontalShelf>
             {usuk.map(s => (
-              <Card key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+              <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
             ))}
-          </HScroll>
+          </HorizontalShelf>
         </section>
       )}
 
@@ -590,11 +519,11 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
       {vpop.length > 0 && (
         <section className="home-section" style={{ "--stagger": stagger++, marginBottom: 44 }}>
           <SectionHeader title="V-Pop nổi bật" />
-          <HScroll>
+          <HorizontalShelf>
             {vpop.map(s => (
-              <Card key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+              <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
             ))}
-          </HScroll>
+          </HorizontalShelf>
         </section>
       )}
 
@@ -602,11 +531,11 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
       {newAlbums.length > 0 && (
         <section className="home-section" style={{ "--stagger": stagger++, marginBottom: 44 }}>
           <SectionHeader title="Album mới" />
-          <HScroll>
+          <HorizontalShelf>
             {newAlbums.map(al => (
               <AlbumCard key={al.album} album={al} cur={cur} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
             ))}
-          </HScroll>
+          </HorizontalShelf>
         </section>
       )}
 
@@ -614,32 +543,32 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
       {albums.length > 0 && (
         <section className="home-section" style={{ "--stagger": stagger++, marginBottom: 44 }}>
           <SectionHeader title="Album phổ biến" />
-          <HScroll>
+          <HorizontalShelf>
             {albums.map(al => (
               <AlbumCard key={al.album} album={al} cur={cur} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
             ))}
-          </HScroll>
+          </HorizontalShelf>
         </section>
       )}
 
       {/* Nghệ sĩ phổ biến */}
       <section className="home-section" style={{ "--stagger": stagger++, marginBottom: 44 }}>
         <SectionHeader title="Nghệ sĩ phổ biến" />
-        <HScroll>
+        <HorizontalShelf>
           {artists.map(a => (
             <ArtistCard key={a.name} artist={a} cur={cur} onPlay={onPlay} onOpenArtist={onOpenArtist} />
           ))}
-        </HScroll>
+        </HorizontalShelf>
       </section>
 
       {/* Nghe gần đây */}
       <section className="home-section" style={{ "--stagger": stagger }}>
         <SectionHeader title={recentIds.length > 0 ? "Nghe gần đây" : "Đề xuất cho bạn"} />
-        <HScroll>
+        <HorizontalShelf>
           {recentSongs.map(s => (
-            <Card key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+            <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
           ))}
-        </HScroll>
+        </HorizontalShelf>
       </section>
     </div>
   );

@@ -70,7 +70,3 @@ public/audio/
 /playwright-report/
 /test-results/
 
-# Markdown docs generated during local work
-*.md
-!README.md
-!**/README.md
