@@ -14,6 +14,7 @@ export default function Card({ song, cur, onPlay, width }) {
     <div
       role="button"
       tabIndex={0}
+      className="discovery-card"
       aria-label={`Phát ${song.title} – ${song.artist}`}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -32,8 +33,10 @@ export default function Card({ song, cur, onPlay, width }) {
         borderRadius: 10,
         padding: 14,
         cursor: "pointer",
-        transition: "background 0.25s cubic-bezier(0.2, 0, 0, 1), border-color 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1)",
-        boxShadow: hov ? "var(--shadow-card-hover)" : "var(--shadow-card)",
+        transition: "box-shadow 150ms cubic-bezier(0.2, 0, 0, 1), background 150ms cubic-bezier(0.2, 0, 0, 1), transform 200ms cubic-bezier(0.2, 0, 0, 1)",
+        boxShadow: hov
+          ? "var(--shadow-card-hover), 0 0 0 6px color-mix(in srgb, #f97316 22%, transparent)"
+          : "var(--shadow-card)",
         scrollSnapAlign: "start",
       }}
     >
@@ -108,15 +111,18 @@ export default function Card({ song, cur, onPlay, width }) {
         )}
       </div>
 
-      {/* Title */}
+      {/* Title — 2 dòng rồi ellipsis */}
       <div
         style={{
           fontSize: 13,
           fontWeight: 600,
           color: playing ? C[400] : "var(--text-primary)",
-          whiteSpace: "nowrap",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
           overflow: "hidden",
-          textOverflow: "ellipsis",
+          lineHeight: 1.4,
+          minHeight: "calc(13px * 1.4 * 2)",
           marginBottom: 4,
           letterSpacing: -0.1,
         }}

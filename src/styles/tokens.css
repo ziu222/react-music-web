@@ -1,0 +1,134 @@
+@theme {
+  --color-coral-400: #fb923c;
+  --color-coral-500: #f97316;
+  --color-coral-600: #ea580c;
+  --color-coral-700: #c2410c;
+  --color-coral-900: #7c2d12;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+  --color-gold-600: #d97706;
+  --color-rose-400: #fb7185;
+  --color-surface-base: #0f0c0c;
+  --color-surface-card: #181818;
+  --color-surface-el: #1f1f1f;
+  --font-sans: "Be Vietnam Pro", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ── Theme-independent tokens (shared across dark/light) ─────────── */
+:root {
+  --grad-premium: linear-gradient(90deg, #ea580c, #f59e0b);
+  --shadow-play: rgba(0, 0, 0, 0.5) 0 8px 16px;
+  --glow-coral-play: 0 0 0 6px color-mix(in srgb, #f97316 22%, transparent);
+  --transition-fast: 150ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-standard: 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ── Dark theme (default) ────────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg-base: #0f0c0c;
+  --bg-card: #181818;
+  --bg-el: #1f1f1f;
+  --bg-menu: #282828;
+  --text-primary: #ede5dd;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --text-tertiary: rgba(255, 255, 255, 0.3);
+  --text-strong: rgba(255, 255, 255, 0.92);
+  --text-mid: rgba(255, 255, 255, 0.7);
+  --overlay-1: rgba(255, 255, 255, 0.07);
+  --overlay-2: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow-card: rgba(0, 0, 0, 0.28) 0px 8px 24px;
+  --shadow-card-hover: rgba(0, 0, 0, 0.38) 0px 12px 30px;
+  --shadow-cover: rgba(0, 0, 0, 0.4) 0px 8px 24px;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.18);
+  --shadow-modal: rgba(0, 0, 0, 0.72) 0px 24px 64px;
+  --shadow-menu: rgba(0, 0, 0, 0.65) 0px 18px 48px;
+  --island-bg: #181818;
+  --island-bg-soft: #202020;
+  --island-menu: #282828;
+  --island-border: rgba(255, 255, 255, 0.08);
+  --island-text: #f4eee8;
+  --island-muted: rgba(255, 255, 255, 0.64);
+  --island-faint: rgba(255, 255, 255, 0.42);
+  --island-hover: rgba(255, 255, 255, 0.08);
+  --island-rail: rgba(255, 255, 255, 0.16);
+  --island-fill: rgba(255, 255, 255, 0.72);
+  --island-shadow: 0 -10px 28px rgba(0, 0, 0, 0.32);
+  --scrim: rgba(0, 0, 0, 0.72);
+  color-scheme: dark;
+}
+
+/* ── Light theme ─────────────────────────────────────────────────── */
+:root[data-theme="light"],
+[data-theme="light"] {
+  --bg-base: #fcf9f5;
+  --bg-card: #f6f3ef;
+  --bg-el: #f0ede9;
+  --bg-menu: #ffffff;
+  --text-primary: #1c1c1a;
+  --text-secondary: #584237;
+  --text-tertiary: #8c7164;
+  --text-strong: #141210;
+  --text-mid: #41332a;
+  --overlay-1: rgba(26, 22, 20, 0.05);
+  --overlay-2: rgba(26, 22, 20, 0.1);
+  --border: rgba(26, 22, 20, 0.12);
+  --shadow-card: rgba(26, 22, 20, 0.08) 0px 5px 18px;
+  --shadow-card-hover: rgba(26, 22, 20, 0.14) 0px 10px 26px;
+  --shadow-cover: rgba(26, 22, 20, 0.16) 0px 8px 20px;
+  --scrollbar-thumb: rgba(88, 66, 55, 0.28);
+  --shadow-modal: rgba(26, 22, 20, 0.18) 0px 18px 48px;
+  --shadow-menu: rgba(26, 22, 20, 0.14) 0px 12px 32px;
+  --island-bg: #171412;
+  --island-bg-soft: #201a16;
+  --island-menu: #261f1a;
+  --island-border: rgba(252, 249, 245, 0.11);
+  --island-text: #fff7ef;
+  --island-muted: rgba(252, 249, 245, 0.68);
+  --island-faint: rgba(252, 249, 245, 0.46);
+  --island-hover: rgba(252, 249, 245, 0.09);
+  --island-rail: rgba(252, 249, 245, 0.18);
+  --island-fill: rgba(252, 249, 245, 0.78);
+  --island-shadow: 0 -8px 22px rgba(26, 22, 20, 0.24);
+  --scrim: rgba(26, 22, 20, 0.52);
+  color-scheme: light;
+}
+
+/* ── System auto (follows OS preference) ─────────────────────────── */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"],
+  [data-theme="system"] {
+    --bg-base: #fcf9f5;
+    --bg-card: #f6f3ef;
+    --bg-el: #f0ede9;
+    --bg-menu: #ffffff;
+    --text-primary: #1c1c1a;
+    --text-secondary: #584237;
+    --text-tertiary: #8c7164;
+    --text-strong: #141210;
+    --text-mid: #41332a;
+    --overlay-1: rgba(26, 22, 20, 0.05);
+    --overlay-2: rgba(26, 22, 20, 0.1);
+    --border: rgba(26, 22, 20, 0.12);
+    --shadow-card: rgba(26, 22, 20, 0.08) 0px 5px 18px;
+    --shadow-card-hover: rgba(26, 22, 20, 0.14) 0px 10px 26px;
+    --shadow-cover: rgba(26, 22, 20, 0.16) 0px 8px 20px;
+    --scrollbar-thumb: rgba(88, 66, 55, 0.28);
+    --shadow-modal: rgba(26, 22, 20, 0.18) 0px 18px 48px;
+    --shadow-menu: rgba(26, 22, 20, 0.14) 0px 12px 32px;
+    --island-bg: #171412;
+    --island-bg-soft: #201a16;
+    --island-menu: #261f1a;
+    --island-border: rgba(252, 249, 245, 0.11);
+    --island-text: #fff7ef;
+    --island-muted: rgba(252, 249, 245, 0.68);
+    --island-faint: rgba(252, 249, 245, 0.46);
+    --island-hover: rgba(252, 249, 245, 0.09);
+    --island-rail: rgba(252, 249, 245, 0.18);
+    --island-fill: rgba(252, 249, 245, 0.78);
+    --island-shadow: 0 -8px 22px rgba(26, 22, 20, 0.24);
+    --scrim: rgba(26, 22, 20, 0.52);
+    color-scheme: light;
+  }
+}

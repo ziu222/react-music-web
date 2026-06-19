@@ -184,16 +184,18 @@ export default function PageProfile({
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 5,
+                  gap: 4,
                   borderRadius: 9999,
-                  padding: "3px 12px",
-                  fontSize: 11,
-                  fontWeight: 700,
+                  padding: "2px 8px",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
                   background: `linear-gradient(90deg, ${C[600]}, ${G[500]})`,
                   color: "#fff",
                 }}
               >
-                <FontAwesomeIcon icon={faCrown} style={{ fontSize: 10 }} />
+                <FontAwesomeIcon icon={faCrown} style={{ fontSize: 8 }} />
                 Premium
               </span>
             ) : (
@@ -202,11 +204,13 @@ export default function PageProfile({
                   display: "inline-flex",
                   alignItems: "center",
                   borderRadius: 9999,
-                  padding: "3px 12px",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  border: `1px solid ${BORDER}`,
-                  color: TEXT.secondary,
+                  padding: "2px 8px",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
+                  background: "var(--overlay-2)",
+                  color: "var(--text-mid)",
                 }}
               >
                 Free

@@ -39,6 +39,12 @@ Thumbs.db
 # Local dev tooling — not for source control
 .agents/
 design-system/
+# Generated design / Stitch artifact folders
+/design/
+/designs/
+/design-stitch/
+/designs-stitch/
+/designs_stitch/
 skills-lock.json
 master.md
 *.claude
@@ -63,3 +69,8 @@ public/audio/
 /e2e/
 /playwright-report/
 /test-results/
+
+# Markdown docs generated during local work
+*.md
+!README.md
+!**/README.md

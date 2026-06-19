@@ -1,0 +1,133 @@
+/* ── Keyframes ───────────────────────────────────────────────────── */
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes orbit   { to { transform: rotate(360deg); } }
+@keyframes pulse   { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+@keyframes authModalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);     }
+}
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+@keyframes popoverInCenter {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
+}
+@keyframes badgePop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1);   }
+}
+@keyframes eq1 { 0% { height: 4px;  } 100% { height: 14px; } }
+@keyframes eq2 { 0% { height: 4px;  } 100% { height: 20px; } }
+@keyframes eq3 { 0% { height: 4px;  } 100% { height: 10px; } }
+@keyframes eq4 { 0% { height: 4px;  } 100% { height: 17px; } }
+
+@keyframes sectionIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes studioCardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes studioBarGrow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes slideDownIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes barGrow {
+  from { transform: scaleX(0.04); }
+  to   { transform: scaleX(1); }
+}
+@keyframes studioHeroIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes studioPopIn {
+  0%   { opacity: 0; transform: scale(0.82); }
+  70%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes heroBreathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.78; }
+}
+@keyframes player-btn-press {
+  0%   { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+@keyframes lyrics-panel-content-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes lyrics-panel-skeleton {
+  0%   { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+/* ── Animation classes ───────────────────────────────────────────── */
+.save-popover { animation: popoverIn 160ms cubic-bezier(0.2, 0, 0, 1) both; }
+.save-popover.is-centered { animation-name: popoverInCenter; }
+
+.home-section {
+  animation: sectionIn 0.55s cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 70ms);
+}
+
+.studio-card {
+  animation: studioCardIn 0.45s cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 60ms);
+}
+.studio-bar {
+  transform-origin: bottom;
+  animation: studioBarGrow 0.5s cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 22ms);
+}
+.studio-hero         { animation: studioHeroIn  0.5s  cubic-bezier(0.05, 0.7, 0.1, 1) both; }
+.studio-pop          { animation: studioPopIn   0.42s cubic-bezier(0.2, 0, 0, 1)      both; }
+.studio-fade-late    { animation: fadeIn         0.45s ease                            both; }
+.studio-hero-ambient { animation: heroBreathe    7s    ease-in-out                     infinite; }
+
+.studio-card-icon { transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1); }
+.studio-card:hover .studio-card-icon { transform: scale(1.1) rotate(-3deg); }
+
+.slide-down-in { animation: slideDownIn 0.22s cubic-bezier(0.2, 0, 0, 1) both; }
+.bar-grow      { transform-origin: left center; animation: barGrow 0.5s cubic-bezier(0.2, 0, 0, 1) both; }
+
+.player-btn-press { animation: player-btn-press 160ms cubic-bezier(0.2, 0, 0, 1) forwards; }
+
+/* ── Reduced-motion guard (consolidated) ────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .notif-badge,
+  .save-popover,
+  .home-section,
+  .slide-down-in,
+  .bar-grow,
+  .studio-card,
+  .studio-bar,
+  .console-tab-content,
+  .studio-hero,
+  .studio-pop,
+  .studio-fade-late,
+  .studio-hero-ambient,
+  .player-btn-press { animation: none !important; }
+
+  .hs-arrow,
+  .card-play-btn,
+  .discovery-card,
+  .studio-card-icon { transition: none !important; }
+
+  .hscroll { scroll-behavior: auto; }
+  * { scroll-behavior: auto !important; }
+}

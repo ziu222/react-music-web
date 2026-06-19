@@ -68,7 +68,7 @@ function PlanChip({ premium }) {
         textTransform: "uppercase",
         flexShrink: 0,
         background: premium ? `linear-gradient(90deg, ${C[600]}, ${G[500]})` : "var(--overlay-2)",
-        color: premium ? "#fff" : "var(--text-secondary)",
+        color: premium ? "#fff" : "var(--text-mid)",
       }}
     >
       {premium && <FontAwesomeIcon icon={faCrown} style={{ fontSize: 8 }} />}
