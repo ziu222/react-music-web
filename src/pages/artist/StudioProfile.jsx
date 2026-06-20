@@ -43,12 +43,16 @@ const inputStyle = {
 };
 
 export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) {
-  const [profile, setProfile] = useState(() => loadArtistProfile(authUser?.email ?? ""));
+  const [profile, setProfile] = useState(null);
+  useEffect(() => {
+    loadArtistProfile(authUser?.email ?? "").then(setProfile);
+  }, [authUser?.email]);
   const [dirty, setDirty] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const avatarInputRef = useRef(null);
 
   const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
+  if (!profile) return null;
   const themeColor = profile.themeColor || authUser?.color || C[500];
   const stageName = profile.displayName?.trim() || authUser?.name;
 
@@ -67,7 +71,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) 
       alive = false;
       revokeMediaBlobUrl(url);
     };
-  }, [profile.avatarBlobId]);
+  }, [profile?.avatarBlobId]);
 
   const update = (patch) => {
     setProfile((p) => ({ ...p, ...patch }));
@@ -76,7 +80,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) 
 
   // Ảnh đại diện áp dụng ngay (như platform thật), không cần bấm Lưu
   const changeAvatar = async (file) => {
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file || !file.type.startsWith("image/") || !profile) return;
     const oldId = profile.avatarBlobId;
     const meta = await saveMediaBlob(file, "avatar");
     const next = { ...profile, avatarBlobId: meta.id };
@@ -87,6 +91,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) 
   };
 
   const removeAvatar = async () => {
+    if (!profile) return;
     if (profile.avatarBlobId) deleteMediaBlob(profile.avatarBlobId);
     const next = { ...profile, avatarBlobId: null };
     setProfile(next);
@@ -95,6 +100,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) 
   };
 
   const toggleGenre = (g) => {
+    if (!profile) return;
     update({
       genres: profile.genres.includes(g)
         ? profile.genres.filter((x) => x !== g)
@@ -103,7 +109,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) 
   };
 
   const save = () => {
-    saveArtistProfile(authUser.email, profile);
+    if (profile) saveArtistProfile(authUser.email, profile);
     setDirty(false);
     onSaved();
   };
