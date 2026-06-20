@@ -32,7 +32,7 @@ import { applySongOverrides } from "./lib/music/songOverrides";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
 import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
-import { loadLikedIdsLocal, saveLikedIdsLocal, saveLibraryToSupabase } from "./lib/supabase/librarySync";
+import { saveLibraryToSupabase } from "./lib/supabase/librarySync";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -69,7 +69,7 @@ export default function App() {
   const [shuffleQueue, setShuffleQueue] = useState([]);
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
-  const [likedIds, setLikedIds] = useState(() => new Set(loadLikedIdsLocal()));
+  const [likedIds, setLikedIds] = useState(() => new Set());
   const [catalogSongs, setCatalogSongs] = useState([]);
   const [catalogStatus, setCatalogStatus] = useState("loading");
   const catalogRequestRef = useRef(0);
@@ -160,7 +160,6 @@ export default function App() {
   }, [userPlaylists]);
 
   useEffect(() => {
-    saveLikedIdsLocal(likedIds);
     if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [likedIds]);
@@ -209,7 +208,8 @@ export default function App() {
       .then((library) => {
         if (!library) return;
         if (Array.isArray(library.liked_ids) && library.liked_ids.length > 0) {
-          setLikedIds(new Set(library.liked_ids));
+          // Merge: giữ lại likes user đã click trong lúc chờ sync
+          setLikedIds(prev => new Set([...library.liked_ids, ...prev]));
         }
         if (Array.isArray(library.playlists) && library.playlists.length > 0) {
           setUserPlaylists(prev => {

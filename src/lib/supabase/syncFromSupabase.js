@@ -2,7 +2,7 @@ import { syncPlayCountsFromSupabase } from "../music/playLog";
 import { syncFollowsFromSupabase } from "../social/followerIndex";
 import { syncUpgradeRequestsFromSupabase } from "../artist/upgradeRequests";
 import { syncNotificationsFromSupabase } from "../social/notifications";
-import { loadLibraryFromSupabase, saveLikedIdsLocal } from "./librarySync";
+import { loadLibraryFromSupabase } from "./librarySync";
 
 export async function syncFromSupabase(userEmail) {
   const [library] = await Promise.allSettled([
