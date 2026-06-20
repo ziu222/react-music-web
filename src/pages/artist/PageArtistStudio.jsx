@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   faMicrophone,
   faChartPie,
@@ -29,10 +29,10 @@ export default function PageArtistStudio({ authUser, onExit }) {
   const [profileVersion, setProfileVersion] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState(null);
 
-  const profile = useMemo(
-    () => loadArtistProfile(authUser?.email ?? ""),
-    [authUser?.email, profileVersion]
-  );
+  const [profile, setProfile] = useState(null);
+  useEffect(() => {
+    if (authUser?.email) loadArtistProfile(authUser.email).then(setProfile);
+  }, [authUser?.email, profileVersion]);
 
   useEffect(() => {
     let alive = true;
@@ -49,18 +49,18 @@ export default function PageArtistStudio({ authUser, onExit }) {
       alive = false;
       revokeMediaBlobUrl(url);
     };
-  }, [profile.avatarBlobId]);
+  }, [profile?.avatarBlobId]);
 
   // Nhận dạng nghệ sĩ (nghệ danh + ảnh + màu chủ đề) áp toàn studio
   const studioUser = useMemo(
     () =>
       authUser && {
         ...authUser,
-        name: profile.displayName?.trim() || authUser.name,
-        color: profile.themeColor || authUser.color,
+        name: profile?.displayName?.trim() || authUser.name,
+        color: profile?.themeColor || authUser.color,
         avatarUrl,
       },
-    [authUser, profile.displayName, profile.themeColor, avatarUrl]
+    [authUser, profile?.displayName, profile?.themeColor, avatarUrl]
   );
 
   const mySubs = subs.filter(
