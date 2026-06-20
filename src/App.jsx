@@ -12,6 +12,7 @@ import AuthGateModal from "./components/modals/AuthGateModal";
 import NavbarUserActions from "./components/nav/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
 import ArtistUpgradeModal from "./components/modals/ArtistUpgradeModal";
+import ModalSkeleton from "./components/ui/skeleton/ModalSkeleton";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/modals/PremiumModal"));
@@ -71,20 +72,40 @@ export default function App() {
   const [likedIds, setLikedIds] = useState(() => new Set(loadLikedIdsLocal()));
   const [catalogSongs, setCatalogSongs] = useState([]);
   const [catalogStatus, setCatalogStatus] = useState("loading");
-  useEffect(() => {
-    fetchSongsFromSupabase()
-      .then(songs => { setCatalogSongs(songs); setCatalogStatus("success"); })
-      .catch(() => setCatalogStatus("error"));
+  const catalogRequestRef = useRef(0);
+  const loadCatalog = useCallback(() => {
+    const requestId = catalogRequestRef.current + 1;
+    catalogRequestRef.current = requestId;
+    return fetchSongsFromSupabase()
+      .then(songs => {
+        if (catalogRequestRef.current !== requestId) return;
+        setCatalogSongs(songs);
+        setCatalogStatus("success");
+      })
+      .catch(() => {
+        if (catalogRequestRef.current === requestId) setCatalogStatus("error");
+      });
   }, []);
+  const retryCatalog = () => {
+    setCatalogStatus("loading");
+    loadCatalog();
+  };
+
+  useEffect(() => {
+    loadCatalog();
+  }, [loadCatalog]);
 
   // Realtime: khi admin approve bài mới → refetch toàn catalog
   useEffect(() => {
     return subscribeToSongs(() => {
-      fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
+      setCatalogStatus("loading");
+      loadCatalog();
     });
-  }, []);
+  }, [loadCatalog]);
 
-  const showCatalogSkeleton = useDelayedVisible(catalogStatus === "loading");
+  const catalogPending = catalogStatus === "loading" && catalogSongs.length === 0;
+  const showCatalogSkeleton = useDelayedVisible(catalogPending);
+  const holdCatalogPlaceholder = catalogPending || showCatalogSkeleton;
 
   // Bài bị admin gỡ biến mất — tính lại khi rời màn admin
   const list = useMemo(() => {
@@ -1272,9 +1293,42 @@ export default function App() {
         {/* Main content */}
         <div
           style={{ flex: 1, overflowY: "auto", background: BG.base }}
-          aria-busy={showCatalogSkeleton}
-          aria-live="polite"
+          aria-busy={catalogStatus === "loading"}
         >
+          {catalogStatus === "error" && catalogSongs.length === 0 && (
+            <div
+              role="status"
+              style={{
+                margin: "12px 20px 0",
+                padding: "10px 14px",
+                border: `1px solid ${C[500]}55`,
+                borderRadius: 8,
+                background: `${C[500]}12`,
+                color: TEXT.secondary,
+                fontSize: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <span>Không thể tải danh mục nhạc.</span>
+              <button
+                type="button"
+                onClick={retryCatalog}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: C[400],
+                  font: "inherit",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
           {page === "home" && (
             <PageHome
               list={list}
@@ -1285,7 +1339,8 @@ export default function App() {
               recentIds={recentIds}
               onOpenAlbum={openAlbum}
               onOpenArtist={openArtist}
-              catalogLoading={showCatalogSkeleton}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
             />
           )}
           {page === "artist" && (
@@ -1300,7 +1355,8 @@ export default function App() {
               onOpenAlbum={openAlbum}
               isFollowed={selectedArtist ? followedArtists.has(selectedArtist) : false}
               onToggleFollow={() => toggleFollowArtistWithAuth(selectedArtist)}
-              catalogLoading={showCatalogSkeleton}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
             />
           )}
           {page === "album" && (
@@ -1316,7 +1372,8 @@ export default function App() {
               onOpenAlbum={openAlbum}
               isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
               onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
-              catalogLoading={showCatalogSkeleton}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
             />
           )}
           {page === "search" && (
@@ -1332,7 +1389,8 @@ export default function App() {
               onOpenArtist={openArtist}
               onOpenAlbum={openAlbum}
               onOpenPlaylist={openPlaylist}
-              catalogLoading={showCatalogSkeleton}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
             />
           )}
           {page === "library" && (
@@ -1355,7 +1413,6 @@ export default function App() {
               recentIds={recentIds}
               onOpenArtist={openArtist}
               onOpenAlbum={openAlbum}
-              catalogLoading={showCatalogSkeleton}
             />
           )}
           {page === "profile" && (
@@ -1368,7 +1425,6 @@ export default function App() {
               cur={cur}
               onOpenPremium={() => setPremiumOpen(true)}
               onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
-              catalogLoading={showCatalogSkeleton}
             />
           )}
         </div>
@@ -1471,7 +1527,7 @@ export default function App() {
       )}
 
       {premiumOpen && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <PremiumModal
             onClose={() => setPremiumOpen(false)}
             user={authUser}
@@ -1483,7 +1539,7 @@ export default function App() {
       )}
 
       {settingsOpen && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <SettingsModal
             user={authUser}
             isPremium={isPremium}
