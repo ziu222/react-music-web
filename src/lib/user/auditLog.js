@@ -1,8 +1,5 @@
 import { supabase } from "../supabase/supabase";
 
-const STORE_KEY = "melodies_audit_log";
-const MAX_ENTRIES = 200;
-
 export const ACTION_LABELS = {
   ban_user:     "Khóa tài khoản",
   unban_user:   "Mở khóa",
@@ -21,53 +18,49 @@ export const ACTION_LABELS = {
 
 let counter = 0;
 
-function readStore() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function fromRow(r) {
+  return {
+    id:         r.id,
+    time:       new Date(r.time).getTime(),
+    adminEmail: r.admin_email,
+    adminName:  r.admin_name,
+    action:     r.action,
+    target:     r.target ?? "",
+    detail:     r.detail ?? "",
+  };
 }
 
-function saveStore(list) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); }
-  catch { /* quota exceeded — non-critical */ }
-}
-
-function pushToSupabase(entry) {
-  if (!supabase) return;
-  supabase
+export async function loadAuditLog() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
     .from("admin_logs")
-    .insert({
-      id:          entry.id,
-      time:        entry.time,
-      admin_email: entry.adminEmail,
-      admin_name:  entry.adminName,
-      action:      entry.action,
-      target:      entry.target ?? "",
-      detail:      entry.detail ?? "",
-    })
-    .then()
-    .catch(() => {});
-}
-
-export function loadAuditLog() {
-  return readStore();
+    .select("*")
+    .order("time", { ascending: false })
+    .limit(200);
+  if (error) return [];
+  return (data || []).map(fromRow);
 }
 
 export function logAdminAction(admin, action, target, detail) {
   const entry = {
     id:         "log-" + Date.now() + "-" + counter++,
-    time:       Date.now(),
-    adminEmail: admin?.email ?? "system",
-    adminName:  admin?.name  ?? "Hệ thống",
+    time:       new Date().toISOString(),
+    admin_email: admin?.email ?? "system",
+    admin_name:  admin?.name  ?? "Hệ thống",
     action,
     target:     target ?? "",
     detail:     detail ?? "",
   };
-  saveStore([entry, ...readStore()].slice(0, MAX_ENTRIES));
-  pushToSupabase(entry);
-  return entry;
+  if (supabase) {
+    supabase.from("admin_logs").insert(entry).then().catch(() => {});
+  }
+  return {
+    id:         entry.id,
+    time:       Date.now(),
+    adminEmail: entry.admin_email,
+    adminName:  entry.admin_name,
+    action:     entry.action,
+    target:     entry.target,
+    detail:     entry.detail,
+  };
 }
