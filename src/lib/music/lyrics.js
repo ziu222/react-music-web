@@ -5,6 +5,9 @@ const MISS_TTL_MS = 1000 * 60 * 60 * 12;
 const LRCLIB_BASE_URL = "https://lrclib.net";
 const MIN_SYNC_CONFIDENCE = 0.82;
 const MAX_SYNC_DURATION_DIFF = 4;
+const REQUEST_TIMEOUT_MS = 8000;
+const memoryCache = new Map();
+const inFlightRequests = new Map();
 
 const EMPTY_LYRICS = {
   source: "none",
@@ -63,6 +66,37 @@ function isFresh(entry) {
   return Date.now() - entry.updatedAt < ttl;
 }
 
+function localLyricsForSong(song) {
+  const text = String(song?.lyricsText || "").trim();
+  if (!text) return null;
+
+  const syncedLines = parseSyncedLyrics(text);
+  return {
+    ...EMPTY_LYRICS,
+    trackId: song.id,
+    source: "catalog",
+    type: syncedLines.length > 0 ? "synced" : "plain",
+    syncedLines,
+    plainText: syncedLines.length > 0 ? "" : text,
+    confidence: 1,
+    updatedAt: Date.now(),
+  };
+}
+
+export function getCachedLyricsForSong(song) {
+  if (!song?.id) return null;
+  const local = localLyricsForSong(song);
+  if (local) return local;
+
+  const memoryEntry = memoryCache.get(song.id);
+  if (isFresh(memoryEntry)) return memoryEntry;
+
+  const storedEntry = readCache()[song.id];
+  if (!isFresh(storedEntry)) return null;
+  memoryCache.set(song.id, storedEntry);
+  return storedEntry;
+}
+
 export function normalizeLyricsQuery(value = "") {
   return String(value)
     .normalize("NFKD")
@@ -110,6 +144,18 @@ async function fetchJson(url, signal) {
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Lyrics request failed: ${response.status}`);
   return response.json();
+}
+
+function waitForRequest(request, signal) {
+  if (!signal) return request;
+  if (signal.aborted) return Promise.reject(new DOMException("Aborted", "AbortError"));
+
+  return Promise.race([
+    request,
+    new Promise((_, reject) => {
+      signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
+    }),
+  ]);
 }
 
 export function parseSyncedLyrics(lrc = "") {
@@ -217,20 +263,37 @@ async function findFromLrclib(song, signal) {
 export async function loadLyricsForSong(song, options = {}) {
   if (!song?.id) return { ...EMPTY_LYRICS, updatedAt: Date.now() };
 
-  const cache = readCache();
-  const cached = cache[song.id];
-  if (isFresh(cached)) return { ...cached, fromCache: true };
+  const cached = getCachedLyricsForSong(song);
+  if (cached) return { ...cached, fromCache: true };
 
-  let result;
-  try {
-    result = await findFromLrclib(song, options.signal);
-  } catch (err) {
-    if (err?.name === "AbortError") throw err;
-    result = null;
+  let request = inFlightRequests.get(song.id);
+  if (!request) {
+    request = (async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const result = await findFromLrclib(song, controller.signal);
+        const normalized = result ?? { ...EMPTY_LYRICS, trackId: song.id, updatedAt: Date.now() };
+        const cache = readCache();
+        cache[song.id] = normalized;
+        memoryCache.set(song.id, normalized);
+        writeCache(cache);
+        return normalized;
+      } catch (err) {
+        if (err?.name === "AbortError") throw new Error("Lyrics request timed out", { cause: err });
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+        inFlightRequests.delete(song.id);
+      }
+    })();
+    inFlightRequests.set(song.id, request);
   }
 
-  const normalized = result ?? { ...EMPTY_LYRICS, trackId: song.id, updatedAt: Date.now() };
-  cache[song.id] = normalized;
-  writeCache(cache);
-  return normalized;
+  return waitForRequest(request, options.signal);
+}
+
+export function prefetchLyricsForSong(song) {
+  if (!song?.id || getCachedLyricsForSong(song)) return;
+  loadLyricsForSong(song).catch(() => {});
 }
