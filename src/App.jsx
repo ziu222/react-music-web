@@ -23,7 +23,7 @@ import {
   restoreSessionFromSupabase,
   PLAN_PREMIUM,
 } from "./auth/session";
-import { loadSettings, saveSettings, normalizeSettingsForEntitlement } from "./lib/user/settings";
+import { loadSettings, saveSettings, syncSettingsFromDB, normalizeSettingsForEntitlement } from "./lib/user/settings";
 import { loadNotifications, saveNotifications, createNotification } from "./lib/social/notifications";
 import { syncFromSupabase } from "./lib/supabase/syncFromSupabase";
 import { applyUserOverride } from "./lib/user/userOverrides";
@@ -200,6 +200,16 @@ export default function App() {
         .catch(() => {});
     }
   }, [authUser]);
+
+  // Sync settings from DB after login — cross-device preferences
+  useEffect(() => {
+    if (!authUser?.email) return;
+    const key = authUser.email.toLowerCase();
+    syncSettingsFromDB(key).then(dbSettings => {
+      if (!dbSettings) return;
+      setSettingsState(s => s.key === key ? { ...s, value: dbSettings } : s);
+    }).catch(() => {});
+  }, [authUser?.email]);
 
   // Sync from Supabase whenever user logs in — hydrate liked songs + playlists
   useEffect(() => {
