@@ -4,14 +4,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFlag, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, BORDER, BG } from "../../constants/theme";
 import { overlayVariants, modalVariants } from "../../lib/ui/consoleMotion";
-import { loadReports, fetchReports, resolveReport, dismissReport } from "../../lib/social/reports";
+import { fetchReports, resolveReport, dismissReport } from "../../lib/social/reports";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { StatusBadge, FilterPills } from "../../components/console/ConsoleUi";
 import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 export default function AdminReports({ authUser }) {
-  const [reports, setReports] = useState(() => loadReports());
+  const [reports, setReports] = useState([]);
   const [reportsStatus, setReportsStatus] = useState("loading");
   const [filter, setFilter] = useState("pending");
 
@@ -35,16 +35,18 @@ export default function AdminReports({ authUser }) {
     { key: "all", label: "Tất cả" },
   ];
 
-  const resolve = (r) => {
+  const resolve = async (r) => {
     const n = note.trim() || "Đã xử lý";
-    setReports(resolveReport(r.id, n));
+    const updated = await resolveReport(r.id, n);
+    setReports(prev => prev.map(x => x.id === updated.id ? { ...x, ...updated } : x));
     logAdminAction(authUser, "resolve_report", r.songTitle, n);
     setNoteTarget(null);
     setNote("");
   };
 
-  const dismiss = (r) => {
-    setReports(dismissReport(r.id));
+  const dismiss = async (r) => {
+    const updated = await dismissReport(r.id);
+    setReports(prev => prev.map(x => x.id === updated.id ? { ...x, ...updated } : x));
     logAdminAction(authUser, "dismiss_report", r.songTitle, "");
   };
 
