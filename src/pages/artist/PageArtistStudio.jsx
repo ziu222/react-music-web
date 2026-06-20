@@ -9,7 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
-import { loadSubmissions, resubmit, deleteSubmission } from "../../lib/artist/submissions";
+import { fetchSubmissions, resubmit, deleteSubmission } from "../../lib/artist/submissions";
 import { deleteMediaBlob, getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
 import { loadArtistProfile } from "../../lib/artist/artistProfile";
 import StudioOverview from "./StudioOverview";
@@ -20,7 +20,10 @@ import StudioProfile from "./StudioProfile";
 
 export default function PageArtistStudio({ authUser, onExit }) {
   const [studioTab, setStudioTab] = useState("overview");
-  const [subs, setSubs] = useState(() => loadSubmissions());
+  const [subs, setSubs] = useState([]);
+  useEffect(() => {
+    if (authUser?.email) fetchSubmissions(authUser.email).then(setSubs).catch(() => {});
+  }, [authUser?.email]);
   const [toast, setToast] = useState(null);
   const [editingDraft, setEditingDraft] = useState(null);
   const [profileVersion, setProfileVersion] = useState(0);
@@ -123,7 +126,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
           mySubs={mySubs}
           onGoSubmit={() => setStudioTab("submit")}
           onResubmit={(id) => {
-            setSubs(resubmit(id));
+            resubmit(id).then(setSubs);
             showToast("Đã gửi lại để duyệt");
           }}
           onEditDraft={(sub) => {
@@ -133,7 +136,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
           onDeleteDraft={(sub) => {
             deleteMediaBlob(sub.audioBlobId);
             deleteMediaBlob(sub.coverBlobId);
-            setSubs(deleteSubmission(sub.id));
+            deleteSubmission(sub.id).then(setSubs);
             showToast("Đã xóa bản nháp");
           }}
         />
@@ -144,13 +147,13 @@ export default function PageArtistStudio({ authUser, onExit }) {
           authUser={studioUser}
           draft={editingDraft}
           onSubmitted={() => {
-            setSubs(loadSubmissions());
+            fetchSubmissions(authUser?.email).then(setSubs).catch(() => {});
             setEditingDraft(null);
             setStudioTab("songs");
             showToast("Đã gửi bài hát, chờ phê duyệt");
           }}
           onDraftSaved={() => {
-            setSubs(loadSubmissions());
+            fetchSubmissions(authUser?.email).then(setSubs).catch(() => {});
             setEditingDraft(null);
             setStudioTab("songs");
             showToast("Đã lưu bản nháp");

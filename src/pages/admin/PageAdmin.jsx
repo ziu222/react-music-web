@@ -13,7 +13,7 @@ import {
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
 import UserDetailModal from "../../components/modals/UserDetailModal";
-import { loadSubmissions } from "../../lib/artist/submissions";
+import { fetchSubmissions } from "../../lib/artist/submissions";
 import { getAllUsersWithOverrides } from "../../lib/user/userOverrides";
 import AdminDashboard from "./AdminDashboard";
 import AdminUsers from "./AdminUsers";
@@ -40,7 +40,8 @@ const HEADERS = {
 export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
   const [adminTab, setAdminTab] = useState("dashboard");
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const [subs, setSubs] = useState(() => loadSubmissions());
+  const [subs, setSubs] = useState([]);
+  useEffect(() => { fetchSubmissions().then(setSubs).catch(() => {}); }, []);
   const [allUsers, setAllUsers] = useState([]);
   const [usersStatus, setUsersStatus] = useState("loading");
   const refreshUsers = useCallback(() => {

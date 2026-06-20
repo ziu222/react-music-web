@@ -231,20 +231,20 @@ export default function StudioSubmit({ authUser, draft = null, onSubmitted, onDr
   const canSubmit = canStep1 && canStep2 && copyrightOwner.trim() && rightsConfirmed;
   const canDraft = title.trim().length > 0 || Boolean(audioMeta);
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!canDraft) return;
-    if (draft) updateSubmission(draft.id, buildData());
-    else addSubmission(buildData(), { draft: true });
+    if (draft) await updateSubmission(draft.id, buildData());
+    else await addSubmission(buildData(), { draft: true });
     onDraftSaved();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
     if (draft) {
-      updateSubmission(draft.id, buildData());
-      submitDraft(draft.id);
+      await updateSubmission(draft.id, buildData());
+      await submitDraft(draft.id);
     } else {
-      addSubmission(buildData());
+      await addSubmission(buildData());
     }
     saveNotifications(ADMIN_KEY, [
       createNotification(
