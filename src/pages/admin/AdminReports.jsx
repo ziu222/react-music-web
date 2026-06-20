@@ -7,18 +7,27 @@ import { overlayVariants, modalVariants } from "../../lib/ui/consoleMotion";
 import { loadReports, fetchReports, resolveReport, dismissReport } from "../../lib/social/reports";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { StatusBadge, FilterPills } from "../../components/console/ConsoleUi";
+import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 export default function AdminReports({ authUser }) {
   const [reports, setReports] = useState(() => loadReports());
+  const [reportsStatus, setReportsStatus] = useState("loading");
   const [filter, setFilter] = useState("pending");
 
   // Đồng bộ từ Supabase để thấy report của mọi user (không chỉ localStorage)
-  useEffect(() => { fetchReports().then(setReports).catch(() => {}); }, []);
+  useEffect(() => {
+    fetchReports()
+      .then(items => { setReports(items); setReportsStatus("success"); })
+      .catch(() => setReportsStatus("error"));
+  }, []);
   const [noteTarget, setNoteTarget] = useState(null);
   const [note, setNote] = useState("");
 
   const filtered = reports.filter((r) => filter === "all" || r.status === filter);
   const pendingCount = reports.filter((r) => r.status === "pending").length;
+  const showReportsSkeleton = useDelayedVisible(reportsStatus === "loading" && reports.length === 0);
+  const holdReportsSkeleton = (reportsStatus === "loading" && reports.length === 0) || showReportsSkeleton;
   const FILTER_PILLS = [
     { key: "pending", label: pendingCount ? `Chờ xử lý (${pendingCount})` : "Chờ xử lý" },
     { key: "resolved", label: "Đã xử lý" },
@@ -45,13 +54,21 @@ export default function AdminReports({ authUser }) {
         <FilterPills options={FILTER_PILLS} active={filter} onSelect={setFilter} />
       </div>
 
-      {filtered.length === 0 && (
+      {holdReportsSkeleton && <TableSkeleton rows={5} visible={showReportsSkeleton} />}
+
+      {!holdReportsSkeleton && reportsStatus === "error" && reports.length === 0 && (
+        <div style={{ padding: 32, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
+          Không thể tải báo cáo
+        </div>
+      )}
+
+      {!holdReportsSkeleton && reportsStatus !== "error" && filtered.length === 0 && (
         <div style={{ padding: 32, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
           Không có báo cáo nào
         </div>
       )}
 
-      {filtered.map((r) => (
+      {!holdReportsSkeleton && filtered.map((r) => (
         <div key={r.id} style={{
           background: BG.card, border: "1px solid " + BORDER, borderRadius: 10,
           padding: "14px 16px", marginBottom: 10,

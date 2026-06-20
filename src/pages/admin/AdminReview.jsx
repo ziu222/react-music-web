@@ -20,6 +20,8 @@ import {
 } from "../../lib/social/notifications";
 import { StatusBadge } from "../../components/console/ConsoleUi";
 import { getFollowers } from "../../lib/social/followerIndex";
+import Skeleton from "../../components/ui/skeleton/Skeleton";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 function notifyArtist(sub, approved, reason) {
   const key = sub.artistEmail.toLowerCase();
@@ -41,6 +43,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [mediaUrls, setMediaUrls] = useState({});
+  const [mediaStatus, setMediaStatus] = useState("loading");
   const [selected, setSelected] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
 
@@ -53,6 +56,9 @@ export default function AdminReview({ subs, setSubs, authUser }) {
   useEffect(() => {
     let alive = true;
     const urls = {};
+    Promise.resolve().then(() => {
+      if (alive) setMediaStatus("loading");
+    });
     Promise.all(
       pending.map(async (sub) => {
         urls[sub.id] = {
@@ -61,7 +67,12 @@ export default function AdminReview({ subs, setSubs, authUser }) {
         };
       })
     ).then(() => {
-      if (alive) setMediaUrls(urls);
+      if (alive) {
+        setMediaUrls(urls);
+        setMediaStatus("success");
+      }
+    }).catch(() => {
+      if (alive) setMediaStatus("error");
     });
     return () => {
       alive = false;
@@ -72,6 +83,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingKey]);
+  const showMediaSkeleton = useDelayedVisible(mediaStatus === "loading" && pending.length > 0);
 
   const reviewed = subs
     .filter((s) => s.status !== "pending")
@@ -335,6 +347,10 @@ export default function AdminReview({ subs, setSubs, authUser }) {
                 src={mediaUrls[sub.id].audio}
                 style={{ flex: 1, height: 34, minWidth: 200 }}
               />
+            </div>
+          ) : mediaStatus === "loading" && (sub.audioStorageUrl || sub.audioBlobId != null) ? (
+            <div aria-hidden="true" style={{ marginTop: 12, visibility: showMediaSkeleton ? "visible" : "hidden" }}>
+              <Skeleton width="100%" height={34} radius={7} />
             </div>
           ) : (
             sub.audioBlobId == null && (
