@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserCircle,
-  faCrown,
   faMusic,
   faClock,
   faHeart,
@@ -13,7 +12,8 @@ import {
   faXmarkCircle,
   faReply,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, G, BORDER, BG, TEXT } from "../constants/theme";
+import { C, BORDER, BG, TEXT } from "../constants/theme";
+import PlanBadge from "../components/primitives/PlanBadge";
 import { listenerStats } from "../data/listenerStats";
 import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/artist/upgradeRequests";
 import { createNotification, loadNotifications, saveNotifications } from "../lib/social/notifications";
@@ -77,7 +77,7 @@ export default function PageProfile({
   const [replySent, setReplySent] = useState(false);
 
   useEffect(() => {
-    if (user) setUpgradeReq(getRequest(user.email));
+    if (user) setUpgradeReq(getRequest(user.email)); // eslint-disable-line react-hooks/set-state-in-effect
   }, [user]);
 
   const handleWithdraw = () => {
@@ -179,39 +179,7 @@ export default function PageProfile({
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, color: TEXT.secondary }}>{user.email}</span>
             <span style={{ color: TEXT.tertiary }}>·</span>
-            {isPremium ? (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  borderRadius: 9999,
-                  padding: "3px 12px",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: `linear-gradient(90deg, ${C[600]}, ${G[500]})`,
-                  color: "#fff",
-                }}
-              >
-                <FontAwesomeIcon icon={faCrown} style={{ fontSize: 10 }} />
-                Premium
-              </span>
-            ) : (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  borderRadius: 9999,
-                  padding: "3px 12px",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  border: `1px solid ${BORDER}`,
-                  color: TEXT.secondary,
-                }}
-              >
-                Free
-              </span>
-            )}
+            <PlanBadge premium={isPremium} />
             <span style={{ fontSize: 12, color: TEXT.tertiary }}>Thành viên từ {joined}</span>
           </div>
 

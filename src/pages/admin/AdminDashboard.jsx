@@ -63,7 +63,8 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
     .sort((a, b) => new Date(b.joinedAt) - new Date(a.joinedAt))
     .slice(0, 3);
 
-  const recentAudit = loadAuditLog().slice(0, 5);
+  const [recentAudit, setRecentAudit] = useState([]);
+  useEffect(() => { loadAuditLog().then(data => setRecentAudit(data.slice(0, 5))); }, []);
 
   return (
     <motion.div variants={staggerContainer} initial="initial" animate="animate">

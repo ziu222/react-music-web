@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import TrackRow from "../components/ui/TrackRow";
+import Skeleton from "../components/ui/skeleton/Skeleton";
+import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 import PlaylistCover from "../components/ui/PlaylistCover";
 import { TEXT } from "../constants/theme";
 import { getSongImage } from "../data/media";
@@ -385,12 +387,27 @@ function PlaylistResult({ pl, coverSongs, meta, onOpen }) {
   );
 }
 
+function SearchPageSkeleton({ visible }) {
+  return (
+    <div aria-hidden="true" style={{ padding: "32px 28px 80px", visibility: visible ? "visible" : "hidden" }}>
+      <Skeleton width={220} height={22} style={{ marginBottom: 20 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, marginBottom: 40 }}>
+        {Array.from({ length: 9 }, (_, i) => <Skeleton key={i} width="100%" height={56} radius={8} />)}
+      </div>
+      <Skeleton width={160} height={20} style={{ marginBottom: 16 }} />
+      {Array.from({ length: 8 }, (_, i) => <TrackRowSkeleton key={i} />)}
+    </div>
+  );
+}
+
 export default function PageSearch({
   list, query, cur, onPlay, likedIds, onLike, onAddToQueue,
   userPlaylists = [],
   onOpenArtist,
   onOpenAlbum,
   onOpenPlaylist,
+  catalogLoading,
+  skeletonVisible,
 }) {
   const [genre, setGenre] = useState(null);
 
@@ -472,6 +489,10 @@ export default function PageSearch({
     if (albumMatches[0]) return { type: "album", album: albumMatches[0] };
     return null;
   }, [isSearching, q, artistMatches, albumMatches, songMatches]);
+
+  if (catalogLoading && list.length === 0 && (isSearching || hasGenreFilter)) {
+    return <SearchPageSkeleton visible={skeletonVisible} />;
+  }
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", padding: "32px 28px 80px" }}>

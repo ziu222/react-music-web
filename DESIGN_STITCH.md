@@ -183,10 +183,13 @@ Three independent scroll zones:
 - **Primary Action:** Pill-shaped, orange #f97316, black text
 - **Play Button:** Circular, green #1ed760, white/black icon; hover with `translateY` animation (180ms)
 - **Filter Pills:** `rgba(255,255,255,0.1)` bg; active = white bg + black text
+- **Plan Badge:** chip `fontSize 9 / fontWeight 800 / uppercase / letterSpacing 0.5 / radius 9999 / padding 2px 8px`. Premium = gradient `linear-gradient(90deg, ${C[600]}, ${G[500]})` (`--grad-premium`), white text + crown. Free = `var(--overlay-2)` bg, `var(--text-mid)` text, no crown.
 
 ### Cards (Album/Playlist)
 - **Image top, Title (bold), Subtitle (muted)**
 - **Hover:** Brighten to #242424, Play button slides up from bottom-right
+- **Discovery SongCard title:** allow 2 lines then ellipsis (`-webkit-box`, `WebkitLineClamp: 2`, `lineHeight 1.4`, reserve `minHeight` for 2 lines); subtitle stays 1-line. Keep `fontSize 13 / fontWeight 600`.
+- **Discovery SongCard coral PlayButton hover glow:** play button keeps its base shadow and adds coral ring `0 0 0 6px color-mix(in srgb, #f97316 22%, transparent)`; transition `box-shadow 150ms, background 150ms, transform 200ms`. Coral only — green/white play buttons unchanged. Respect `prefers-reduced-motion`.
 
 ### Track Rows (List View)
 - **Height:** 48px (dense)

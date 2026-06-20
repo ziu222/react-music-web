@@ -7,6 +7,8 @@ import AlbumTile from "../components/ui/AlbumTile";
 import { TEXT } from "../constants/theme";
 import { getSongImage, getPrimaryArtist } from "../data/media";
 import { getAlbum, deriveAlbums, formatTotalDuration } from "../data/derived";
+import EntityHeaderSkeleton from "../components/ui/skeleton/EntityHeaderSkeleton";
+import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 
 export default function PageAlbum({
   albumName,
@@ -20,6 +22,8 @@ export default function PageAlbum({
   onOpenAlbum,
   isSaved,
   onToggleSave,
+  catalogLoading,
+  skeletonVisible,
 }) {
   const album = useMemo(() => getAlbum(list, albumName), [list, albumName]);
 
@@ -33,6 +37,16 @@ export default function PageAlbum({
   }, [list, album]);
 
   if (!album) {
+    if (catalogLoading) {
+      return (
+        <div aria-hidden="true" style={{ paddingBottom: 80, visibility: skeletonVisible ? "visible" : "hidden" }}>
+          <EntityHeaderSkeleton type="album" />
+          <div style={{ padding: "0 28px" }}>
+            {Array.from({ length: 8 }, (_, i) => <TrackRowSkeleton key={i} />)}
+          </div>
+        </div>
+      );
+    }
     return (
       <div style={{ padding: 60, textAlign: "center", color: TEXT.secondary, animation: "slideUp 0.3s ease" }}>
         <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Không tìm thấy album</div>

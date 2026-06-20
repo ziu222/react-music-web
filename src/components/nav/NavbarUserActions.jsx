@@ -3,6 +3,7 @@ import { Bell, LogOut, Settings, UserRound } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBolt, faCrown, faLock } from "@fortawesome/free-solid-svg-icons";
 import { C, G, BG, BORDER, TEXT } from "../../constants/theme";
+import PlanBadge from "../primitives/PlanBadge";
 import NotificationsPanel from "./NotificationsPanel";
 
 function FloatingPanel({ right = 0, children }) {
@@ -53,29 +54,6 @@ function IconButton({ label, active, children, onClick }) {
   );
 }
 
-function PlanChip({ premium }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        borderRadius: 9999,
-        padding: "2px 8px",
-        fontSize: 9,
-        fontWeight: 800,
-        letterSpacing: 0.5,
-        textTransform: "uppercase",
-        flexShrink: 0,
-        background: premium ? `linear-gradient(90deg, ${C[600]}, ${G[500]})` : "var(--overlay-2)",
-        color: premium ? "#fff" : "var(--text-secondary)",
-      }}
-    >
-      {premium && <FontAwesomeIcon icon={faCrown} style={{ fontSize: 8 }} />}
-      {premium ? "Premium" : "Free"}
-    </span>
-  );
-}
 
 export default function NavbarUserActions({
   user,
@@ -186,7 +164,7 @@ export default function NavbarUserActions({
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {user.name || user.email}
         </span>
-        <PlanChip premium={isPremium} />
+        <PlanBadge premium={isPremium} />
       </button>
 
       {openPanel === "notifications" && (
@@ -204,7 +182,7 @@ export default function NavbarUserActions({
               <div style={{ fontSize: 13, color: TEXT.primary, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {user.name || "Người nghe Melodies"}
               </div>
-              <PlanChip premium={isPremium} />
+              <PlanBadge premium={isPremium} />
             </div>
             <div style={{ fontSize: 11, color: TEXT.secondary, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {user.email}

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Music2, X } from "lucide-react";
-import { loadLyricsForSong, loadLyricsOffsetMs, saveLyricsOffsetMs } from "../../lib/music/lyrics";
+import { getCachedLyricsForSong, loadLyricsForSong, loadLyricsOffsetMs, saveLyricsOffsetMs } from "../../lib/music/lyrics";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
+import PanelSkeleton from "../ui/skeleton/PanelSkeleton";
 
 export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime = 0, onSeek }) {
   const [status, setStatus] = useState("idle");
@@ -19,10 +21,11 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
   useEffect(() => {
     if (!isOpen || !currentSong) return;
     const controller = new AbortController();
+    const cached = getCachedLyricsForSong(currentSong);
     Promise.resolve().then(() => {
       if (controller.signal.aborted) return;
-      setStatus("loading");
-      setLyrics(prev => prev?.trackId === currentSong.id ? prev : null);
+      setStatus(cached ? "ready" : "loading");
+      setLyrics(cached ?? (prev => prev?.trackId === currentSong.id ? prev : null));
     });
 
     loadLyricsForSong(currentSong, { signal: controller.signal })
@@ -69,6 +72,8 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
   }, [activeIndex, isOpen]);
 
   const isLoading = status === "loading";
+  const showLyricsSkeleton = useDelayedVisible(isLoading);
+  const holdLyricsSkeleton = isLoading || showLyricsSkeleton;
   const isUnavailable = status === "error"
     || !lyrics
     || lyrics.type === "unavailable"
@@ -144,8 +149,8 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
-        {isLoading ? (
-          <LyricsSkeleton />
+        {holdLyricsSkeleton ? (
+          <PanelSkeleton visible={showLyricsSkeleton} />
         ) : lyrics?.type === "instrumental" ? (
           <EmptyLyricsState
             title="Instrumental track"
@@ -305,27 +310,6 @@ function EmptyLyricsState({ title, description }) {
       <div style={{ fontSize: 12, color: "var(--island-faint)", lineHeight: 1.5 }}>
         {description}
       </div>
-    </div>
-  );
-}
-
-function LyricsSkeleton() {
-  return (
-    <div style={{ padding: "28px 0", animation: "lyrics-panel-content-in 220ms cubic-bezier(0.2, 0, 0, 1)" }}>
-      {Array.from({ length: 9 }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            height: i % 3 === 0 ? 22 : 18,
-            width: `${86 - (i % 4) * 11}%`,
-            borderRadius: 6,
-            margin: "0 0 13px",
-            background: "linear-gradient(90deg, var(--island-hover), var(--island-rail), var(--island-hover))",
-            backgroundSize: "220% 100%",
-            animation: "lyrics-panel-skeleton 1.2s ease-in-out infinite",
-          }}
-        />
-      ))}
     </div>
   );
 }

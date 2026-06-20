@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { TEXT } from "../../constants/theme";
 import { loadAuditLog, ACTION_LABELS } from "../../lib/user/auditLog";
 import { formatNotificationTime } from "../../lib/social/notifications";
@@ -31,7 +31,8 @@ export function actionColor(action) {
 
 export default function AdminAudit() {
   const [group, setGroup] = useState("all");
-  const log = useMemo(() => loadAuditLog(), []);
+  const [log, setLog] = useState([]);
+  useEffect(() => { loadAuditLog().then(setLog); }, []);
 
   const filtered = log.filter((e) => {
     if (group === "all") return true;

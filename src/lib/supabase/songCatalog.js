@@ -28,6 +28,7 @@ export async function fetchSongsFromSupabase() {
     .select("*")
     .order("community")
     .order("id");
-  if (error || !data) return [];
+  if (error) throw error;
+  if (!data) return [];
   return data.map(mapRow);
 }

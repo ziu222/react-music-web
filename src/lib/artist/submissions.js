@@ -1,7 +1,5 @@
 import { supabase } from "../supabase/supabase";
 
-const STORE_KEY = "melodies_submissions";
-
 const SUBMISSION_DEFAULTS = {
   explicit: false,
   language: "Tiếng Việt",
@@ -23,58 +21,6 @@ const SUBMISSION_DEFAULTS = {
   approvedAt: null,
 };
 
-const SEED_SUBMISSIONS = [
-  {
-    id: "sub-seed-1",
-    artistEmail: "myanh@melodies.local",
-    artistName: "Mỹ Anh",
-    title: "Pillow Talk",
-    album: "Em Bé EP",
-    genre: "R&B",
-    duration: "3:42",
-    durationSecs: 222,
-    bg: "linear-gradient(135deg,#7c3aed,#a78bfa)",
-    status: "pending",
-    submittedAt: "2026-06-10T09:00:00.000Z",
-    createdAt: "2026-06-10T09:00:00.000Z",
-    updatedAt: "2026-06-10T09:00:00.000Z",
-  },
-  {
-    id: "sub-seed-2",
-    artistEmail: "myanh@melodies.local",
-    artistName: "Mỹ Anh",
-    title: "Midnight Garden",
-    album: "Single",
-    genre: "Pop",
-    duration: "4:05",
-    durationSecs: 245,
-    bg: "linear-gradient(135deg,#0369a1,#38bdf8)",
-    status: "approved",
-    submittedAt: "2026-05-28T10:00:00.000Z",
-    reviewedAt: "2026-05-29T08:30:00.000Z",
-    approvedAt: "2026-05-29T08:30:00.000Z",
-    createdAt: "2026-05-28T10:00:00.000Z",
-    updatedAt: "2026-05-29T08:30:00.000Z",
-  },
-  {
-    id: "sub-seed-3",
-    artistEmail: "myanh@melodies.local",
-    artistName: "Mỹ Anh",
-    title: "Loop",
-    album: "Single",
-    genre: "EDM",
-    duration: "2:58",
-    durationSecs: 178,
-    bg: "linear-gradient(135deg,#be123c,#fb7185)",
-    status: "rejected",
-    rejectReason: "Chất lượng bản thu chưa đạt chuẩn phát hành. Vui lòng mix lại phần vocal.",
-    submittedAt: "2026-05-20T14:00:00.000Z",
-    reviewedAt: "2026-05-21T11:00:00.000Z",
-    createdAt: "2026-05-20T14:00:00.000Z",
-    updatedAt: "2026-05-21T11:00:00.000Z",
-  },
-];
-
 function normalize(sub) {
   return {
     ...SUBMISSION_DEFAULTS,
@@ -83,25 +29,6 @@ function normalize(sub) {
     ...sub,
   };
 }
-
-// ── localStorage (cache + offline fallback) ───────────────────
-
-function readStore() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveStore(list) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); }
-  catch { /* quota exceeded */ }
-}
-
-// ── Supabase sync helpers ─────────────────────────────────────
 
 function toRow(sub) {
   return {
@@ -136,6 +63,28 @@ function toRow(sub) {
     created_at:       sub.createdAt ?? new Date().toISOString(),
     updated_at:       sub.updatedAt ?? new Date().toISOString(),
   };
+}
+
+function patchToRow(patch) {
+  const row = {};
+  const map = {
+    title: "title", album: "album", genre: "genre",
+    duration: "duration", durationSecs: "duration_secs", bg: "bg",
+    status: "status", explicit: "explicit", language: "language",
+    lyricsText: "lyrics_text", contributors: "contributors",
+    copyrightOwner: "copyright_owner", rightsConfirmed: "rights_confirmed",
+    audioBlobId: "audio_blob_id", audioFileName: "audio_file_name",
+    audioFileType: "audio_file_type", audioFileSize: "audio_file_size",
+    coverBlobId: "cover_blob_id", coverFileName: "cover_file_name",
+    coverFileType: "cover_file_type", coverFileSize: "cover_file_size",
+    rejectReason: "reject_reason", submittedAt: "submitted_at",
+    reviewedAt: "reviewed_at", approvedAt: "approved_at",
+    updatedAt: "updated_at",
+  };
+  for (const [js, db] of Object.entries(map)) {
+    if (patch[js] !== undefined) row[db] = patch[js];
+  }
+  return row;
 }
 
 function fromRow(row) {
@@ -173,29 +122,30 @@ function fromRow(row) {
   });
 }
 
-// Suppress unused warning — fromRow used by future Supabase read path
-void fromRow;
+// ── In-memory cache ────────────────────────────────────────────
+let _cache = null;
 
-function upsertToSupabase(sub) {
-  if (!supabase) return;
-  supabase
-    .from("submissions")
-    .upsert(toRow(sub))
-    .then()
-    .catch(() => {});
+function applyToCache(fn) {
+  if (_cache !== null) _cache = fn(_cache);
+  return _cache ?? [];
 }
 
 // ── Public API ────────────────────────────────────────────────
 
-export function loadSubmissions() {
-  const stored = readStore();
-  if (stored && stored.length) return stored.map(normalize);
-  const seeds = SEED_SUBMISSIONS.map(normalize);
-  saveStore(seeds);
-  return seeds;
+export async function fetchSubmissions(artistEmail) {
+  if (!supabase) return [];
+  const q = supabase
+    .from("submissions")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (artistEmail) q.eq("artist_email", artistEmail.toLowerCase());
+  const { data, error } = await q;
+  if (error) throw error;
+  _cache = (data || []).map(fromRow);
+  return _cache;
 }
 
-export function addSubmission(data, opts = {}) {
+export async function addSubmission(data, opts = {}) {
   const now = new Date().toISOString();
   const submission = normalize({
     ...data,
@@ -205,23 +155,27 @@ export function addSubmission(data, opts = {}) {
     createdAt: now,
     updatedAt: now,
   });
-  const list = [submission, ...loadSubmissions()];
-  saveStore(list);
-  upsertToSupabase(submission);
-  return submission;
+  if (supabase) {
+    const { error } = await supabase.from("submissions").insert(toRow(submission));
+    if (error) console.error("[addSubmission]", error.message);
+  }
+  return applyToCache(prev => [submission, ...prev]);
 }
 
-export function updateSubmission(id, patch) {
-  const list = loadSubmissions().map((s) =>
-    s.id === id ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s
-  );
-  saveStore(list);
-  const updated = list.find((s) => s.id === id);
-  if (updated) upsertToSupabase(updated);
-  return list;
+export async function updateSubmission(id, patch) {
+  const now = new Date().toISOString();
+  const fullPatch = { ...patch, updatedAt: now };
+  if (supabase) {
+    const { error } = await supabase
+      .from("submissions")
+      .update({ ...patchToRow(fullPatch), updated_at: now })
+      .eq("id", id);
+    if (error) console.error("[updateSubmission]", error.message);
+  }
+  return applyToCache(prev => prev.map(s => s.id === id ? { ...s, ...fullPatch } : s));
 }
 
-export function submitDraft(id) {
+export async function submitDraft(id) {
   const now = new Date().toISOString();
   return updateSubmission(id, {
     status: "pending",
@@ -231,7 +185,7 @@ export function submitDraft(id) {
   });
 }
 
-export function reviewSubmission(id, status, reason) {
+export async function reviewSubmission(id, status, reason) {
   const now = new Date().toISOString();
   return updateSubmission(id, {
     status,
@@ -241,8 +195,7 @@ export function reviewSubmission(id, status, reason) {
   });
 }
 
-/* Hoàn tác từ chối — đưa bài rejected về lại pending để admin re-review */
-export function undoRejectSubmission(id) {
+export async function undoRejectSubmission(id) {
   return updateSubmission(id, {
     status: "pending",
     rejectReason: null,
@@ -251,7 +204,7 @@ export function undoRejectSubmission(id) {
   });
 }
 
-export function resubmit(id) {
+export async function resubmit(id) {
   return updateSubmission(id, {
     status: "pending",
     rejectReason: null,
@@ -260,15 +213,14 @@ export function resubmit(id) {
   });
 }
 
-export function deleteSubmission(id) {
-  const list = loadSubmissions().filter((s) => s.id !== id);
-  saveStore(list);
+export async function deleteSubmission(id) {
   if (supabase) {
     supabase.from("submissions").delete().eq("id", id).then().catch(() => {});
   }
-  return list;
+  return applyToCache(prev => prev.filter(s => s.id !== id));
 }
 
-export function getApprovedSubmissions() {
-  return loadSubmissions().filter((s) => s.status === "approved");
+export async function getApprovedSubmissions() {
+  const list = _cache ?? await fetchSubmissions();
+  return list.filter(s => s.status === "approved");
 }

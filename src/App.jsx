@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
+import useDelayedVisible from "./hooks/useDelayedVisible";
 import { useApplyTheme } from "./lib/theme/useTheme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/ui/Splash";
-import Loader from "./components/ui/Loader";
 import Player from "./components/player/Player";
 import Sidebar from "./components/nav/Sidebar";
 import AuthModal from "./components/modals/AuthModal";
@@ -12,6 +12,7 @@ import AuthGateModal from "./components/modals/AuthGateModal";
 import NavbarUserActions from "./components/nav/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
 import ArtistUpgradeModal from "./components/modals/ArtistUpgradeModal";
+import ModalSkeleton from "./components/ui/skeleton/ModalSkeleton";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/modals/PremiumModal"));
@@ -31,7 +32,7 @@ import { applySongOverrides } from "./lib/music/songOverrides";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
 import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
-import { loadLikedIdsLocal, saveLikedIdsLocal, saveLibraryToSupabase } from "./lib/supabase/librarySync";
+import { saveLibraryToSupabase } from "./lib/supabase/librarySync";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -58,7 +59,6 @@ export default function App() {
   const feedbackTimerRef = useRef(null);
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
-  const [loading, setLoading] = useState(false);
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [prog, setProg] = useState(0);
@@ -69,18 +69,43 @@ export default function App() {
   const [shuffleQueue, setShuffleQueue] = useState([]);
   const [shufflePos, setShufflePos] = useState(0);
   const [repeatMode, setRepeatMode] = useState("off");
-  const [likedIds, setLikedIds] = useState(() => new Set(loadLikedIdsLocal()));
+  const [likedIds, setLikedIds] = useState(() => new Set());
   const [catalogSongs, setCatalogSongs] = useState([]);
-  useEffect(() => {
-    fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
+  const [catalogStatus, setCatalogStatus] = useState("loading");
+  const catalogRequestRef = useRef(0);
+  const loadCatalog = useCallback(() => {
+    const requestId = catalogRequestRef.current + 1;
+    catalogRequestRef.current = requestId;
+    return fetchSongsFromSupabase()
+      .then(songs => {
+        if (catalogRequestRef.current !== requestId) return;
+        setCatalogSongs(songs);
+        setCatalogStatus("success");
+      })
+      .catch(() => {
+        if (catalogRequestRef.current === requestId) setCatalogStatus("error");
+      });
   }, []);
+  const retryCatalog = () => {
+    setCatalogStatus("loading");
+    loadCatalog();
+  };
+
+  useEffect(() => {
+    loadCatalog();
+  }, [loadCatalog]);
 
   // Realtime: khi admin approve bài mới → refetch toàn catalog
   useEffect(() => {
     return subscribeToSongs(() => {
-      fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
+      setCatalogStatus("loading");
+      loadCatalog();
     });
-  }, []);
+  }, [loadCatalog]);
+
+  const catalogPending = catalogStatus === "loading" && catalogSongs.length === 0;
+  const showCatalogSkeleton = useDelayedVisible(catalogPending);
+  const holdCatalogPlaceholder = catalogPending || showCatalogSkeleton;
 
   // Bài bị admin gỡ biến mất — tính lại khi rời màn admin
   const list = useMemo(() => {
@@ -135,7 +160,6 @@ export default function App() {
   }, [userPlaylists]);
 
   useEffect(() => {
-    saveLikedIdsLocal(likedIds);
     if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [likedIds]);
@@ -184,7 +208,8 @@ export default function App() {
       .then((library) => {
         if (!library) return;
         if (Array.isArray(library.liked_ids) && library.liked_ids.length > 0) {
-          setLikedIds(new Set(library.liked_ids));
+          // Merge: giữ lại likes user đã click trong lúc chờ sync
+          setLikedIds(prev => new Set([...library.liked_ids, ...prev]));
         }
         if (Array.isArray(library.playlists) && library.playlists.length > 0) {
           setUserPlaylists(prev => {
@@ -195,8 +220,15 @@ export default function App() {
         }
       })
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.email]);
+
+  /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
+  const userKey = authUser?.email?.toLowerCase() ?? "guest";
+  const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
+  const [notifState, setNotifState] = useState(() => ({ key: userKey, value: loadNotifications(userKey) }));
+  // High quality chỉ hợp lệ khi premium — guest/free luôn thấy normal dù stored là high
+  const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
+  const notifications = notifState.value;
 
   // Realtime: push notifications from Supabase (admin broadcast, song approved, etc.)
   useEffect(() => {
@@ -208,16 +240,7 @@ export default function App() {
         return { ...s, value: items };
       });
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.email]);
-
-  /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
-  const userKey = authUser?.email?.toLowerCase() ?? "guest";
-  const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
-  const [notifState, setNotifState] = useState(() => ({ key: userKey, value: loadNotifications(userKey) }));
-  // High quality chỉ hợp lệ khi premium — guest/free luôn thấy normal dù stored là high
-  const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
-  const notifications = notifState.value;
 
   useApplyTheme(settings.themeMode);
 
@@ -387,11 +410,10 @@ export default function App() {
 
   // entry: extra route state (artist/album/playlistId) recorded in history
   const nav = (p, entry) => {
-    if (loading || (p === page && !entry)) return;
+    if (p === page && !entry) return;
     pushEntry({ page: p, ...entry });
-    if (p === page) return; // same page, new entity — switch without loader
-    setLoading(true);
-    setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
+    if (p === page) return;
+    setPage(p);
   };
 
   const openLibrary = (entry = {}) => {
@@ -406,27 +428,26 @@ export default function App() {
     setSearch(value);
     if (page !== "search") {
       pushEntry({ page: "search", query: value });
-      setLoading(false);
       setPage("search");
       return;
     }
     replaceEntry({ page: "search", query: value });
   };
 
-  // Back/forward restore instantly — no fake loader on history moves
+  // Back/forward restore instantly
   const goBack = useCallback(() => {
-    if (loading || hist.index <= 0) return;
+    if (hist.index <= 0) return;
     const idx = hist.index - 1;
     applyEntry(hist.stack[idx]);
     setHist(h => ({ ...h, index: idx }));
-  }, [loading, hist, applyEntry]);
+  }, [hist, applyEntry]);
 
   const goForward = useCallback(() => {
-    if (loading || hist.index >= hist.stack.length - 1) return;
+    if (hist.index >= hist.stack.length - 1) return;
     const idx = hist.index + 1;
     applyEntry(hist.stack[idx]);
     setHist(h => ({ ...h, index: idx }));
-  }, [loading, hist, applyEntry]);
+  }, [hist, applyEntry]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -1270,104 +1291,141 @@ export default function App() {
         />
 
         {/* Main content */}
-        <div style={{ flex: 1, overflowY: "auto", background: BG.base }}>
-          {loading ? (
-            <Loader text={`Đang tải ${
-              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album", profile: "hồ sơ" }[page] ?? page
-            }...`} />
-          ) : (
-            <>
-              {page === "home" && (
-                <PageHome
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  recentIds={recentIds}
-                  onOpenAlbum={openAlbum}
-                  onOpenArtist={openArtist}
-                />
-              )}
-              {page === "artist" && (
-                <PageArtist
-                  artistName={selectedArtist}
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  onOpenAlbum={openAlbum}
-                  isFollowed={selectedArtist ? followedArtists.has(selectedArtist) : false}
-                  onToggleFollow={() => toggleFollowArtistWithAuth(selectedArtist)}
-                />
-              )}
-              {page === "album" && (
-                <PageAlbum
-                  albumName={selectedAlbum}
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  onOpenArtist={openArtist}
-                  onOpenAlbum={openAlbum}
-                  isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
-                  onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
-                />
-              )}
-              {page === "search" && (
-                <PageSearch
-                  list={list}
-                  query={search}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  userPlaylists={visiblePlaylists}
-                  onOpenArtist={openArtist}
-                  onOpenAlbum={openAlbum}
-                  onOpenPlaylist={openPlaylist}
-                />
-              )}
-              {page === "library" && (
-                <PageLibrary
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  userPlaylists={visiblePlaylists}
-                  albumPlaylists={albumPlaylists}
-                  selectedPlaylistId={selectedPlaylistId}
-                  onSelectPlaylist={(playlistId) => openLibrary({ playlistId, libraryFilter: "Danh sách phát" })}
-                  libraryFilter={libraryFilter}
-                  onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
-                  onToggleSongInPlaylist={toggleSongInPlaylist}
-                  followedArtists={followedArtists}
-                  savedAlbums={savedAlbums}
-                  recentIds={recentIds}
-                  onOpenArtist={openArtist}
-                  onOpenAlbum={openAlbum}
-                />
-              )}
-              {page === "profile" && (
-                <PageProfile
-                  user={authUser}
-                  isPremium={isPremium}
-                  likedCount={likedIds.size}
-                  recentSongs={recentSongs}
-                  onPlay={playWithAuth}
-                  cur={cur}
-                  onOpenPremium={() => setPremiumOpen(true)}
-                  onOpenArtistUpgrade={(prefill) => { setArtistUpgradeOpen(true); }}
-                />
-              )}
-            </>
+        <div
+          style={{ flex: 1, overflowY: "auto", background: BG.base }}
+          aria-busy={catalogStatus === "loading"}
+        >
+          {catalogStatus === "error" && catalogSongs.length === 0 && (
+            <div
+              role="status"
+              style={{
+                margin: "12px 20px 0",
+                padding: "10px 14px",
+                border: `1px solid ${C[500]}55`,
+                borderRadius: 8,
+                background: `${C[500]}12`,
+                color: TEXT.secondary,
+                fontSize: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <span>Không thể tải danh mục nhạc.</span>
+              <button
+                type="button"
+                onClick={retryCatalog}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: C[400],
+                  font: "inherit",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
+          {page === "home" && (
+            <PageHome
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              recentIds={recentIds}
+              onOpenAlbum={openAlbum}
+              onOpenArtist={openArtist}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
+            />
+          )}
+          {page === "artist" && (
+            <PageArtist
+              artistName={selectedArtist}
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              onOpenAlbum={openAlbum}
+              isFollowed={selectedArtist ? followedArtists.has(selectedArtist) : false}
+              onToggleFollow={() => toggleFollowArtistWithAuth(selectedArtist)}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
+            />
+          )}
+          {page === "album" && (
+            <PageAlbum
+              albumName={selectedAlbum}
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              onOpenArtist={openArtist}
+              onOpenAlbum={openAlbum}
+              isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
+              onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
+            />
+          )}
+          {page === "search" && (
+            <PageSearch
+              list={list}
+              query={search}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              userPlaylists={visiblePlaylists}
+              onOpenArtist={openArtist}
+              onOpenAlbum={openAlbum}
+              onOpenPlaylist={openPlaylist}
+              catalogLoading={holdCatalogPlaceholder}
+              skeletonVisible={showCatalogSkeleton}
+            />
+          )}
+          {page === "library" && (
+            <PageLibrary
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              userPlaylists={visiblePlaylists}
+              albumPlaylists={albumPlaylists}
+              selectedPlaylistId={selectedPlaylistId}
+              onSelectPlaylist={(playlistId) => openLibrary({ playlistId, libraryFilter: "Danh sách phát" })}
+              libraryFilter={libraryFilter}
+              onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
+              onToggleSongInPlaylist={toggleSongInPlaylist}
+              followedArtists={followedArtists}
+              savedAlbums={savedAlbums}
+              recentIds={recentIds}
+              onOpenArtist={openArtist}
+              onOpenAlbum={openAlbum}
+            />
+          )}
+          {page === "profile" && (
+            <PageProfile
+              user={authUser}
+              isPremium={isPremium}
+              likedCount={likedIds.size}
+              recentSongs={recentSongs}
+              onPlay={playWithAuth}
+              cur={cur}
+              onOpenPremium={() => setPremiumOpen(true)}
+              onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
+            />
           )}
         </div>
       </div>
@@ -1469,7 +1527,7 @@ export default function App() {
       )}
 
       {premiumOpen && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <PremiumModal
             onClose={() => setPremiumOpen(false)}
             user={authUser}
@@ -1481,7 +1539,7 @@ export default function App() {
       )}
 
       {settingsOpen && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton />}>
           <SettingsModal
             user={authUser}
             isPremium={isPremium}

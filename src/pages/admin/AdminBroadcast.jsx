@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBullhorn } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
@@ -34,11 +34,10 @@ export default function AdminBroadcast({ authUser, allUsers = [] }) {
   const [body, setBody] = useState("");
   const [sentMsg, setSentMsg] = useState(null);
   const [historyVersion, setHistoryVersion] = useState(0);
-
-  const history = useMemo(
-    () => loadAuditLog().filter((e) => e.action === "broadcast").slice(0, 8),
-    [historyVersion]
-  );
+  const [history, setHistory] = useState([]);
+  useEffect(() => {
+    loadAuditLog().then(data => setHistory(data.filter(e => e.action === "broadcast").slice(0, 8)));
+  }, [historyVersion]);
 
   const canSend = title.trim() && body.trim();
 
