@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTicket, faPlus, faBan, faCopy } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, BORDER, BG } from "../../constants/theme";
@@ -7,23 +7,25 @@ import { logAdminAction } from "../../lib/user/auditLog";
 import { FilterPills } from "../../components/console/ConsoleUi";
 
 export default function AdminPromo({ authUser }) {
-  const [codes, setCodes] = useState(() => loadPromoCodes());
+  const [codes, setCodes] = useState([]);
   const [duration, setDuration] = useState("1m");
   const [maxUses, setMaxUses] = useState(1);
   const [customCode, setCustomCode] = useState("");
   const [copied, setCopied] = useState(null);
 
-  const create = () => {
-    const promo = createPromoCode(authUser?.email, { durationKey: duration, maxUses, code: customCode.trim() || undefined });
+  useEffect(() => { loadPromoCodes().then(setCodes); }, []);
+
+  const create = async () => {
+    const promo = await createPromoCode(authUser?.email, { durationKey: duration, maxUses, code: customCode.trim() || undefined });
     logAdminAction(authUser, "create_promo", promo.code, GRANT_DURATIONS.find(d=>d.key===duration)?.label + " × " + maxUses);
-    setCodes(loadPromoCodes());
+    loadPromoCodes().then(setCodes);
     setCustomCode("");
   };
 
-  const deactivate = (code) => {
-    deactivatePromoCode(code);
+  const deactivate = async (code) => {
+    await deactivatePromoCode(code);
     logAdminAction(authUser, "deactivate_promo", code, "");
-    setCodes(loadPromoCodes());
+    loadPromoCodes().then(setCodes);
   };
 
   const copy = (code) => {

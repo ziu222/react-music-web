@@ -96,8 +96,13 @@ export default function UserDetailModal({
   const [upgradeAction, setUpgradeAction] = useState(null); // "info" | "reject" | null
   const [premiumDuration, setPremiumDuration] = useState("1m");
   const [adminNote, setAdminNote] = useState(() => localStorage.getItem("melodies_admin_note_" + user?.email) || "");
-  const grantHistory = getGrantHistory(user?.email ?? "");
-  const activeGrant = getActiveGrant(user?.email ?? "");
+  const [grantHistory, setGrantHistory] = useState([]);
+  const [activeGrant, setActiveGrant] = useState(null);
+  useEffect(() => {
+    if (!user?.email) return;
+    getGrantHistory(user.email).then(setGrantHistory);
+    getActiveGrant(user.email).then(setActiveGrant);
+  }, [user?.email]);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -585,7 +590,7 @@ export default function UserDetailModal({
             onClick={() => {
               const data = JSON.stringify({
                 profile: user,
-                grantHistory: getGrantHistory(user.email),
+                grantHistory,
                 exportedAt: new Date().toISOString(),
               }, null, 2);
               const blob = new Blob([data], { type: "application/json" });
@@ -662,9 +667,11 @@ export default function UserDetailModal({
                 ))}
               </div>
               <button
-                onClick={() => {
-                  const { expiresAt } = grantPremium(currentAdmin?.email, user.email, premiumDuration);
+                onClick={async () => {
+                  const { expiresAt } = await grantPremium(currentAdmin?.email, user.email, premiumDuration);
                   act("change_plan", { plan: "premium" }, "→ premium " + GRANT_DURATIONS.find(d=>d.key===premiumDuration)?.label);
+                  getActiveGrant(user.email).then(setActiveGrant);
+                  getGrantHistory(user.email).then(setGrantHistory);
                   void expiresAt;
                 }}
                 style={{
@@ -688,7 +695,12 @@ export default function UserDetailModal({
                   : "Premium vĩnh viễn"}
               </div>
               <button
-                onClick={() => { revokePremium(currentAdmin?.email, user.email); act("change_plan", { plan: "free" }, "→ free"); }}
+                onClick={async () => {
+                  await revokePremium(currentAdmin?.email, user.email);
+                  act("change_plan", { plan: "free" }, "→ free");
+                  setActiveGrant(null);
+                  getGrantHistory(user.email).then(setGrantHistory);
+                }}
                 style={{
                   width: "100%", background: "transparent", border: "1px solid #fbbf24",
                   color: "#fbbf24", borderRadius: 9999, padding: "8px 12px", fontSize: 12,

@@ -107,7 +107,7 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
         <button onClick={async () => {
           const listeners = filtered.filter((u) => !u.deleted && u.plan !== "premium" && u.role === "listener");
           // grantPremium → lưu lịch sử subscription; setUserOverride → cập nhật plan thật (users table + cache)
-          listeners.forEach((u) => grantPremium(authUser?.email, u.email, bulkDuration, "bulk grant"));
+          await Promise.all(listeners.map((u) => grantPremium(authUser?.email, u.email, bulkDuration, "bulk grant")));
           await Promise.all(listeners.map((u) => setUserOverride(u.email, { plan: "premium" })));
           logAdminAction(authUser, "change_plan", listeners.length + " listeners", "bulk → premium " + GRANT_DURATIONS.find(d=>d.key===bulkDuration)?.label);
           setBulkDone(listeners.length);
