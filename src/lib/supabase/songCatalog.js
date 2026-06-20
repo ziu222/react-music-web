@@ -18,6 +18,7 @@ function mapRow(r) {
     language: r.language ?? null,
     lyricsText: r.lyrics_text ?? null,
     artistEmail: r.artist_email ?? null,
+    hidden: r.hidden ?? false,
   };
 }
 

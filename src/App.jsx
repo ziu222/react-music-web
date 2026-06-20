@@ -976,7 +976,7 @@ export default function App() {
       <div>
         <PageAdmin
           authUser={authUser}
-          songs={list}
+          songs={catalogSongs}
           onExit={() => setScreen("app")}
           onImpersonate={handleImpersonate}
         />
