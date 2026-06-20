@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Skeleton from "../components/ui/skeleton/Skeleton";
+import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 import {
   faUserCircle,
   faMusic,
@@ -62,6 +64,30 @@ function SectionTitle({ children }) {
   );
 }
 
+function ProfilePageSkeleton() {
+  return (
+    <div style={{ padding: "32px 28px 80px", animation: "slideUp 0.3s ease" }}>
+      {/* Avatar + name */}
+      <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 32 }}>
+        <Skeleton width={80} height={80} radius={9999} style={{ flexShrink: 0 }} />
+        <div>
+          <Skeleton width={160} height={22} style={{ marginBottom: 8 }} />
+          <Skeleton width={100} height={13} radius={3} />
+        </div>
+      </div>
+      {/* Stat cards */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 32 }}>
+        {Array.from({ length: 3 }, (_, i) => (
+          <Skeleton key={i} width={140} height={72} radius={10} />
+        ))}
+      </div>
+      {/* Track rows */}
+      <Skeleton width={140} height={18} style={{ marginBottom: 14 }} />
+      {Array.from({ length: 6 }, (_, i) => <TrackRowSkeleton key={i} />)}
+    </div>
+  );
+}
+
 export default function PageProfile({
   user,
   isPremium,
@@ -71,13 +97,14 @@ export default function PageProfile({
   cur,
   onOpenPremium,
   onOpenArtistUpgrade,
+  catalogLoading,
 }) {
   const [upgradeReq, setUpgradeReq] = useState(() => user ? getRequest(user.email) : null);
   const [infoReply, setInfoReply] = useState("");
   const [replySent, setReplySent] = useState(false);
 
   useEffect(() => {
-    if (user) setUpgradeReq(getRequest(user.email));
+    if (user) setUpgradeReq(getRequest(user.email)); // eslint-disable-line react-hooks/set-state-in-effect
   }, [user]);
 
   const handleWithdraw = () => {
@@ -98,6 +125,8 @@ export default function PageProfile({
     setReplySent(true);
     setInfoReply("");
   };
+  if (catalogLoading && recentSongs.length === 0) return <ProfilePageSkeleton />;
+
   if (!user) {
     return (
       <div style={{ padding: 60, textAlign: "center" }}>

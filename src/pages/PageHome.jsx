@@ -4,6 +4,8 @@ import { faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import SongCard from "../components/music/SongCard";
 import HorizontalShelf from "../components/layout/HorizontalShelf";
 import { getSongImage, artistImages, getPrimaryArtist } from "../data/media";
+import Skeleton from "../components/ui/skeleton/Skeleton";
+import CardSkeleton from "../components/ui/skeleton/CardSkeleton";
 
 const ARTIST_COLORS = [
   "linear-gradient(135deg,#ea580c,#f97316)",
@@ -333,8 +335,41 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
   );
 }
 
+/* ── Skeleton ─────────────────────────────────────────────────── */
+function HomeShelfSkeleton() {
+  return (
+    <div style={{ marginBottom: 44 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+        <Skeleton width={180} height={22} />
+        <Skeleton width={60} height={12} />
+      </div>
+      <div style={{ display: "flex", gap: 16, overflow: "hidden" }}>
+        {Array.from({ length: 5 }, (_, i) => <CardSkeleton key={i} width={160} />)}
+      </div>
+    </div>
+  );
+}
+
+function HomePageSkeleton() {
+  return (
+    <div style={{ padding: "28px 28px 80px" }}>
+      <div style={{ marginBottom: 40 }}>
+        <Skeleton width={220} height={28} style={{ marginBottom: 18 }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} width="100%" height={56} radius={6} />
+          ))}
+        </div>
+      </div>
+      <HomeShelfSkeleton />
+      <HomeShelfSkeleton />
+      <HomeShelfSkeleton />
+    </div>
+  );
+}
+
 /* ── Page ──────────────────────────────────────────────────────── */
-export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum, onOpenArtist }) {
+export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum, onOpenArtist, catalogLoading }) {
   const idMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
   const sorted = useMemo(() => [...list].sort((a, b) => b.plays - a.plays), [list]);
 
@@ -445,6 +480,8 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
     }
     return sorted.slice(0, 8);
   }, [recentIds, idMap, sorted]);
+
+  if (catalogLoading && list.length === 0) return <HomePageSkeleton />;
 
   let stagger = 0;
 

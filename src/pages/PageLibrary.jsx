@@ -2,6 +2,8 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../constants/theme";
+import Skeleton from "../components/ui/skeleton/Skeleton";
+import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
 import PlaylistCover from "../components/ui/PlaylistCover";
@@ -306,6 +308,38 @@ function ArtistRow({ artist, onClick }) {
 }
 
 /* ── Page ─────────────────────────────────────────────────────── */
+function LibraryPageSkeleton() {
+  return (
+    <div style={{ display: "flex", height: "100%", animation: "slideUp 0.3s ease" }}>
+      {/* Left panel */}
+      <div style={{ width: 280, flexShrink: 0, borderRight: "1px solid var(--border)", padding: "20px 16px" }}>
+        <Skeleton width={100} height={18} style={{ marginBottom: 16 }} />
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          {Array.from({ length: 3 }, (_, i) => <Skeleton key={i} width={80} height={30} radius={9999} />)}
+        </div>
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+            <Skeleton width={44} height={44} radius={6} style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <Skeleton width="70%" height={13} style={{ marginBottom: 5 }} />
+              <Skeleton width="45%" height={11} radius={3} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Right panel */}
+      <div style={{ flex: 1, padding: "20px 24px" }}>
+        <Skeleton width="100%" height={180} radius={8} style={{ marginBottom: 20 }} />
+        <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
+          <Skeleton width={120} height={22} />
+          <Skeleton width={60} height={22} />
+        </div>
+        {Array.from({ length: 6 }, (_, i) => <TrackRowSkeleton key={i} />)}
+      </div>
+    </div>
+  );
+}
+
 export default function PageLibrary({
   list, cur, onPlay, likedIds, onLike,
   onAddToQueue,
@@ -321,6 +355,7 @@ export default function PageLibrary({
   recentIds = [],
   onOpenArtist,
   onOpenAlbum,
+  catalogLoading,
 }) {
   const [trackSort, setTrackSort] = useState("custom");
   const [trackQuery, setTrackQuery] = useState("");
@@ -431,6 +466,8 @@ export default function PageLibrary({
   /* filtered playlist list for left panel */
   const shownPlaylists = libraryFilter === "Album" ? shownAlbums :
     libraryFilter === "Danh sách phát" ? playlistItems : [];
+
+  if (catalogLoading && list.length === 0) return <LibraryPageSkeleton />;
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", display: "flex", height: "100%" }}>

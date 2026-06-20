@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
+import useDelayedVisible from "./hooks/useDelayedVisible";
 import { useApplyTheme } from "./lib/theme/useTheme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/ui/Splash";
-import Loader from "./components/ui/Loader";
 import Player from "./components/player/Player";
 import Sidebar from "./components/nav/Sidebar";
 import AuthModal from "./components/modals/AuthModal";
@@ -58,7 +58,6 @@ export default function App() {
   const feedbackTimerRef = useRef(null);
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
-  const [loading, setLoading] = useState(false);
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [prog, setProg] = useState(0);
@@ -71,8 +70,11 @@ export default function App() {
   const [repeatMode, setRepeatMode] = useState("off");
   const [likedIds, setLikedIds] = useState(() => new Set(loadLikedIdsLocal()));
   const [catalogSongs, setCatalogSongs] = useState([]);
+  const [catalogStatus, setCatalogStatus] = useState("loading");
   useEffect(() => {
-    fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
+    fetchSongsFromSupabase()
+      .then(songs => { setCatalogSongs(songs); setCatalogStatus("success"); })
+      .catch(() => setCatalogStatus("error"));
   }, []);
 
   // Realtime: khi admin approve bài mới → refetch toàn catalog
@@ -81,6 +83,8 @@ export default function App() {
       fetchSongsFromSupabase().then(setCatalogSongs).catch(() => {});
     });
   }, []);
+
+  const showCatalogSkeleton = useDelayedVisible(catalogStatus === "loading");
 
   // Bài bị admin gỡ biến mất — tính lại khi rời màn admin
   const list = useMemo(() => {
@@ -195,8 +199,15 @@ export default function App() {
         }
       })
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.email]);
+
+  /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
+  const userKey = authUser?.email?.toLowerCase() ?? "guest";
+  const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
+  const [notifState, setNotifState] = useState(() => ({ key: userKey, value: loadNotifications(userKey) }));
+  // High quality chỉ hợp lệ khi premium — guest/free luôn thấy normal dù stored là high
+  const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
+  const notifications = notifState.value;
 
   // Realtime: push notifications from Supabase (admin broadcast, song approved, etc.)
   useEffect(() => {
@@ -208,16 +219,7 @@ export default function App() {
         return { ...s, value: items };
       });
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.email]);
-
-  /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
-  const userKey = authUser?.email?.toLowerCase() ?? "guest";
-  const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
-  const [notifState, setNotifState] = useState(() => ({ key: userKey, value: loadNotifications(userKey) }));
-  // High quality chỉ hợp lệ khi premium — guest/free luôn thấy normal dù stored là high
-  const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
-  const notifications = notifState.value;
 
   useApplyTheme(settings.themeMode);
 
@@ -387,11 +389,10 @@ export default function App() {
 
   // entry: extra route state (artist/album/playlistId) recorded in history
   const nav = (p, entry) => {
-    if (loading || (p === page && !entry)) return;
+    if (p === page && !entry) return;
     pushEntry({ page: p, ...entry });
-    if (p === page) return; // same page, new entity — switch without loader
-    setLoading(true);
-    setTimeout(() => { setPage(p); setLoading(false); }, 500 + Math.random() * 300);
+    if (p === page) return;
+    setPage(p);
   };
 
   const openLibrary = (entry = {}) => {
@@ -406,27 +407,26 @@ export default function App() {
     setSearch(value);
     if (page !== "search") {
       pushEntry({ page: "search", query: value });
-      setLoading(false);
       setPage("search");
       return;
     }
     replaceEntry({ page: "search", query: value });
   };
 
-  // Back/forward restore instantly — no fake loader on history moves
+  // Back/forward restore instantly
   const goBack = useCallback(() => {
-    if (loading || hist.index <= 0) return;
+    if (hist.index <= 0) return;
     const idx = hist.index - 1;
     applyEntry(hist.stack[idx]);
     setHist(h => ({ ...h, index: idx }));
-  }, [loading, hist, applyEntry]);
+  }, [hist, applyEntry]);
 
   const goForward = useCallback(() => {
-    if (loading || hist.index >= hist.stack.length - 1) return;
+    if (hist.index >= hist.stack.length - 1) return;
     const idx = hist.index + 1;
     applyEntry(hist.stack[idx]);
     setHist(h => ({ ...h, index: idx }));
-  }, [loading, hist, applyEntry]);
+  }, [hist, applyEntry]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -1270,104 +1270,106 @@ export default function App() {
         />
 
         {/* Main content */}
-        <div style={{ flex: 1, overflowY: "auto", background: BG.base }}>
-          {loading ? (
-            <Loader text={`Đang tải ${
-              { home: "trang chủ", search: "tìm kiếm", library: "thư viện", artist: "nghệ sĩ", album: "album", profile: "hồ sơ" }[page] ?? page
-            }...`} />
-          ) : (
-            <>
-              {page === "home" && (
-                <PageHome
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  recentIds={recentIds}
-                  onOpenAlbum={openAlbum}
-                  onOpenArtist={openArtist}
-                />
-              )}
-              {page === "artist" && (
-                <PageArtist
-                  artistName={selectedArtist}
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  onOpenAlbum={openAlbum}
-                  isFollowed={selectedArtist ? followedArtists.has(selectedArtist) : false}
-                  onToggleFollow={() => toggleFollowArtistWithAuth(selectedArtist)}
-                />
-              )}
-              {page === "album" && (
-                <PageAlbum
-                  albumName={selectedAlbum}
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  onOpenArtist={openArtist}
-                  onOpenAlbum={openAlbum}
-                  isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
-                  onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
-                />
-              )}
-              {page === "search" && (
-                <PageSearch
-                  list={list}
-                  query={search}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  userPlaylists={visiblePlaylists}
-                  onOpenArtist={openArtist}
-                  onOpenAlbum={openAlbum}
-                  onOpenPlaylist={openPlaylist}
-                />
-              )}
-              {page === "library" && (
-                <PageLibrary
-                  list={list}
-                  cur={cur}
-                  onPlay={playWithAuth}
-                  likedIds={likedIds}
-                  onLike={toggleLikeWithAuth}
-                  onAddToQueue={addToQueue}
-                  userPlaylists={visiblePlaylists}
-                  albumPlaylists={albumPlaylists}
-                  selectedPlaylistId={selectedPlaylistId}
-                  onSelectPlaylist={(playlistId) => openLibrary({ playlistId, libraryFilter: "Danh sách phát" })}
-                  libraryFilter={libraryFilter}
-                  onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
-                  onToggleSongInPlaylist={toggleSongInPlaylist}
-                  followedArtists={followedArtists}
-                  savedAlbums={savedAlbums}
-                  recentIds={recentIds}
-                  onOpenArtist={openArtist}
-                  onOpenAlbum={openAlbum}
-                />
-              )}
-              {page === "profile" && (
-                <PageProfile
-                  user={authUser}
-                  isPremium={isPremium}
-                  likedCount={likedIds.size}
-                  recentSongs={recentSongs}
-                  onPlay={playWithAuth}
-                  cur={cur}
-                  onOpenPremium={() => setPremiumOpen(true)}
-                  onOpenArtistUpgrade={(prefill) => { setArtistUpgradeOpen(true); }}
-                />
-              )}
-            </>
+        <div
+          style={{ flex: 1, overflowY: "auto", background: BG.base }}
+          aria-busy={showCatalogSkeleton}
+          aria-live="polite"
+        >
+          {page === "home" && (
+            <PageHome
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              recentIds={recentIds}
+              onOpenAlbum={openAlbum}
+              onOpenArtist={openArtist}
+              catalogLoading={showCatalogSkeleton}
+            />
+          )}
+          {page === "artist" && (
+            <PageArtist
+              artistName={selectedArtist}
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              onOpenAlbum={openAlbum}
+              isFollowed={selectedArtist ? followedArtists.has(selectedArtist) : false}
+              onToggleFollow={() => toggleFollowArtistWithAuth(selectedArtist)}
+              catalogLoading={showCatalogSkeleton}
+            />
+          )}
+          {page === "album" && (
+            <PageAlbum
+              albumName={selectedAlbum}
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              onOpenArtist={openArtist}
+              onOpenAlbum={openAlbum}
+              isSaved={selectedAlbum ? savedAlbums.has(selectedAlbum) : false}
+              onToggleSave={() => toggleSaveAlbumWithAuth(selectedAlbum)}
+              catalogLoading={showCatalogSkeleton}
+            />
+          )}
+          {page === "search" && (
+            <PageSearch
+              list={list}
+              query={search}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              userPlaylists={visiblePlaylists}
+              onOpenArtist={openArtist}
+              onOpenAlbum={openAlbum}
+              onOpenPlaylist={openPlaylist}
+              catalogLoading={showCatalogSkeleton}
+            />
+          )}
+          {page === "library" && (
+            <PageLibrary
+              list={list}
+              cur={cur}
+              onPlay={playWithAuth}
+              likedIds={likedIds}
+              onLike={toggleLikeWithAuth}
+              onAddToQueue={addToQueue}
+              userPlaylists={visiblePlaylists}
+              albumPlaylists={albumPlaylists}
+              selectedPlaylistId={selectedPlaylistId}
+              onSelectPlaylist={(playlistId) => openLibrary({ playlistId, libraryFilter: "Danh sách phát" })}
+              libraryFilter={libraryFilter}
+              onSetLibraryFilter={(filter) => openLibrary({ libraryFilter: filter })}
+              onToggleSongInPlaylist={toggleSongInPlaylist}
+              followedArtists={followedArtists}
+              savedAlbums={savedAlbums}
+              recentIds={recentIds}
+              onOpenArtist={openArtist}
+              onOpenAlbum={openAlbum}
+              catalogLoading={showCatalogSkeleton}
+            />
+          )}
+          {page === "profile" && (
+            <PageProfile
+              user={authUser}
+              isPremium={isPremium}
+              likedCount={likedIds.size}
+              recentSongs={recentSongs}
+              onPlay={playWithAuth}
+              cur={cur}
+              onOpenPremium={() => setPremiumOpen(true)}
+              onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
+              catalogLoading={showCatalogSkeleton}
+            />
           )}
         </div>
       </div>

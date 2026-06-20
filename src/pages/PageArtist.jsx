@@ -6,6 +6,8 @@ import TrackList from "../components/ui/TrackList";
 import AlbumTile from "../components/ui/AlbumTile";
 import { TEXT } from "../constants/theme";
 import { getArtist, deriveAlbums, formatPlays } from "../data/derived";
+import EntityHeaderSkeleton from "../components/ui/skeleton/EntityHeaderSkeleton";
+import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 
 export default function PageArtist({
   artistName,
@@ -18,6 +20,7 @@ export default function PageArtist({
   onOpenAlbum,
   isFollowed,
   onToggleFollow,
+  catalogLoading,
 }) {
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
@@ -29,6 +32,16 @@ export default function PageArtist({
   }, [artist]);
 
   if (!artist) {
+    if (catalogLoading) {
+      return (
+        <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>
+          <EntityHeaderSkeleton type="artist" />
+          <div style={{ padding: "0 28px" }}>
+            {Array.from({ length: 6 }, (_, i) => <TrackRowSkeleton key={i} />)}
+          </div>
+        </div>
+      );
+    }
     return (
       <div style={{ padding: 60, textAlign: "center", color: TEXT.secondary, animation: "slideUp 0.3s ease" }}>
         <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Không tìm thấy nghệ sĩ</div>
