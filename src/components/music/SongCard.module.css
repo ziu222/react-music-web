@@ -15,7 +15,7 @@
 
 .card:hover {
   background: var(--bg-el);
-  box-shadow: var(--shadow-card-hover), var(--glow-coral-play);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .art {

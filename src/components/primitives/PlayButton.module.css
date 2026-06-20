@@ -22,6 +22,10 @@
   box-shadow: var(--shadow-play), var(--glow-coral-play);
 }
 
+.visible:hover {
+  transform: translateY(0) scale(1.06);
+}
+
 .visible {
   opacity: 1;
   transform: translateY(0) scale(1);

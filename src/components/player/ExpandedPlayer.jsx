@@ -7,7 +7,9 @@ import EqBars from "./EqBars";
 import SaveToPlaylistPopover from "../modals/SaveToPlaylistPopover";
 import { C } from "../../constants/theme";
 import { getSongImage } from "../../data/media";
-import { loadLyricsForSong, loadLyricsOffsetMs } from "../../lib/music/lyrics";
+import { getCachedLyricsForSong, loadLyricsForSong, loadLyricsOffsetMs } from "../../lib/music/lyrics";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
+import PanelSkeleton from "../ui/skeleton/PanelSkeleton";
 
 export default function ExpandedPlayer({
   isOpen, onClose,
@@ -405,10 +407,11 @@ function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
   useEffect(() => {
     if (!song) return;
     const controller = new AbortController();
+    const cached = getCachedLyricsForSong(song);
     Promise.resolve().then(() => {
       if (controller.signal.aborted) return;
-      setStatus("loading");
-      setLyrics(prev => prev?.trackId === song.id ? prev : null);
+      setStatus(cached ? "ready" : "loading");
+      setLyrics(cached ?? (prev => prev?.trackId === song.id ? prev : null));
     });
 
     loadLyricsForSong(song, { signal: controller.signal })
@@ -465,6 +468,9 @@ function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
     : status === "error"
       ? "Lyrics failed to load"
       : "Lyrics not available for this track.";
+  const isLoading = status === "loading";
+  const showLyricsSkeleton = useDelayedVisible(isLoading);
+  const holdLyricsSkeleton = isLoading || showLyricsSkeleton;
 
   return (
     <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 20 }}>
@@ -496,22 +502,8 @@ function ExpandedLyricsPreview({ song, currentTime, onSeek, onOpenLyrics }) {
         )}
       </div>
 
-      {status === "loading" ? (
-        <div style={{ display: "grid", gap: 9 }}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: `${86 - i * 12}%`,
-                height: 17,
-                borderRadius: 5,
-                background: "linear-gradient(90deg, var(--island-hover), var(--island-rail), var(--island-hover))",
-                backgroundSize: "220% 100%",
-                animation: "lyrics-panel-skeleton 1.2s ease-in-out infinite",
-              }}
-            />
-          ))}
-        </div>
+      {holdLyricsSkeleton ? (
+        <PanelSkeleton lines={3} compact visible={showLyricsSkeleton} />
       ) : previewLines.length > 0 ? (
         <div style={{ display: "grid", gap: 2, animation: "lyrics-panel-content-in 260ms cubic-bezier(0.2, 0, 0, 1)" }}>
           {previewLines.map(line => {

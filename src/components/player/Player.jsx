@@ -24,6 +24,7 @@ import LyricsPanel from "./LyricsPanel";
 import ExpandedPlayer from "./ExpandedPlayer";
 import { C } from "../../constants/theme";
 import { getSongImage } from "../../data/media";
+import { prefetchLyricsForSong } from "../../lib/music/lyrics";
 
 export default function Player({
   s,
@@ -86,6 +87,9 @@ export default function Player({
     [actualDurationSecs, s]
   );
   useEffect(() => { sRef.current = songForLyrics; }, [songForLyrics]);
+  useEffect(() => {
+    prefetchLyricsForSong(songForLyrics);
+  }, [songForLyrics]);
   useEffect(() => { onSeekRef.current = onSeek; }, [onSeek]);
   useEffect(() => { onVolumeChangeRef.current = onVolumeChange; }, [onVolumeChange]);
 
