@@ -350,9 +350,9 @@ function HomeShelfSkeleton() {
   );
 }
 
-function HomePageSkeleton() {
+function HomePageSkeleton({ visible }) {
   return (
-    <div style={{ padding: "28px 28px 80px" }}>
+    <div aria-hidden="true" style={{ padding: "28px 28px 80px", visibility: visible ? "visible" : "hidden" }}>
       <div style={{ marginBottom: 40 }}>
         <Skeleton width={220} height={28} style={{ marginBottom: 18 }} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
@@ -369,7 +369,7 @@ function HomePageSkeleton() {
 }
 
 /* ── Page ──────────────────────────────────────────────────────── */
-export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum, onOpenArtist, catalogLoading }) {
+export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum, onOpenArtist, catalogLoading, skeletonVisible }) {
   const idMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
   const sorted = useMemo(() => [...list].sort((a, b) => b.plays - a.plays), [list]);
 
@@ -481,7 +481,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
     return sorted.slice(0, 8);
   }, [recentIds, idMap, sorted]);
 
-  if (catalogLoading && list.length === 0) return <HomePageSkeleton />;
+  if (catalogLoading && list.length === 0) return <HomePageSkeleton visible={skeletonVisible} />;
 
   let stagger = 0;
 

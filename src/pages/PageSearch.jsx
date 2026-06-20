@@ -387,9 +387,9 @@ function PlaylistResult({ pl, coverSongs, meta, onOpen }) {
   );
 }
 
-function SearchPageSkeleton() {
+function SearchPageSkeleton({ visible }) {
   return (
-    <div style={{ padding: "32px 28px 80px" }}>
+    <div aria-hidden="true" style={{ padding: "32px 28px 80px", visibility: visible ? "visible" : "hidden" }}>
       <Skeleton width={220} height={22} style={{ marginBottom: 20 }} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, marginBottom: 40 }}>
         {Array.from({ length: 9 }, (_, i) => <Skeleton key={i} width="100%" height={56} radius={8} />)}
@@ -407,6 +407,7 @@ export default function PageSearch({
   onOpenAlbum,
   onOpenPlaylist,
   catalogLoading,
+  skeletonVisible,
 }) {
   const [genre, setGenre] = useState(null);
 
@@ -489,7 +490,9 @@ export default function PageSearch({
     return null;
   }, [isSearching, q, artistMatches, albumMatches, songMatches]);
 
-  if (catalogLoading && list.length === 0) return <SearchPageSkeleton />;
+  if (catalogLoading && list.length === 0 && (isSearching || hasGenreFilter)) {
+    return <SearchPageSkeleton visible={skeletonVisible} />;
+  }
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", padding: "32px 28px 80px" }}>

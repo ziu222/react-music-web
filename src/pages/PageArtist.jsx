@@ -21,6 +21,7 @@ export default function PageArtist({
   isFollowed,
   onToggleFollow,
   catalogLoading,
+  skeletonVisible,
 }) {
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
@@ -34,7 +35,7 @@ export default function PageArtist({
   if (!artist) {
     if (catalogLoading) {
       return (
-        <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>
+        <div aria-hidden="true" style={{ paddingBottom: 80, visibility: skeletonVisible ? "visible" : "hidden" }}>
           <EntityHeaderSkeleton type="artist" />
           <div style={{ padding: "0 28px" }}>
             {Array.from({ length: 6 }, (_, i) => <TrackRowSkeleton key={i} />)}

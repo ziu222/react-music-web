@@ -23,6 +23,7 @@ export default function PageAlbum({
   isSaved,
   onToggleSave,
   catalogLoading,
+  skeletonVisible,
 }) {
   const album = useMemo(() => getAlbum(list, albumName), [list, albumName]);
 
@@ -38,7 +39,7 @@ export default function PageAlbum({
   if (!album) {
     if (catalogLoading) {
       return (
-        <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>
+        <div aria-hidden="true" style={{ paddingBottom: 80, visibility: skeletonVisible ? "visible" : "hidden" }}>
           <EntityHeaderSkeleton type="album" />
           <div style={{ padding: "0 28px" }}>
             {Array.from({ length: 8 }, (_, i) => <TrackRowSkeleton key={i} />)}
