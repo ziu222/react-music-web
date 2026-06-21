@@ -59,6 +59,7 @@ export default function Player({
   onCreatePlaylistWithSong,
 }) {
   const [hovProgress, setHovProgress] = useState(false);
+  const [hoverRatio, setHoverRatio] = useState(0);
   const [hovVolume, setHovVolume] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isVolDragging, setIsVolDragging] = useState(false);
@@ -126,6 +127,8 @@ export default function Player({
   const cover = getSongImage(s);
   const playbackDurationSecs = actualDurationSecs || s.durationSecs || 0;
   const pct = playbackDurationSecs > 0 ? Math.min(100, Math.max(0, (prog / playbackDurationSecs) * 100)) : 0;
+  const hoverSec = Math.round(hoverRatio * playbackDurationSecs);
+  const hoverTimeStr = `${Math.floor(hoverSec / 60)}:${String(hoverSec % 60).padStart(2, "0")}`;
   const volPct = muted ? 0 : Math.round(volume * 100);
   const mins = Math.floor(prog / 60);
   const secs = String(Math.floor(prog % 60)).padStart(2, "0");
@@ -362,8 +365,35 @@ export default function Player({
               onMouseDown={handleProgressMouseDown}
               onMouseEnter={() => setHovProgress(true)}
               onMouseLeave={() => setHovProgress(false)}
+              onMouseMove={e => {
+                if (progressBarRef.current) {
+                  const r = progressBarRef.current.getBoundingClientRect();
+                  setHoverRatio(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+                }
+              }}
               style={{ flex: 1, height: 16, display: "flex", alignItems: "center", position: "relative", cursor: "pointer", userSelect: "none" }}
             >
+              {showThumb && (
+                <div style={{
+                  position: "absolute",
+                  left: `${hoverRatio * 100}%`,
+                  bottom: "calc(50% + 12px)",
+                  transform: "translateX(-50%)",
+                  background: "rgba(30,20,16,0.92)",
+                  color: "#e8d5c9",
+                  fontSize: 10,
+                  fontVariantNumeric: "tabular-nums",
+                  fontWeight: 600,
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  pointerEvents: "none",
+                  whiteSpace: "nowrap",
+                  zIndex: 10,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                }}>
+                  {hoverTimeStr}
+                </div>
+              )}
               <div style={{
                 position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)",
                 height: showThumb ? 6 : 4,
