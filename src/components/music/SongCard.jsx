@@ -5,9 +5,10 @@ import { getSongImage } from "../../data/media";
 import PlayButton from "../primitives/PlayButton";
 import styles from "./SongCard.module.css";
 
-export default function SongCard({ song, cur, onPlay, width }) {
+export default function SongCard({ song, cur, playing = false, onPlay, width }) {
   const [hov, setHov] = useState(false);
-  const playing = cur?.id === song.id;
+  const isCurrent = cur?.id === song.id;
+  const isPlaying = isCurrent && playing;
   const cover = getSongImage(song);
 
   return (
@@ -15,7 +16,7 @@ export default function SongCard({ song, cur, onPlay, width }) {
       role="button"
       tabIndex={0}
       className={`discovery-card ${styles.card}`}
-      aria-label={`Phát ${song.title} – ${song.artist}`}
+      aria-label={isPlaying ? `Tạm dừng ${song.title}` : `Phát ${song.title} – ${song.artist}`}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={() => onPlay(song)}
@@ -27,24 +28,24 @@ export default function SongCard({ song, cur, onPlay, width }) {
       }}
       style={{ width: width || "100%" }}
     >
-      <div className={`${styles.art} ${playing ? styles.artPlaying : ""}`} style={{ background: song.bg }}>
+      <div className={`${styles.art} ${isCurrent ? styles.artPlaying : ""}`} style={{ background: song.bg }}>
         {cover && <img src={cover} alt="" className={styles.cover} />}
         <div className={styles.playWrap}>
-          <PlayButton playing={playing} visible={hov || playing} />
+          <PlayButton playing={isPlaying} visible={hov || isCurrent} />
         </div>
-        {!hov && playing && (
+        {!hov && isPlaying && (
           <div className={styles.eqBadge}>
             <EqBars size={16} />
           </div>
         )}
-        {!cover && !hov && !playing && (
+        {!cover && !hov && !isCurrent && (
           <span className={styles.fallback}>♪</span>
         )}
       </div>
 
       <div
         className={styles.title}
-        style={playing ? { color: C[400] } : undefined}
+        style={isCurrent ? { color: C[400] } : undefined}
       >
         {song.title}
       </div>

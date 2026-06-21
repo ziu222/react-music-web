@@ -60,16 +60,17 @@ function SectionHeader({ title }) {
 }
 
 /* ── Quick pick tile (Spotify-style top grid) ──────────────────── */
-function QuickTile({ song, cur, onPlay }) {
+function QuickTile({ song, cur, playing = false, onPlay }) {
   const [hov, setHov] = useState(false);
-  const playing = cur?.id === song.id;
+  const isCurrent = cur?.id === song.id;
+  const isPlaying = isCurrent && playing;
   const cover = getSongImage(song);
 
   return (
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Phát ${song.title}`}
+      aria-label={isPlaying ? `Tạm dừng ${song.title}` : `Phát ${song.title}`}
       onClick={() => onPlay(song)}
       onKeyDown={e => {
         if (e.key === "Enter" || e.key === " ") {
@@ -114,7 +115,7 @@ function QuickTile({ song, cur, onPlay }) {
         padding: "0 52px 0 12px",
         fontSize: 13,
         fontWeight: 600,
-        color: playing ? "#fb923c" : "var(--text-primary)",
+        color: isCurrent ? "#fb923c" : "var(--text-primary)",
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
@@ -136,16 +137,16 @@ function QuickTile({ song, cur, onPlay }) {
           alignItems: "center",
           justifyContent: "center",
           boxShadow: "0 6px 16px rgba(0,0,0,0.5)",
-          opacity: hov || playing ? 1 : 0,
-          transform: hov || playing
+          opacity: hov || isCurrent ? 1 : 0,
+          transform: hov || isCurrent
             ? "translateY(-50%) scale(1)"
             : "translateY(-50%) scale(0.85)",
           pointerEvents: "none",
         }}
       >
         <FontAwesomeIcon
-          icon={playing ? faPause : faPlay}
-          style={{ fontSize: 12, color: "#fff", marginLeft: playing ? 0 : 1 }}
+          icon={isPlaying ? faPause : faPlay}
+          style={{ fontSize: 12, color: "#fff", marginLeft: isPlaying ? 0 : 1 }}
         />
       </div>
     </div>
@@ -153,10 +154,11 @@ function QuickTile({ song, cur, onPlay }) {
 }
 
 /* ── Album card ────────────────────────────────────────────────── */
-function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
+function AlbumCard({ album, cur, playing = false, onPlay, onOpenAlbum }) {
   const [hov, setHov] = useState(false);
   const cover = getSongImage(album.representative);
   const isActive = cur?.id === album.representative.id;
+  const isPlaying = isActive && playing;
 
   return (
     <div
@@ -213,6 +215,8 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
         {/* Play button */}
         <div
           className="card-play-btn"
+          role="button"
+          aria-label={isPlaying ? `Tạm dừng ${album.album}` : `Phát ${album.album}`}
           onClick={e => {
             e.stopPropagation();
             onPlay(album.representative);
@@ -228,7 +232,7 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
             pointerEvents: hov || isActive ? "auto" : "none",
           }}
         >
-          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 13, color: "#fff", marginLeft: 2 }} />
+          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} style={{ fontSize: 13, color: "#fff", marginLeft: isPlaying ? 0 : 2 }} />
         </div>
       </div>
 
@@ -250,9 +254,10 @@ function AlbumCard({ album, cur, onPlay, onOpenAlbum }) {
 }
 
 /* ── Artist card ───────────────────────────────────────────────── */
-function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
+function ArtistCard({ artist, cur, playing = false, onPlay, onOpenArtist }) {
   const [hov, setHov] = useState(false);
   const isActive = cur?.id === artist.song.id;
+  const isPlaying = isActive && playing;
   const open = () => (onOpenArtist ? onOpenArtist(artist.name) : onPlay(artist.song));
 
   return (
@@ -304,6 +309,8 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
         </div>
         <div
           className="card-play-btn"
+          role="button"
+          aria-label={isPlaying ? `Tạm dừng nhạc của ${artist.name}` : `Phát nhạc của ${artist.name}`}
           onClick={e => {
             e.stopPropagation();
             onPlay(artist.song);
@@ -319,7 +326,7 @@ function ArtistCard({ artist, cur, onPlay, onOpenArtist }) {
             pointerEvents: hov || isActive ? "auto" : "none",
           }}
         >
-          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 13, color: "#fff", marginLeft: 2 }} />
+          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} style={{ fontSize: 13, color: "#fff", marginLeft: isPlaying ? 0 : 2 }} />
         </div>
       </div>
       <div style={{
@@ -369,7 +376,7 @@ function HomePageSkeleton({ visible }) {
 }
 
 /* ── Page ──────────────────────────────────────────────────────── */
-export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], onOpenAlbum, onOpenArtist, catalogLoading, skeletonVisible }) {
+export default function PageHome({ list, cur, playing = false, onPlay, likedIds, recentIds = [], onOpenAlbum, onOpenArtist, catalogLoading, skeletonVisible }) {
   const idMap = useMemo(() => new Map(list.map(s => [s.id, s])), [list]);
   const sorted = useMemo(() => [...list].sort((a, b) => b.plays - a.plays), [list]);
 
@@ -513,7 +520,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
           gap: 10,
         }}>
           {quickPicks.map(s => (
-            <QuickTile key={s.id} song={s} cur={cur} onPlay={onPlay} />
+            <QuickTile key={s.id} song={s} cur={cur} playing={playing} onPlay={onPlay} />
           ))}
         </div>
       </header>
@@ -523,7 +530,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
         <SectionHeader title="Những bài hát thịnh hành" />
         <HorizontalShelf>
           {trending.map(s => (
-            <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+            <SongCard key={s.id} song={s} cur={cur} playing={playing} onPlay={onPlay} width={160} />
           ))}
         </HorizontalShelf>
       </section>
@@ -534,7 +541,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
           <SectionHeader title="Được tạo cho bạn" />
           <HorizontalShelf>
             {madeForYou.map(s => (
-              <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+              <SongCard key={s.id} song={s} cur={cur} playing={playing} onPlay={onPlay} width={160} />
             ))}
           </HorizontalShelf>
         </section>
@@ -546,7 +553,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
           <SectionHeader title="Top US-UK" />
           <HorizontalShelf>
             {usuk.map(s => (
-              <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+              <SongCard key={s.id} song={s} cur={cur} playing={playing} onPlay={onPlay} width={160} />
             ))}
           </HorizontalShelf>
         </section>
@@ -558,7 +565,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
           <SectionHeader title="V-Pop nổi bật" />
           <HorizontalShelf>
             {vpop.map(s => (
-              <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+              <SongCard key={s.id} song={s} cur={cur} playing={playing} onPlay={onPlay} width={160} />
             ))}
           </HorizontalShelf>
         </section>
@@ -570,7 +577,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
           <SectionHeader title="Album mới" />
           <HorizontalShelf>
             {newAlbums.map(al => (
-              <AlbumCard key={al.album} album={al} cur={cur} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
+              <AlbumCard key={al.album} album={al} cur={cur} playing={playing} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
             ))}
           </HorizontalShelf>
         </section>
@@ -582,7 +589,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
           <SectionHeader title="Album phổ biến" />
           <HorizontalShelf>
             {albums.map(al => (
-              <AlbumCard key={al.album} album={al} cur={cur} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
+              <AlbumCard key={al.album} album={al} cur={cur} playing={playing} onPlay={onPlay} onOpenAlbum={onOpenAlbum} />
             ))}
           </HorizontalShelf>
         </section>
@@ -593,7 +600,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
         <SectionHeader title="Nghệ sĩ phổ biến" />
         <HorizontalShelf>
           {artists.map(a => (
-            <ArtistCard key={a.name} artist={a} cur={cur} onPlay={onPlay} onOpenArtist={onOpenArtist} />
+            <ArtistCard key={a.name} artist={a} cur={cur} playing={playing} onPlay={onPlay} onOpenArtist={onOpenArtist} />
           ))}
         </HorizontalShelf>
       </section>
@@ -603,7 +610,7 @@ export default function PageHome({ list, cur, onPlay, likedIds, recentIds = [], 
         <SectionHeader title={recentIds.length > 0 ? "Nghe gần đây" : "Đề xuất cho bạn"} />
         <HorizontalShelf>
           {recentSongs.map(s => (
-            <SongCard key={s.id} song={s} cur={cur} onPlay={onPlay} width={160} />
+            <SongCard key={s.id} song={s} cur={cur} playing={playing} onPlay={onPlay} width={160} />
           ))}
         </HorizontalShelf>
       </section>

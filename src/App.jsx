@@ -489,6 +489,16 @@ export default function App() {
     }
   }, [play, shuffle, list]);
 
+  // Unified play/pause toggle for every control OUTSIDE the player bar
+  // (song cards, track rows, entity headers). Same song → pause/resume in
+  // place; a different song → start it. Keeps all those buttons in sync with
+  // the global `playing` state instead of always restarting.
+  const togglePlaySong = useCallback((song) => {
+    if (!song) return;
+    if (cur?.id === song.id) setPlaying(p => !p);
+    else playExternal(song);
+  }, [cur, playExternal]);
+
   // Play a track that the user picked from the Queue panel — seeks in the existing queue.
   const playFromQueue = useCallback((song) => {
     if (shuffle) {
@@ -649,6 +659,10 @@ export default function App() {
 
   const playWithAuth = (s) => {
     requireAuth(() => playExternal(s), { reason: "play", song: s });
+  };
+
+  const togglePlayWithAuth = (s) => {
+    requireAuth(() => togglePlaySong(s), { reason: "play", song: s });
   };
 
   const playFromQueueWithAuth = (s) => {
@@ -1353,7 +1367,8 @@ export default function App() {
             <PageHome
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               recentIds={recentIds}
@@ -1368,7 +1383,8 @@ export default function App() {
               artistName={selectedArtist}
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1384,7 +1400,8 @@ export default function App() {
               albumName={selectedAlbum}
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1401,7 +1418,8 @@ export default function App() {
               list={list}
               query={search}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1417,7 +1435,8 @@ export default function App() {
             <PageLibrary
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1441,8 +1460,9 @@ export default function App() {
               isPremium={isPremium}
               likedCount={likedIds.size}
               recentSongs={recentSongs}
-              onPlay={playWithAuth}
+              onPlay={togglePlayWithAuth}
               cur={cur}
+              playing={playing}
               onOpenPremium={() => setPremiumOpen(true)}
               onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
             />

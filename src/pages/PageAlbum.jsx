@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faCirclePlus, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faCirclePlus, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import EntityHeader from "../components/ui/EntityHeader";
 import TrackList from "../components/ui/TrackList";
 import AlbumTile from "../components/ui/AlbumTile";
@@ -14,6 +14,7 @@ export default function PageAlbum({
   albumName,
   list,
   cur,
+  playing = false,
   onPlay,
   likedIds,
   onLike,
@@ -58,6 +59,11 @@ export default function PageAlbum({
   const cover = getSongImage(album.representative);
   const accent = album.representative.bg?.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1d1616";
 
+  // Context-aware play/pause: if a track from THIS album is the current song,
+  // the big button toggles it; otherwise it starts the album from the top.
+  const ctxSong = album.songs.find(s => s.id === cur?.id) || null;
+  const ctxPlaying = playing && !!ctxSong;
+
   return (
     <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>
       <EntityHeader
@@ -94,8 +100,8 @@ export default function PageAlbum({
       <div style={{ padding: "16px 32px 8px", display: "flex", alignItems: "center", gap: 18 }}>
         <button
           type="button"
-          aria-label={`Phát album ${album.name}`}
-          onClick={() => onPlay(album.songs[0])}
+          aria-label={ctxPlaying ? `Tạm dừng album ${album.name}` : `Phát album ${album.name}`}
+          onClick={() => onPlay(ctxSong ?? album.songs[0])}
           style={{
             width: 52, height: 52, borderRadius: "50%",
             background: "#1ed760", border: "none",
@@ -107,7 +113,7 @@ export default function PageAlbum({
           onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.06)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
           onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.filter = "none"; }}
         >
-          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 18, marginLeft: 2 }} />
+          <FontAwesomeIcon icon={ctxPlaying ? faPause : faPlay} style={{ fontSize: 18, marginLeft: ctxPlaying ? 0 : 2 }} />
         </button>
         <button
           type="button"
@@ -133,6 +139,7 @@ export default function PageAlbum({
         <TrackList
           songs={album.songs}
           cur={cur}
+          playing={playing}
           likedIds={likedIds}
           onPlay={onPlay}
           onLike={onLike}

@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserCircle,
   faMusic,
+  faPlay,
+  faPause,
   faClock,
   faHeart,
   faMicrophone,
@@ -70,6 +72,7 @@ export default function PageProfile({
   recentSongs = [],
   onPlay,
   cur,
+  playing = false,
   onOpenPremium,
   onOpenArtistUpgrade,
 }) {
@@ -472,10 +475,12 @@ export default function PageProfile({
             <SectionTitle>Nghe gần đây</SectionTitle>
             {recentSongs.slice(0, 6).map((song, i) => {
               const active = cur?.id === song.id;
+              const isPlaying = active && playing;
               return (
                 <div
                   key={song.id}
                   onClick={() => onPlay(song)}
+                  aria-label={isPlaying ? `Tạm dừng ${song.title}` : `Phát ${song.title}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -494,9 +499,10 @@ export default function PageProfile({
                       fontSize: 13,
                       color: active ? C[500] : TEXT.tertiary,
                       flexShrink: 0,
+                      textAlign: "center",
                     }}
                   >
-                    {i + 1}
+                    {isPlaying ? <FontAwesomeIcon icon={faPause} style={{ fontSize: 11 }} /> : i + 1}
                   </span>
                   {song.cover ? (
                     <img
