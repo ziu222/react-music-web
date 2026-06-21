@@ -27,7 +27,7 @@ export default function SongCard({ song, cur, onPlay, width }) {
       }}
       style={{ width: width || "100%" }}
     >
-      <div className={styles.art} style={{ background: song.bg }}>
+      <div className={`${styles.art} ${playing ? styles.artPlaying : ""}`} style={{ background: song.bg }}>
         {cover && <img src={cover} alt="" className={styles.cover} />}
         <div className={styles.playWrap}>
           <PlayButton playing={playing} visible={hov || playing} />

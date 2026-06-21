@@ -23,6 +23,7 @@ import { getRequest, requestMoreInfo, resolveUpgradeRequest, undoRejectUpgradeRe
 import { grantPremium, revokePremium, getGrantHistory, getActiveGrant, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
 import { createNotification, loadNotifications, saveNotifications } from "../../lib/social/notifications";
 import { getMediaBlobUrl } from "../../lib/music/mediaStore";
+import { supabase } from "../../lib/supabase/supabase";
 
 const ROLE_CHIPS = {
   listener: { label: "Listener", color: null },
@@ -95,7 +96,13 @@ export default function UserDetailModal({
   const [adminRejectReason, setAdminRejectReason] = useState("");
   const [upgradeAction, setUpgradeAction] = useState(null); // "info" | "reject" | null
   const [premiumDuration, setPremiumDuration] = useState("1m");
-  const [adminNote, setAdminNote] = useState(() => localStorage.getItem("melodies_admin_note_" + user?.email) || "");
+  const [adminNote, setAdminNote] = useState("");
+  useEffect(() => {
+    if (!user?.email) return;
+    supabase?.from("users").select("admin_note").eq("email", user.email.toLowerCase()).maybeSingle()
+      .then(({ data }) => { if (data) setAdminNote(data.admin_note ?? ""); })
+      .catch(() => {});
+  }, [user?.email]);
   const [grantHistory, setGrantHistory] = useState([]);
   const [activeGrant, setActiveGrant] = useState(null);
   useEffect(() => {
@@ -575,8 +582,10 @@ export default function UserDetailModal({
             <textarea
               value={adminNote}
               onChange={(e) => {
-                setAdminNote(e.target.value);
-                localStorage.setItem("melodies_admin_note_" + user.email, e.target.value);
+                const val = e.target.value;
+                setAdminNote(val);
+                supabase?.from("users").update({ admin_note: val }).eq("email", user.email.toLowerCase())
+                  .then().catch(() => {});
               }}
               placeholder="Ghi chú về người dùng này..."
               style={{ width: "100%", minHeight: 60, background: "rgba(255,255,255,0.05)",

@@ -1,47 +1,13 @@
-/* ── Admin song catalog overrides (frontend-only) ─────────────────
- * Lưu trong localStorage key `melodies_song_overrides` — danh sách
- * id bài hát admin đã gỡ khỏi catalog; App lọc list theo đây nên
- * listener không còn thấy bài bị gỡ ở Home/Search/Library.
- */
+import { supabase } from "../supabase/supabase";
 
-const STORE_KEY = "melodies_song_overrides";
-
-function readStore() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === "object" && Array.isArray(parsed.hiddenIds)
-      ? parsed
-      : { hiddenIds: [] };
-  } catch {
-    return { hiddenIds: [] };
-  }
+/* toggleSongHidden — ghi trực tiếp vào songs.hidden trên DB */
+export async function toggleSongHidden(id, hidden) {
+  if (!supabase) return;
+  await supabase.from("songs").update({ hidden }).eq("id", id)
+    .catch(err => console.error("[toggleSongHidden]", err.message));
 }
 
-function saveStore(store) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
-  catch (err) { void err; }
-}
-
-export function loadSongOverrides() {
-  return readStore();
-}
-
-export function isSongHidden(id) {
-  return readStore().hiddenIds.includes(id);
-}
-
-export function toggleSongHidden(id) {
-  const store = readStore();
-  const hiddenIds = store.hiddenIds.includes(id)
-    ? store.hiddenIds.filter((x) => x !== id)
-    : [...store.hiddenIds, id];
-  saveStore({ ...store, hiddenIds });
-  return hiddenIds;
-}
-
+/* applySongOverrides — lọc bài đã bị admin gỡ (hidden = true trong catalog) */
 export function applySongOverrides(songs) {
-  const { hiddenIds } = readStore();
-  if (!hiddenIds.length) return songs;
-  return songs.filter((s) => !hiddenIds.includes(s.id));
+  return songs.filter(s => !s.hidden);
 }

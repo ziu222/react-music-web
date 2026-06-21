@@ -5,7 +5,7 @@ import { faEyeSlash, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
 import { TEXT } from "../../constants/theme";
 import { staggerContainer, cardVariants, rowVariants } from "../../lib/ui/consoleMotion";
 import { supabase } from "../../lib/supabase/supabase";
-import { loadSongOverrides, toggleSongHidden } from "../../lib/music/songOverrides";
+import { toggleSongHidden } from "../../lib/music/songOverrides";
 import { recordDailySnapshot } from "../../lib/music/playSnapshots";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
@@ -26,7 +26,11 @@ function bulkBtn(accent) {
 }
 
 export default function AdminContent({ songs, authUser }) {
-  const [hiddenIds, setHiddenIds] = useState(() => loadSongOverrides().hiddenIds);
+  const [hiddenIds, setHiddenIds] = useState(() => songs.filter(s => s.hidden).map(s => s.id));
+  // Catalog reloaded → re-sync hiddenIds từ DB state
+  useEffect(() => {
+    setHiddenIds(songs.filter(s => s.hidden).map(s => s.id));
+  }, [songs]);
   const [search, setSearch] = useState("");
   const [detailTarget, setDetailTarget] = useState(null);
   const [detailTab, setDetailTab] = useState("overview");
@@ -78,7 +82,8 @@ export default function AdminContent({ songs, authUser }) {
   };
 
   const toggle = (song, hide) => {
-    setHiddenIds(toggleSongHidden(song.id));
+    setHiddenIds(prev => hide ? [...prev, song.id] : prev.filter(id => id !== song.id));
+    toggleSongHidden(song.id, hide);
     logAdminAction(authUser, hide ? "hide_song" : "unhide_song", song.title, song.artist);
   };
 
@@ -133,11 +138,11 @@ export default function AdminContent({ songs, authUser }) {
   };
 
   const bulkHide = (hide) => {
-    let next = hiddenIds;
-    [...selected].forEach((id) => {
-      if (next.includes(id) !== hide) next = toggleSongHidden(id);
-    });
-    setHiddenIds(next);
+    const ids = [...selected].filter(id => hiddenIds.includes(id) !== hide);
+    setHiddenIds(prev => hide
+      ? [...new Set([...prev, ...ids])]
+      : prev.filter(id => !ids.includes(id)));
+    ids.forEach(id => toggleSongHidden(id, hide));
     logAdminAction(authUser, hide ? "hide_song" : "unhide_song", selected.size + " bài", "bulk");
     clearSel();
   };

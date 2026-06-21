@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useToast } from "../../hooks/useToast";
 import {
   faMicrophone,
   faChartPie,
@@ -24,7 +25,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
   useEffect(() => {
     if (authUser?.email) fetchSubmissions(authUser.email).then(setSubs).catch(() => {});
   }, [authUser?.email]);
-  const [toast, setToast] = useState(null);
+  const { push: pushToast } = useToast();
   const [editingDraft, setEditingDraft] = useState(null);
   const [profileVersion, setProfileVersion] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -67,10 +68,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
     (s) => s.artistEmail === authUser?.email?.toLowerCase()
   );
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
-  };
+  const showToast = (msg) => pushToast({ message: msg, type: "success" });
 
   const headers = {
     overview: { title: "Tổng quan", subtitle: "Không gian nghệ sĩ của bạn" },
@@ -173,26 +171,6 @@ export default function PageArtistStudio({ authUser, onExit }) {
         />
       )}
 
-      {toast && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "#333",
-            color: "#fff",
-            borderRadius: 9999,
-            padding: "8px 18px",
-            fontSize: 12,
-            fontWeight: 600,
-            zIndex: 400,
-            animation: "fadeIn 200ms ease",
-          }}
-        >
-          {toast}
-        </div>
-      )}
     </ConsoleShell>
   );
 }
