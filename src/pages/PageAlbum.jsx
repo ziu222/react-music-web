@@ -4,6 +4,7 @@ import { faPlay, faPause, faCirclePlus, faCircleCheck } from "@fortawesome/free-
 import EntityHeader from "../components/ui/EntityHeader";
 import TrackList from "../components/ui/TrackList";
 import AlbumTile from "../components/ui/AlbumTile";
+import { useContextPlay } from "../hooks/useContextPlay";
 import { TEXT } from "../constants/theme";
 import { getSongImage, getPrimaryArtist } from "../data/media";
 import { getAlbum, deriveAlbums, formatTotalDuration } from "../data/derived";
@@ -27,6 +28,10 @@ export default function PageAlbum({
   skeletonVisible,
 }) {
   const album = useMemo(() => getAlbum(list, albumName), [list, albumName]);
+
+  // Context-aware play/pause for the big button (toggle if a track from this
+  // album is current, else start from the top).
+  const { ctxSong, ctxPlaying } = useContextPlay(album?.songs, cur, playing);
 
   const moreFromArtist = useMemo(() => {
     if (!album) return [];
@@ -58,11 +63,6 @@ export default function PageAlbum({
 
   const cover = getSongImage(album.representative);
   const accent = album.representative.bg?.match(/#[0-9a-f]{6}/i)?.[0] ?? "#1d1616";
-
-  // Context-aware play/pause: if a track from THIS album is the current song,
-  // the big button toggles it; otherwise it starts the album from the top.
-  const ctxSong = album.songs.find(s => s.id === cur?.id) || null;
-  const ctxPlaying = playing && !!ctxSong;
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>

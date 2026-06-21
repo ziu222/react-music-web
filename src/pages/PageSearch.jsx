@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import TrackRow from "../components/ui/TrackRow";
+import { useContextPlay } from "../hooks/useContextPlay";
 import Skeleton from "../components/ui/skeleton/Skeleton";
 import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 import PlaylistCover from "../components/ui/PlaylistCover";
@@ -268,7 +269,7 @@ function ArtistResult({ artist, onOpenArtist }) {
 function AlbumResult({ album, cur, playing = false, onOpenAlbum, onPlay }) {
   const [hov, setHov] = useState(false);
   const cover = getSongImage(album.representative);
-  const isPlaying = playing && album.songs.some(s => s.id === cur?.id);
+  const { ctxSong, ctxPlaying: isPlaying } = useContextPlay(album.songs, cur, playing);
   return (
     <div
       role="button"
@@ -310,7 +311,7 @@ function AlbumResult({ album, cur, playing = false, onOpenAlbum, onPlay }) {
           aria-label={isPlaying ? `Tạm dừng album ${album.name}` : `Phát album ${album.name}`}
           className="card-play-btn"
           tabIndex={hov ? 0 : -1}
-          onClick={e => { e.stopPropagation(); onPlay(album.songs.find(s => s.id === cur?.id) ?? album.songs[0]); }}
+          onClick={e => { e.stopPropagation(); onPlay(ctxSong ?? album.songs[0]); }}
           style={{
             position: "absolute", right: 6, bottom: 6,
             width: 36, height: 36, borderRadius: "50%",

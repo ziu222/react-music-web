@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useImageAccent } from "../lib/ui/colorExtract";
+import { useContextPlay } from "../hooks/useContextPlay";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause, faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import EmptyState from "../components/ui/EmptyState";
@@ -29,6 +30,10 @@ export default function PageArtist({
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
   const imageAccent = useImageAccent(artist?.image, "#f97316");
+
+  // Context-aware play/pause for the big button (toggle if a track by this
+  // artist is current, else start from their top track).
+  const { ctxSong, ctxPlaying } = useContextPlay(artist?.songs, cur, playing);
 
   const artistAlbums = useMemo(() => {
     if (!artist) return [];
@@ -60,11 +65,6 @@ export default function PageArtist({
   const popular = artist.songs.slice(0, 5);
   const allSongs = showAllSongs ? artist.songs : artist.songs.slice(0, 10);
   const accent = imageAccent;
-
-  // Context-aware play/pause for the big button: toggle if a song by this
-  // artist is current, otherwise start from their top track.
-  const ctxSong = artist.songs.find(s => s.id === cur?.id) || null;
-  const ctxPlaying = playing && !!ctxSong;
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>

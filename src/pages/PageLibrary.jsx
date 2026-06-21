@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faPlay, faPause, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic, faClock } from "@fortawesome/free-solid-svg-icons";
 import EmptyState from "../components/ui/EmptyState";
+import { useContextPlay } from "../hooks/useContextPlay";
 import { C, BG, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
@@ -388,10 +389,9 @@ export default function PageLibrary({
     return [];
   }, [activePl, likedSongs, recentIds, songMap]);
 
-  // Context-aware play/pause for the "Phát tất cả" button: toggle if the
-  // current song is in this list, otherwise start from the top.
-  const ctxSong = displaySongs.find(s => s.id === cur?.id) || null;
-  const ctxPlaying = playing && !!ctxSong;
+  // Context-aware play/pause for the "Phát tất cả" button (toggle if the
+  // current song is in this list, else start from the top).
+  const { ctxSong, ctxPlaying } = useContextPlay(displaySongs, cur, playing);
 
   const visibleSongs = useMemo(() => {
     const q = trackQuery.trim().toLowerCase();
