@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic } from "@fortawesome/free-solid-svg-icons";
+import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic, faClock } from "@fortawesome/free-solid-svg-icons";
+import EmptyState from "../components/ui/EmptyState";
 import { C, BG, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
@@ -860,9 +861,31 @@ export default function PageLibrary({
                   </div>
 
                   {visibleSongs.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "40px 0", color: TEXT.secondary, fontSize: 13 }}>
-                      Không tìm thấy bài hát phù hợp
-                    </div>
+                    trackQuery.trim() ? (
+                      <EmptyState
+                        icon={faMagnifyingGlass}
+                        title="Không tìm thấy kết quả"
+                        desc={`Không có bài hát nào khớp với "${trackQuery}"`}
+                      />
+                    ) : activePl?.type === "liked" ? (
+                      <EmptyState
+                        icon={faHeart}
+                        title="Chưa thích bài hát nào"
+                        desc="Nhấn ♡ trên bất kỳ bài hát nào để thêm vào đây"
+                      />
+                    ) : activePl?.type === "recent" ? (
+                      <EmptyState
+                        icon={faClock}
+                        title="Chưa nghe bài hát nào"
+                        desc="Bắt đầu phát nhạc và lịch sử sẽ xuất hiện tại đây"
+                      />
+                    ) : (
+                      <EmptyState
+                        icon={faMusic}
+                        title="Playlist chưa có bài hát"
+                        desc="Thêm bài hát để playlist của bạn có nhạc"
+                      />
+                    )
                   ) : (
                     visibleSongs.map(({ song }, i) => (
                       <LibraryTrackRow
@@ -886,9 +909,12 @@ export default function PageLibrary({
             </div>
           </>
         ) : (
-          <div style={{ padding: 40, color: TEXT.secondary }}>
-            Chọn danh sách phát để xem
-          </div>
+          <EmptyState
+            icon={faMusic}
+            title="Chọn danh sách phát để xem"
+            desc="Chọn một playlist từ danh sách bên trái"
+            style={{ padding: "80px 0" }}
+          />
         )}
       </div>
     </div>

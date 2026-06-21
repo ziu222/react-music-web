@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EqBars from "../player/EqBars";
 import { C, G } from "../../constants/theme";
 
 export default function Splash({ onDone }) {
@@ -34,10 +35,19 @@ export default function Splash({ onDone }) {
         gap: 20,
         transition: "opacity 0.4s",
         opacity: prog >= 100 ? 0 : 1,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Ambient glow blobs */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: `radial-gradient(ellipse 60% 50% at 35% 40%, ${C[500]}12 0%, transparent 70%),
+                     radial-gradient(ellipse 45% 45% at 70% 65%, ${G[400]}0a 0%, transparent 70%)`,
+      }} />
+
       {/* Logo */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", zIndex: 1 }}>
         <div
           style={{
             width: 72,
@@ -49,7 +59,7 @@ export default function Splash({ onDone }) {
             justifyContent: "center",
             transform: step >= 1 ? "scale(1)" : "scale(0)",
             transition: "transform 0.5s cubic-bezier(0.34,1.56,0.64,1)",
-            boxShadow: step >= 2 ? `0 0 30px ${C[500]}50` : "none",
+            boxShadow: step >= 2 ? `0 0 30px ${C[500]}50, 0 0 60px ${C[500]}20` : "none",
             fontSize: 28,
             color: "#fff",
             animation: step >= 2 ? "pulse 1.5s infinite" : "none",
@@ -89,6 +99,7 @@ export default function Splash({ onDone }) {
           textAlign: "center",
           opacity: step >= 1 ? 1 : 0,
           transition: "opacity 0.4s 0.15s",
+          zIndex: 1,
         }}
       >
         <div style={{ fontSize: 26, fontWeight: 500, color: "#ede5dd", letterSpacing: -0.5 }}>
@@ -99,8 +110,19 @@ export default function Splash({ onDone }) {
         </div>
       </div>
 
+      {/* EqBars — visible once loading starts */}
+      {step >= 2 && (
+        <div style={{
+          opacity: prog >= 100 ? 0 : 1,
+          transition: "opacity 0.3s",
+          zIndex: 1,
+        }}>
+          <EqBars size={22} />
+        </div>
+      )}
+
       {/* Progress */}
-      <div style={{ width: 180, opacity: step >= 2 ? 1 : 0, transition: "opacity 0.3s" }}>
+      <div style={{ width: 180, opacity: step >= 2 ? 1 : 0, transition: "opacity 0.3s", zIndex: 1 }}>
         <div
           style={{
             height: 3,

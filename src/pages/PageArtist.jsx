@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { useImageAccent } from "../lib/ui/colorExtract";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faMicrophone } from "@fortawesome/free-solid-svg-icons";
+import EmptyState from "../components/ui/EmptyState";
 import EntityHeader from "../components/ui/EntityHeader";
 import TrackList from "../components/ui/TrackList";
 import AlbumTile from "../components/ui/AlbumTile";
@@ -25,6 +27,7 @@ export default function PageArtist({
 }) {
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
+  const imageAccent = useImageAccent(artist?.image, "#f97316");
 
   const artistAlbums = useMemo(() => {
     if (!artist) return [];
@@ -44,16 +47,18 @@ export default function PageArtist({
       );
     }
     return (
-      <div style={{ padding: 60, textAlign: "center", color: TEXT.secondary, animation: "slideUp 0.3s ease" }}>
-        <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Không tìm thấy nghệ sĩ</div>
-        <div style={{ fontSize: 13, color: TEXT.tertiary }}>Nghệ sĩ này không có trong thư viện nhạc</div>
-      </div>
+      <EmptyState
+        icon={faMicrophone}
+        title="Không tìm thấy nghệ sĩ"
+        desc="Nghệ sĩ này không có trong thư viện nhạc"
+        style={{ padding: "80px 0" }}
+      />
     );
   }
 
   const popular = artist.songs.slice(0, 5);
   const allSongs = showAllSongs ? artist.songs : artist.songs.slice(0, 10);
-  const accent = artist.topSong.bg?.match(/#[0-9a-f]{6}/i)?.[0] ?? "#f97316";
+  const accent = imageAccent;
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>

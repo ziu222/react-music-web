@@ -1,10 +1,6 @@
+import { useRef, useEffect, useState } from "react";
 import { BG, BORDER, C, TEXT } from "../../constants/theme";
 
-/**
- * Shared hero header for artist/album/playlist detail pages.
- * Dense, Spotify-like: gradient backdrop, art on the left,
- * type label + title + meta on the right.
- */
 export default function EntityHeader({
   type,
   title,
@@ -14,8 +10,29 @@ export default function EntityHeader({
   round = false,
   accent = "#1d1616",
 }) {
+  const wrapRef = useRef(null);
+  const [parallax, setParallax] = useState(0);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    let scrollEl = el.parentElement;
+    while (scrollEl && !/(auto|scroll)/.test(getComputedStyle(scrollEl).overflowY)) {
+      scrollEl = scrollEl.parentElement;
+    }
+    if (!scrollEl) return;
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const containerRect = scrollEl.getBoundingClientRect();
+      const relTop = rect.top - containerRect.top + scrollEl.scrollTop;
+      setParallax(Math.max(0, scrollEl.scrollTop - relTop) * 0.35);
+    };
+    scrollEl.addEventListener("scroll", onScroll, { passive: true });
+    return () => scrollEl.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <div style={{
+    <div ref={wrapRef} style={{
       padding: "40px 32px 28px",
       background: `linear-gradient(180deg, ${C[500]}14 0%, rgba(255,255,255,0.025) 48%, transparent 100%)`,
       borderBottom: `1px solid ${BORDER}`,
@@ -42,7 +59,11 @@ export default function EntityHeader({
           <img
             src={image}
             alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            style={{
+              width: "100%", height: "108%", objectFit: "cover", display: "block",
+              transform: `translateY(${parallax * 0.4}px)`,
+              transition: parallax === 0 ? "none" : undefined,
+            }}
           />
         ) : (
           fallback

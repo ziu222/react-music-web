@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
-import { ToastProvider } from './hooks/useToast.js'
+import { ToastProvider } from './hooks/useToast.jsx'
 import Toast from './components/ui/Toast.jsx'
 
 createRoot(document.getElementById('root')).render(
