@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import useDelayedVisible from "./hooks/useDelayedVisible";
 import { useApplyTheme } from "./lib/theme/useTheme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -1339,6 +1340,15 @@ export default function App() {
               </button>
             </div>
           )}
+          <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={page + "|" + (page === "artist" ? selectedArtist : "") + (page === "album" ? selectedAlbum : "")}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            style={{ minHeight: "100%" }}
+          >
           {page === "home" && (
             <PageHome
               list={list}
@@ -1437,6 +1447,8 @@ export default function App() {
               onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
             />
           )}
+          </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 
