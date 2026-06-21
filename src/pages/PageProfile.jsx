@@ -13,6 +13,7 @@ import {
   faReply,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BORDER, BG, TEXT } from "../constants/theme";
+import EmptyState from "../components/ui/EmptyState";
 import PlanBadge from "../components/primitives/PlanBadge";
 import { listenerStats } from "../data/listenerStats";
 import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/artist/upgradeRequests";
@@ -466,7 +467,7 @@ export default function PageProfile({
         )}
 
 
-        {recentSongs.length > 0 && (
+        {recentSongs.length > 0 ? (
           <div style={{ marginBottom: 32 }}>
             <SectionTitle>Nghe gần đây</SectionTitle>
             {recentSongs.slice(0, 6).map((song, i) => {
@@ -539,6 +540,13 @@ export default function PageProfile({
               );
             })}
           </div>
+        ) : (
+          <EmptyState
+            icon={faClock}
+            title="Chưa nghe bài hát nào"
+            desc="Bắt đầu phát nhạc và lịch sử sẽ xuất hiện tại đây"
+            style={{ padding: "32px 0" }}
+          />
         )}
       </div>
     </div>
