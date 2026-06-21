@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useLayoutEffect, useEffect, useCallback } from "react";
+import { useToast } from "../../hooks/useToast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -568,7 +569,6 @@ export default function Sidebar({
   const [renamingId,     setRenamingId]     = useState(null);
   const [renameValue,    setRenameValue]    = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-  const [feedback,       setFeedback]       = useState(null);
 
   const createBtnRef = useRef(null);
   const sortBtnRef   = useRef(null);
@@ -584,12 +584,8 @@ export default function Sidebar({
     if (el) setFilterPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true });
   }, [libraryFilter, isOpen]);
 
-  const showFeedback = useCallback((msg) => { setFeedback({ msg }); }, []);
-  useEffect(() => {
-    if (!feedback) return;
-    const t = setTimeout(() => setFeedback(null), 2000);
-    return () => clearTimeout(t);
-  }, [feedback]);
+  const { push: pushToast } = useToast();
+  const showFeedback = useCallback((msg) => { pushToast({ message: msg, type: "info" }); }, [pushToast]);
 
   const viewModeIdx = VIEW_MODES.findIndex(m => m.key === libraryViewMode);
 
@@ -886,19 +882,6 @@ export default function Sidebar({
         );
       })()}
 
-      {/* ── Feedback toast ── */}
-      {feedback && (
-        <div key={feedback.msg} style={{
-          position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)",
-          background: "#333", color: "#fff", fontSize: 12, fontWeight: 500,
-          padding: "8px 18px", borderRadius: 9999,
-          boxShadow: "rgba(0,0,0,0.5) 0px 8px 24px",
-          zIndex: 2000, pointerEvents: "none", whiteSpace: "nowrap",
-          animation: "fadeIn 200ms ease both",
-        }}>
-          {feedback.msg}
-        </div>
-      )}
 
       {/* ══ RAIL ═══════════════════════════════════════════════════ */}
       <div style={{
