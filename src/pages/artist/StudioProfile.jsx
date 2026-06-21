@@ -44,19 +44,16 @@ const inputStyle = {
 
 export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) {
   const [profile, setProfile] = useState(null);
-  useEffect(() => {
-    loadArtistProfile(authUser?.email ?? "").then(setProfile);
-  }, [authUser?.email]);
   const [dirty, setDirty] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const avatarInputRef = useRef(null);
 
-  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
-  if (!profile) return null;
-  const themeColor = profile.themeColor || authUser?.color || C[500];
-  const stageName = profile.displayName?.trim() || authUser?.name;
+  useEffect(() => {
+    loadArtistProfile(authUser?.email ?? "").then(setProfile);
+  }, [authUser?.email]);
 
   useEffect(() => {
+    if (!profile) return;
     let alive = true;
     let url = null;
     getMediaBlobUrl(profile.avatarBlobId).then((u) => {
@@ -72,6 +69,11 @@ export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) 
       revokeMediaBlobUrl(url);
     };
   }, [profile?.avatarBlobId]);
+
+  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
+  if (!profile) return null;
+  const themeColor = profile.themeColor || authUser?.color || C[500];
+  const stageName = profile.displayName?.trim() || authUser?.name;
 
   const update = (patch) => {
     setProfile((p) => ({ ...p, ...patch }));
