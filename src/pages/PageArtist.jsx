@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useImageAccent } from "../lib/ui/colorExtract";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import EmptyState from "../components/ui/EmptyState";
@@ -26,6 +27,7 @@ export default function PageArtist({
 }) {
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
+  const imageAccent = useImageAccent(artist?.image, "#f97316");
 
   const artistAlbums = useMemo(() => {
     if (!artist) return [];
@@ -56,7 +58,7 @@ export default function PageArtist({
 
   const popular = artist.songs.slice(0, 5);
   const allSongs = showAllSongs ? artist.songs : artist.songs.slice(0, 10);
-  const accent = artist.topSong.bg?.match(/#[0-9a-f]{6}/i)?.[0] ?? "#f97316";
+  const accent = imageAccent;
 
   return (
     <div style={{ animation: "slideUp 0.3s ease", paddingBottom: 80 }}>
