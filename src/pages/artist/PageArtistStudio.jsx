@@ -36,6 +36,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
   }, [authUser?.email, profileVersion]);
 
   useEffect(() => {
+    if (!profile) return;
     let alive = true;
     let url = null;
     getMediaBlobUrl(profile.avatarBlobId).then((u) => {
