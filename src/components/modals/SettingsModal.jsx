@@ -49,7 +49,7 @@ function ToggleSwitch({ on, disabled, onToggle }) {
         background: on ? C[500] : "var(--overlay-2)",
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.45 : 1,
-        transition: "background 0.18s",
+        transition: "background 0.22s cubic-bezier(0.34,1.56,0.64,1)",
       }}
     >
       <span
@@ -61,7 +61,7 @@ function ToggleSwitch({ on, disabled, onToggle }) {
           background: "#fff",
           boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
           transform: on ? "translateX(16px)" : "translateX(0)",
-          transition: "transform 0.18s cubic-bezier(0.2,0,0,1)",
+          transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1)",
         }}
       />
     </button>

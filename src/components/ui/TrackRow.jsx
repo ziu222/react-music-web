@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faPlus, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPlus } from "@fortawesome/free-solid-svg-icons";
 import EqBars from "../player/EqBars";
 import ReportButton from "./ReportButton";
-import { C, R } from "../../constants/theme";
+import LikeButton from "../primitives/LikeButton";
+import { C } from "../../constants/theme";
 import { getSongImage } from "../../data/media";
 
 export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQueue }) {
@@ -164,30 +165,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
       )}
 
       {/* Like */}
-      <button
-        type="button"
-        aria-label={liked ? `Bỏ thích ${song.title}` : `Thích ${song.title}`}
-        title={liked ? "Bỏ thích" : "Thích"}
-        tabIndex={liked || hov ? 0 : -1}
-        onClick={e => { e.stopPropagation(); onLike(song.id); }}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          fontSize: 13,
-          color: liked ? R[400] : "var(--text-tertiary)",
-          padding: "2px 4px",
-          transition: "color 0.15s, transform 0.1s, opacity 0.15s",
-          lineHeight: 1,
-          flexShrink: 0,
-          opacity: liked || hov ? 1 : 0,
-          pointerEvents: liked || hov ? "auto" : "none",
-        }}
-        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.2)"; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
-      >
-        <FontAwesomeIcon icon={faHeart} />
-      </button>
+      <LikeButton liked={liked} visible={hov} onLike={() => onLike(song.id)} />
 
       {/* Report */}
       <ReportButton song={song} visible={hov} />

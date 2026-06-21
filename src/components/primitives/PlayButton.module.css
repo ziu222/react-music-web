@@ -26,6 +26,11 @@
   transform: translateY(0) scale(1.06);
 }
 
+.btn:active {
+  transform: scale(0.9) !important;
+  transition: transform 0.08s ease !important;
+}
+
 .visible {
   opacity: 1;
   transform: translateY(0) scale(1);
