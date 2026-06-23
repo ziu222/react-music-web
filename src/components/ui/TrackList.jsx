@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faPlus, faHeart, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faPlus, faHeart, faXmark } from "@fortawesome/free-solid-svg-icons";
 import EqBars from "../player/EqBars";
 import ReportButton from "./ReportButton";
 import { C, R, TEXT, BORDER } from "../../constants/theme";
@@ -14,6 +14,7 @@ import { formatPlays } from "../../data/derived";
 export default function TrackList({
   songs,
   cur,
+  playing = false,
   likedIds,
   onPlay,
   onLike,
@@ -71,6 +72,7 @@ export default function TrackList({
           index={i}
           cols={cols}
           cur={cur}
+          playing={playing}
           likedIds={likedIds}
           onPlay={onPlay}
           onLike={onLike}
@@ -87,12 +89,13 @@ export default function TrackList({
 }
 
 function Row({
-  song, index, cols, cur, likedIds,
+  song, index, cols, cur, playing: globalPlaying, likedIds,
   onPlay, onLike, onAddToQueue, onOpenArtist, onOpenAlbum, onRemove,
   showAlbum, showPlays,
 }) {
   const [hov, setHov] = useState(false);
-  const playing = cur?.id === song.id;
+  const isCurrent = cur?.id === song.id;
+  const isPlaying = isCurrent && globalPlaying;
   const liked = likedIds.has(song.id);
   const cover = getSongImage(song);
   const primaryArtist = getPrimaryArtist(song.artist);
@@ -114,7 +117,7 @@ function Row({
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Phát ${song.title} – ${song.artist}`}
+      aria-label={isPlaying ? `Tạm dừng ${song.title}` : `Phát ${song.title} – ${song.artist}`}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={() => onPlay(song)}
@@ -134,24 +137,24 @@ function Row({
         padding: "0 10px",
         borderRadius: 6,
         cursor: "pointer",
-        background: playing ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
+        background: isCurrent ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
         transition: "background 0.15s",
       }}
     >
       {/* # / play / eq */}
       <div style={{
         fontSize: 12,
-        color: playing ? C[400] : "var(--text-tertiary)",
+        color: isCurrent ? C[400] : "var(--text-tertiary)",
         textAlign: "center",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontVariantNumeric: "tabular-nums",
       }}>
-        {playing
-          ? <EqBars size={14} />
-          : hov
-            ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
+        {hov
+          ? <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
+          : isPlaying
+            ? <EqBars size={14} />
             : index + 1}
       </div>
 
@@ -171,7 +174,7 @@ function Row({
         <div style={{ minWidth: 0 }}>
           <div style={{
             fontSize: 13, fontWeight: 600,
-            color: playing ? C[400] : TEXT.primary,
+            color: isCurrent ? C[400] : TEXT.primary,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             marginBottom: 2,
           }}>

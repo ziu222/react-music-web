@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faPlus } from "@fortawesome/free-solid-svg-icons";
 import EqBars from "../player/EqBars";
 import ReportButton from "./ReportButton";
 import LikeButton from "../primitives/LikeButton";
 import { C } from "../../constants/theme";
 import { getSongImage } from "../../data/media";
 
-export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQueue }) {
+export default function TrackRow({ song, index, cur, playing = false, likedIds, onPlay, onLike, onAddToQueue }) {
   const [hov, setHov] = useState(false);
-  const playing = cur?.id === song.id;
+  const isCurrent = cur?.id === song.id;
+  const isPlaying = isCurrent && playing;
   const liked = likedIds.has(song.id);
   const cover = getSongImage(song);
 
@@ -18,6 +19,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={() => onPlay(song)}
+      aria-label={isPlaying ? `Tạm dừng ${song.title}` : `Phát ${song.title} – ${song.artist}`}
       style={{
         display: "flex",
         alignItems: "center",
@@ -26,7 +28,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
         borderRadius: 6,
         cursor: "pointer",
         transition: "background 0.15s",
-        background: playing ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
+        background: isCurrent ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
         userSelect: "none",
       }}
     >
@@ -36,7 +38,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           width: 20,
           textAlign: "center",
           fontSize: 12,
-          color: playing ? C[500] : "var(--text-tertiary)",
+          color: isCurrent ? C[500] : "var(--text-tertiary)",
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
@@ -44,10 +46,10 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           fontVariantNumeric: "tabular-nums",
         }}
       >
-        {playing
-          ? <EqBars size={14} />
-          : hov
-            ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
+        {hov
+          ? <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
+          : isPlaying
+            ? <EqBars size={14} />
             : index + 1}
       </span>
 
@@ -83,7 +85,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           style={{
             fontSize: 13,
             fontWeight: 500,
-            color: playing ? C[400] : "var(--text-primary)",
+            color: isCurrent ? C[400] : "var(--text-primary)",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -116,7 +118,7 @@ export default function TrackRow({ song, index, cur, likedIds, onPlay, onLike, o
           borderRadius: 9999,
           padding: "2px 8px",
           letterSpacing: 0.2,
-          display: hov || playing ? "none" : "block",
+          display: hov || isCurrent ? "none" : "block",
         }}
       >
         {song.genre}

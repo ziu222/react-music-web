@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faPlay, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic, faClock } from "@fortawesome/free-solid-svg-icons";
+import { faXmark, faPlay, faPause, faPlus, faHeart, faMagnifyingGlass, faChevronDown, faCheck, faMusic, faClock } from "@fortawesome/free-solid-svg-icons";
 import EmptyState from "../components/ui/EmptyState";
+import { useContextPlay } from "../hooks/useContextPlay";
 import { C, BG, TEXT, BORDER } from "../constants/theme";
 import { getSongImage } from "../data/media";
 import { deriveArtists } from "../data/derived";
@@ -28,9 +29,10 @@ function dateLabel(song) {
   return song.dateAdded ?? "Feb 23, 2022";
 }
 
-function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQueue, onRemove, gridCols }) {
+function LibraryTrackRow({ song, index, cur, playing: globalPlaying, likedIds, onPlay, onLike, onAddToQueue, onRemove, gridCols }) {
   const [hov, setHov] = useState(false);
-  const playing = cur?.id === song.id;
+  const isCurrent = cur?.id === song.id;
+  const isPlaying = isCurrent && globalPlaying;
   const liked = likedIds.has(song.id);
   const cover = getSongImage(song);
 
@@ -48,18 +50,18 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
         padding: "0 10px",
         borderRadius: 6,
         cursor: "pointer",
-        background: playing ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
+        background: isCurrent ? `${C[500]}12` : hov ? "var(--overlay-1)" : "transparent",
         transition: "background 0.15s",
       }}
     >
       <div style={{
         fontSize: 12,
-        color: playing ? C[400] : "var(--text-tertiary)",
+        color: isCurrent ? C[400] : "var(--text-tertiary)",
         textAlign: "center",
         fontVariantNumeric: "tabular-nums",
       }}>
-        {hov && !playing
-          ? <FontAwesomeIcon icon={faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
+        {hov
+          ? <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} style={{ fontSize: 10, color: "var(--text-primary)" }} />
           : index + 1}
       </div>
 
@@ -85,7 +87,7 @@ function LibraryTrackRow({ song, index, cur, likedIds, onPlay, onLike, onAddToQu
           <div style={{
             fontSize: 13,
             fontWeight: 600,
-            color: playing ? C[400] : TEXT.primary,
+            color: isCurrent ? C[400] : TEXT.primary,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -308,7 +310,7 @@ function ArtistRow({ artist, onClick }) {
 
 /* ── Page ─────────────────────────────────────────────────────── */
 export default function PageLibrary({
-  list, cur, onPlay, likedIds, onLike,
+  list, cur, playing = false, onPlay, likedIds, onLike,
   onAddToQueue,
   userPlaylists = [],
   albumPlaylists = [],
@@ -386,6 +388,10 @@ export default function PageLibrary({
     }
     return [];
   }, [activePl, likedSongs, recentIds, songMap]);
+
+  // Context-aware play/pause for the "Phát tất cả" button (toggle if the
+  // current song is in this list, else start from the top).
+  const { ctxSong, ctxPlaying } = useContextPlay(displaySongs, cur, playing);
 
   const visibleSongs = useMemo(() => {
     const q = trackQuery.trim().toLowerCase();
@@ -644,8 +650,8 @@ export default function PageLibrary({
             <div style={{ padding: "16px 32px 12px", display: "flex", alignItems: "center", gap: 16 }}>
               <button
                 type="button"
-                aria-label="Phát tất cả"
-                onClick={() => displaySongs[0] && onPlay(displaySongs[0])}
+                aria-label={ctxPlaying ? "Tạm dừng" : "Phát tất cả"}
+                onClick={() => (ctxSong ?? displaySongs[0]) && onPlay(ctxSong ?? displaySongs[0])}
                 disabled={displaySongs.length === 0}
                 style={{
                   width: 52, height: 52, borderRadius: "50%",
@@ -660,7 +666,7 @@ export default function PageLibrary({
                 onMouseEnter={e => { if (displaySongs.length > 0) e.currentTarget.style.transform = "scale(1.06)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
               >
-                <FontAwesomeIcon icon={faPlay} style={{ fontSize: 17, marginLeft: 2 }} />
+                <FontAwesomeIcon icon={ctxPlaying ? faPause : faPlay} style={{ fontSize: 17, marginLeft: ctxPlaying ? 0 : 2 }} />
               </button>
               <span style={{ fontSize: 13, color: TEXT.secondary }}>
                 {activePl.type === "liked" && likedIds.size === 0
@@ -893,6 +899,7 @@ export default function PageLibrary({
                         song={song}
                         index={i}
                         cur={cur}
+                        playing={playing}
                         onPlay={onPlay}
                         likedIds={likedIds}
                         onLike={onLike}

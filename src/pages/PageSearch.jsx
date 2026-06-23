@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause } from "@fortawesome/free-solid-svg-icons";
 import TrackRow from "../components/ui/TrackRow";
+import { useContextPlay } from "../hooks/useContextPlay";
 import Skeleton from "../components/ui/skeleton/Skeleton";
 import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 import PlaylistCover from "../components/ui/PlaylistCover";
@@ -88,7 +89,7 @@ function GroupHeading({ children, count }) {
 }
 
 /* Spotify-style top result card */
-function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
+function TopResultCard({ result, cur, playing = false, onPlay, onOpenArtist, onOpenAlbum }) {
   const [hov, setHov] = useState(false);
 
   const isArtist = result.type === "artist";
@@ -114,6 +115,7 @@ function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
     : result.type === "album"
     ? entity.songs[0]
     : entity;
+  const isPlaying = playing && !!playTarget && cur?.id === playTarget.id;
 
   const open = () => {
     if (isArtist) onOpenArtist(entity.name);
@@ -187,7 +189,7 @@ function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
 
       <button
         type="button"
-        aria-label={`Phát ${title}`}
+        aria-label={isPlaying ? `Tạm dừng ${title}` : `Phát ${title}`}
         className="card-play-btn"
         tabIndex={hov ? 0 : -1}
         onClick={e => { e.stopPropagation(); onPlay(playTarget); }}
@@ -198,12 +200,12 @@ function TopResultCard({ result, onPlay, onOpenArtist, onOpenAlbum }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           color: "#000", cursor: "pointer",
           boxShadow: "rgba(0,0,0,0.5) 0px 8px 18px",
-          opacity: hov ? 1 : 0,
-          transform: hov ? "translateY(0) scale(1)" : "translateY(8px) scale(0.85)",
-          pointerEvents: hov ? "auto" : "none",
+          opacity: hov || isPlaying ? 1 : 0,
+          transform: hov || isPlaying ? "translateY(0) scale(1)" : "translateY(8px) scale(0.85)",
+          pointerEvents: hov || isPlaying ? "auto" : "none",
         }}
       >
-        <FontAwesomeIcon icon={faPlay} style={{ fontSize: 16, marginLeft: 2 }} />
+        <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} style={{ fontSize: 16, marginLeft: isPlaying ? 0 : 2 }} />
       </button>
     </div>
   );
@@ -264,9 +266,10 @@ function ArtistResult({ artist, onOpenArtist }) {
 }
 
 /* Square album result card */
-function AlbumResult({ album, onOpenAlbum, onPlay }) {
+function AlbumResult({ album, cur, playing = false, onOpenAlbum, onPlay }) {
   const [hov, setHov] = useState(false);
   const cover = getSongImage(album.representative);
+  const { ctxSong, ctxPlaying: isPlaying } = useContextPlay(album.songs, cur, playing);
   return (
     <div
       role="button"
@@ -305,10 +308,10 @@ function AlbumResult({ album, onOpenAlbum, onPlay }) {
         </div>
         <button
           type="button"
-          aria-label={`Phát album ${album.name}`}
+          aria-label={isPlaying ? `Tạm dừng album ${album.name}` : `Phát album ${album.name}`}
           className="card-play-btn"
           tabIndex={hov ? 0 : -1}
-          onClick={e => { e.stopPropagation(); onPlay(album.songs[0]); }}
+          onClick={e => { e.stopPropagation(); onPlay(ctxSong ?? album.songs[0]); }}
           style={{
             position: "absolute", right: 6, bottom: 6,
             width: 36, height: 36, borderRadius: "50%",
@@ -316,12 +319,12 @@ function AlbumResult({ album, onOpenAlbum, onPlay }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "#000", cursor: "pointer",
             boxShadow: "rgba(0,0,0,0.5) 0px 6px 14px",
-            opacity: hov ? 1 : 0,
-            transform: hov ? "translateY(0) scale(1)" : "translateY(8px) scale(0.85)",
-            pointerEvents: hov ? "auto" : "none",
+            opacity: hov || isPlaying ? 1 : 0,
+            transform: hov || isPlaying ? "translateY(0) scale(1)" : "translateY(8px) scale(0.85)",
+            pointerEvents: hov || isPlaying ? "auto" : "none",
           }}
         >
-          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 12, marginLeft: 1 }} />
+          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} style={{ fontSize: 12, marginLeft: isPlaying ? 0 : 1 }} />
         </button>
       </div>
       <div style={{
@@ -401,7 +404,7 @@ function SearchPageSkeleton({ visible }) {
 }
 
 export default function PageSearch({
-  list, query, cur, onPlay, likedIds, onLike, onAddToQueue,
+  list, query, cur, playing = false, onPlay, likedIds, onLike, onAddToQueue,
   userPlaylists = [],
   onOpenArtist,
   onOpenAlbum,
@@ -531,6 +534,7 @@ export default function PageSearch({
                   song={s}
                   index={i}
                   cur={cur}
+                  playing={playing}
                   onPlay={onPlay}
                   likedIds={likedIds}
                   onLike={onLike}
@@ -571,6 +575,8 @@ export default function PageSearch({
                     <GroupHeading>Kết quả hàng đầu</GroupHeading>
                     <TopResultCard
                       result={topResult}
+                      cur={cur}
+                      playing={playing}
                       onPlay={onPlay}
                       onOpenArtist={onOpenArtist}
                       onOpenAlbum={onOpenAlbum}
@@ -586,6 +592,7 @@ export default function PageSearch({
                         song={s}
                         index={i}
                         cur={cur}
+                        playing={playing}
                         onPlay={onPlay}
                         likedIds={likedIds}
                         onLike={onLike}
@@ -627,7 +634,7 @@ export default function PageSearch({
                   }}
                 >
                   {albumMatches.map(al => (
-                    <AlbumResult key={al.name} album={al} onOpenAlbum={onOpenAlbum} onPlay={onPlay} />
+                    <AlbumResult key={al.name} album={al} cur={cur} playing={playing} onOpenAlbum={onOpenAlbum} onPlay={onPlay} />
                   ))}
                 </div>
               </section>

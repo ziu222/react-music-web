@@ -34,6 +34,8 @@ import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
 import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
 import { saveLibraryToSupabase } from "./lib/supabase/librarySync";
+import { fetchCuratedPlaylists } from "./lib/supabase/curatedPlaylists";
+import { recordUserPlay, loadUserRecent, loadUserPlayHistory } from "./lib/supabase/userPlayHistory";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -124,6 +126,11 @@ export default function App() {
   const [artistUpgradeOpen, setArtistUpgradeOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
+  const [myPlayHistory, setMyPlayHistory] = useState([]);
+  // Current user's email in a ref so play() can record per-user plays without
+  // being recreated (and re-propagated as onPlay) on every auth change.
+  const authEmailRef = useRef(authUser?.email);
+  useEffect(() => { authEmailRef.current = authUser?.email; }, [authUser?.email]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
   const [queueFeedback, setQueueFeedback] = useState(null);
   const [userPlaylists, setUserPlaylists] = useState(() => {
@@ -153,29 +160,49 @@ export default function App() {
   const [librarySort, setLibrarySort] = useState("recent");
   const [libraryViewMode, setLibraryViewMode] = useState("list");
 
+  // Every library write pushes the FULL snapshot — the debounced upsert in
+  // librarySync is last-write-wins, so a partial payload would clobber the
+  // fields it omitted (e.g. a like toggle wiping followed artists).
+  const librarySnapshot = () => ({ likedIds, playlists: userPlaylists, followedArtists, savedAlbums });
+
   useEffect(() => {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
     catch (err) { void err; }
-    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPlaylists]);
 
   useEffect(() => {
-    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [likedIds]);
 
   useEffect(() => {
     try { localStorage.setItem("melodies_followed_artists", JSON.stringify([...followedArtists])); }
     catch (err) { void err; }
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [followedArtists]);
 
   useEffect(() => {
     try { localStorage.setItem("melodies_saved_albums", JSON.stringify([...savedAlbums])); }
     catch (err) { void err; }
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedAlbums]);
 
   useEffect(() => () => { clearTimeout(feedbackTimerRef.current); }, []);
+
+  // Refresh curated (seed) playlists from Supabase; keep personal ones.
+  // Falls back to the bundled static seed if the fetch fails.
+  useEffect(() => {
+    fetchCuratedPlaylists()
+      .then((curated) => {
+        if (!curated) return;
+        setUserPlaylists((prev) => [...curated, ...prev.filter((pl) => pl.isPersonal)]);
+      })
+      .catch(() => {});
+  }, []);
 
   const done = useCallback(() => setScreen("app"), []);
 
@@ -202,16 +229,6 @@ export default function App() {
     }
   }, [authUser]);
 
-  // Sync settings from DB after login — cross-device preferences
-  useEffect(() => {
-    if (!authUser?.email) return;
-    const key = authUser.email.toLowerCase();
-    syncSettingsFromDB(key).then(dbSettings => {
-      if (!dbSettings) return;
-      setSettingsState(s => s.key === key ? { ...s, value: dbSettings } : s);
-    }).catch(() => {});
-  }, [authUser?.email]);
-
   // Sync from Supabase whenever user logs in — hydrate liked songs + playlists
   useEffect(() => {
     if (!authUser?.email) return;
@@ -229,8 +246,25 @@ export default function App() {
             return [...prev.filter(pl => !pl.isPersonal), ...personal];
           });
         }
+        // Merge follows/saves (union) so a fresh device picks up server state
+        // without dropping anything toggled locally before sync landed.
+        if (Array.isArray(library.followed_artists) && library.followed_artists.length > 0) {
+          setFollowedArtists(prev => new Set([...library.followed_artists, ...prev]));
+        }
+        if (Array.isArray(library.saved_albums) && library.saved_albums.length > 0) {
+          setSavedAlbums(prev => new Set([...library.saved_albums, ...prev]));
+        }
       })
       .catch(() => {});
+  }, [authUser?.email]);
+
+  // Hydrate per-user play history → cross-device "Nghe gần đây" + real stats.
+  useEffect(() => {
+    if (!authUser?.email) { setMyPlayHistory([]); return; }
+    loadUserPlayHistory(authUser.email).then(setMyPlayHistory).catch(() => {});
+    loadUserRecent(authUser.email).then(ids => {
+      if (ids.length) setRecentIds(prev => [...new Set([...prev, ...ids])].slice(0, 12));
+    }).catch(() => {});
   }, [authUser?.email]);
 
   /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
@@ -240,6 +274,16 @@ export default function App() {
   // High quality chỉ hợp lệ khi premium — guest/free luôn thấy normal dù stored là high
   const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
   const notifications = notifState.value;
+
+  // Sync settings from DB after login — cross-device preferences
+  useEffect(() => {
+    if (!authUser?.email) return;
+    const key = authUser.email.toLowerCase();
+    syncSettingsFromDB(key).then(dbSettings => {
+      if (!dbSettings) return;
+      setSettingsState(s => s.key === key ? { ...s, value: dbSettings } : s);
+    }).catch(() => {});
+  }, [authUser?.email]);
 
   // Realtime: push notifications from Supabase (admin broadcast, song approved, etc.)
   useEffect(() => {
@@ -476,6 +520,14 @@ export default function App() {
     setProg(0);
     incrementPlay(s.id);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
+    if (authEmailRef.current) {
+      recordUserPlay(authEmailRef.current, s.id);
+      setMyPlayHistory(prev => {
+        const rest = prev.filter(h => h.songId !== s.id);
+        const cur = prev.find(h => h.songId === s.id);
+        return [...rest, { songId: s.id, plays: (cur?.plays ?? 0) + 1 }];
+      });
+    }
   }, []);
 
   // Play a track selected outside the queue (library, home, search) — rebuilds shuffle queue.
@@ -488,6 +540,16 @@ export default function App() {
       setShufflePos(0);
     }
   }, [play, shuffle, list]);
+
+  // Unified play/pause toggle for every control OUTSIDE the player bar
+  // (song cards, track rows, entity headers). Same song → pause/resume in
+  // place; a different song → start it. Keeps all those buttons in sync with
+  // the global `playing` state instead of always restarting.
+  const togglePlaySong = useCallback((song) => {
+    if (!song) return;
+    if (cur?.id === song.id) setPlaying(p => !p);
+    else playExternal(song);
+  }, [cur, playExternal]);
 
   // Play a track that the user picked from the Queue panel — seeks in the existing queue.
   const playFromQueue = useCallback((song) => {
@@ -649,6 +711,10 @@ export default function App() {
 
   const playWithAuth = (s) => {
     requireAuth(() => playExternal(s), { reason: "play", song: s });
+  };
+
+  const togglePlayWithAuth = (s) => {
+    requireAuth(() => togglePlaySong(s), { reason: "play", song: s });
   };
 
   const playFromQueueWithAuth = (s) => {
@@ -1353,7 +1419,8 @@ export default function App() {
             <PageHome
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               recentIds={recentIds}
@@ -1368,7 +1435,8 @@ export default function App() {
               artistName={selectedArtist}
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1384,7 +1452,8 @@ export default function App() {
               albumName={selectedAlbum}
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1401,7 +1470,8 @@ export default function App() {
               list={list}
               query={search}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1417,7 +1487,8 @@ export default function App() {
             <PageLibrary
               list={list}
               cur={cur}
-              onPlay={playWithAuth}
+              playing={playing}
+              onPlay={togglePlayWithAuth}
               likedIds={likedIds}
               onLike={toggleLikeWithAuth}
               onAddToQueue={addToQueue}
@@ -1440,9 +1511,13 @@ export default function App() {
               user={authUser}
               isPremium={isPremium}
               likedCount={likedIds.size}
+              likedSongs={list.filter(s => likedIds.has(s.id))}
+              playHistory={myPlayHistory}
+              catalog={list}
               recentSongs={recentSongs}
-              onPlay={playWithAuth}
+              onPlay={togglePlayWithAuth}
               cur={cur}
+              playing={playing}
               onOpenPremium={() => setPremiumOpen(true)}
               onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
             />

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useImageAccent } from "../lib/ui/colorExtract";
+import { useContextPlay } from "../hooks/useContextPlay";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faMicrophone } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import EmptyState from "../components/ui/EmptyState";
 import EntityHeader from "../components/ui/EntityHeader";
 import TrackList from "../components/ui/TrackList";
@@ -15,6 +16,7 @@ export default function PageArtist({
   artistName,
   list,
   cur,
+  playing = false,
   onPlay,
   likedIds,
   onLike,
@@ -28,6 +30,10 @@ export default function PageArtist({
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
   const imageAccent = useImageAccent(artist?.image, "#f97316");
+
+  // Context-aware play/pause for the big button (toggle if a track by this
+  // artist is current, else start from their top track).
+  const { ctxSong, ctxPlaying } = useContextPlay(artist?.songs, cur, playing);
 
   const artistAlbums = useMemo(() => {
     if (!artist) return [];
@@ -82,8 +88,8 @@ export default function PageArtist({
       <div style={{ padding: "16px 32px 8px", display: "flex", alignItems: "center", gap: 18 }}>
         <button
           type="button"
-          aria-label={`Phát nhạc của ${artist.name}`}
-          onClick={() => onPlay(artist.topSong)}
+          aria-label={ctxPlaying ? `Tạm dừng nhạc của ${artist.name}` : `Phát nhạc của ${artist.name}`}
+          onClick={() => onPlay(ctxSong ?? artist.topSong)}
           style={{
             width: 52, height: 52, borderRadius: "50%",
             background: "#1ed760", border: "none",
@@ -95,7 +101,7 @@ export default function PageArtist({
           onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.06)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
           onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.filter = "none"; }}
         >
-          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 18, marginLeft: 2 }} />
+          <FontAwesomeIcon icon={ctxPlaying ? faPause : faPlay} style={{ fontSize: 18, marginLeft: ctxPlaying ? 0 : 2 }} />
         </button>
         <button
           type="button"
@@ -129,6 +135,7 @@ export default function PageArtist({
         <TrackList
           songs={popular}
           cur={cur}
+          playing={playing}
           likedIds={likedIds}
           onPlay={onPlay}
           onLike={onLike}
@@ -170,6 +177,7 @@ export default function PageArtist({
           <TrackList
             songs={allSongs}
             cur={cur}
+            playing={playing}
             likedIds={likedIds}
             onPlay={onPlay}
             onLike={onLike}

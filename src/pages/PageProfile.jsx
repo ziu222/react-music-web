@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserCircle,
   faMusic,
+  faPlay,
+  faPause,
   faClock,
   faHeart,
   faMicrophone,
@@ -15,7 +17,7 @@ import {
 import { C, BORDER, BG, TEXT } from "../constants/theme";
 import EmptyState from "../components/ui/EmptyState";
 import PlanBadge from "../components/primitives/PlanBadge";
-import { listenerStats } from "../data/listenerStats";
+import { getListenerStats } from "../data/listenerStats";
 import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/artist/upgradeRequests";
 import { createNotification, loadNotifications, saveNotifications } from "../lib/social/notifications";
 
@@ -67,9 +69,13 @@ export default function PageProfile({
   user,
   isPremium,
   likedCount,
+  likedSongs = [],
+  playHistory = [],
+  catalog = [],
   recentSongs = [],
   onPlay,
   cur,
+  playing = false,
   onOpenPremium,
   onOpenArtistUpgrade,
 }) {
@@ -110,13 +116,7 @@ export default function PageProfile({
     );
   }
 
-  const stats =
-    listenerStats.find(s => s.userId === user.id) ?? {
-      songsListened: 0,
-      totalHours: 0,
-      topGenres: [],
-      topArtists: [],
-    };
+  const stats = getListenerStats(user, { likedSongs, playHistory, catalog });
 
   const joined = new Date(user.joinedAt).toLocaleDateString("vi-VN", {
     year: "numeric",
@@ -472,10 +472,12 @@ export default function PageProfile({
             <SectionTitle>Nghe gần đây</SectionTitle>
             {recentSongs.slice(0, 6).map((song, i) => {
               const active = cur?.id === song.id;
+              const isPlaying = active && playing;
               return (
                 <div
                   key={song.id}
                   onClick={() => onPlay(song)}
+                  aria-label={isPlaying ? `Tạm dừng ${song.title}` : `Phát ${song.title}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -494,9 +496,10 @@ export default function PageProfile({
                       fontSize: 13,
                       color: active ? C[500] : TEXT.tertiary,
                       flexShrink: 0,
+                      textAlign: "center",
                     }}
                   >
-                    {i + 1}
+                    {isPlaying ? <FontAwesomeIcon icon={faPause} style={{ fontSize: 11 }} /> : i + 1}
                   </span>
                   {song.cover ? (
                     <img

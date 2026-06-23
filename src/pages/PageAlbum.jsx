@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faCirclePlus, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faCirclePlus, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import EntityHeader from "../components/ui/EntityHeader";
 import TrackList from "../components/ui/TrackList";
 import AlbumTile from "../components/ui/AlbumTile";
+import { useContextPlay } from "../hooks/useContextPlay";
 import { TEXT } from "../constants/theme";
 import { getSongImage, getPrimaryArtist } from "../data/media";
 import { getAlbum, deriveAlbums, formatTotalDuration } from "../data/derived";
@@ -14,6 +15,7 @@ export default function PageAlbum({
   albumName,
   list,
   cur,
+  playing = false,
   onPlay,
   likedIds,
   onLike,
@@ -26,6 +28,10 @@ export default function PageAlbum({
   skeletonVisible,
 }) {
   const album = useMemo(() => getAlbum(list, albumName), [list, albumName]);
+
+  // Context-aware play/pause for the big button (toggle if a track from this
+  // album is current, else start from the top).
+  const { ctxSong, ctxPlaying } = useContextPlay(album?.songs, cur, playing);
 
   const moreFromArtist = useMemo(() => {
     if (!album) return [];
@@ -94,8 +100,8 @@ export default function PageAlbum({
       <div style={{ padding: "16px 32px 8px", display: "flex", alignItems: "center", gap: 18 }}>
         <button
           type="button"
-          aria-label={`Phát album ${album.name}`}
-          onClick={() => onPlay(album.songs[0])}
+          aria-label={ctxPlaying ? `Tạm dừng album ${album.name}` : `Phát album ${album.name}`}
+          onClick={() => onPlay(ctxSong ?? album.songs[0])}
           style={{
             width: 52, height: 52, borderRadius: "50%",
             background: "#1ed760", border: "none",
@@ -107,7 +113,7 @@ export default function PageAlbum({
           onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.06)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
           onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.filter = "none"; }}
         >
-          <FontAwesomeIcon icon={faPlay} style={{ fontSize: 18, marginLeft: 2 }} />
+          <FontAwesomeIcon icon={ctxPlaying ? faPause : faPlay} style={{ fontSize: 18, marginLeft: ctxPlaying ? 0 : 2 }} />
         </button>
         <button
           type="button"
@@ -133,6 +139,7 @@ export default function PageAlbum({
         <TrackList
           songs={album.songs}
           cur={cur}
+          playing={playing}
           likedIds={likedIds}
           onPlay={onPlay}
           onLike={onLike}
