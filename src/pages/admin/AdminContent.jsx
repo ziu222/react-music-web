@@ -25,7 +25,7 @@ function bulkBtn(accent) {
   };
 }
 
-export default function AdminContent({ songs, authUser }) {
+export default function AdminContent({ songs, authUser, can = () => true }) {
   const [hiddenIds, setHiddenIds] = useState(() => songs.filter(s => s.hidden).map(s => s.id));
   // Catalog reloaded → re-sync hiddenIds từ DB state
   useEffect(() => {
@@ -223,15 +223,17 @@ export default function AdminContent({ songs, authUser }) {
           >
             ← Tất cả album · <span style={{ color: TEXT.strong, fontWeight: 600 }}>{albumFilter}</span>
           </button>
-          <button
-            onClick={renameAlbum}
-            style={{
-              background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
-              borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
-            }}
-          >
-            Sửa tên album
-          </button>
+          {can("content.edit") && (
+            <button
+              onClick={renameAlbum}
+              style={{
+                background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+                borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
+              }}
+            >
+              Sửa tên album
+            </button>
+          )}
         </div>
       )}
 
@@ -293,11 +295,21 @@ export default function AdminContent({ songs, authUser }) {
           }}
         >
           <span style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid }}>Đã chọn {selected.size}</span>
-          <button onClick={() => bulkFeature(true)} style={bulkBtn("#fbbf24")}>★ Feature</button>
-          <button onClick={() => bulkFeature(false)} style={bulkBtn()}>Bỏ feature</button>
-          <button onClick={() => bulkHide(true)} style={bulkBtn("#ef4444")}>Gỡ bài</button>
-          <button onClick={() => bulkHide(false)} style={bulkBtn("#34d399")}>Khôi phục</button>
-          <button onClick={bulkGenre} style={bulkBtn()}>Đổi thể loại</button>
+          {can("content.feature") && (
+            <button onClick={() => bulkFeature(true)} style={bulkBtn("#fbbf24")}>★ Feature</button>
+          )}
+          {can("content.feature") && (
+            <button onClick={() => bulkFeature(false)} style={bulkBtn()}>Bỏ feature</button>
+          )}
+          {can("content.delete") && (
+            <button onClick={() => bulkHide(true)} style={bulkBtn("#ef4444")}>Gỡ bài</button>
+          )}
+          {can("content.delete") && (
+            <button onClick={() => bulkHide(false)} style={bulkBtn("#34d399")}>Khôi phục</button>
+          )}
+          {can("content.edit") && (
+            <button onClick={bulkGenre} style={bulkBtn()}>Đổi thể loại</button>
+          )}
           <button onClick={clearSel} style={{ ...bulkBtn(), marginLeft: "auto" }}>Bỏ chọn</button>
         </div>
       )}
@@ -446,30 +458,34 @@ export default function AdminContent({ songs, authUser }) {
                 alignItems: "center",
               }}
             >
-              <button
-                onClick={(e) => { e.stopPropagation(); openDetail(song, "metadata"); }}
-                style={{
-                  background: "transparent", border: "1px solid var(--border)",
-                  color: TEXT.tertiary, borderRadius: 9999, padding: "5px 12px",
-                  fontSize: 11, fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                Sửa
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); featureSong(song, !song.featured); }}
-                title={song.featured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
-                style={{
-                  background: "transparent",
-                  border: "1px solid " + (song.featured ? "#fbbf24" : "var(--border)"),
-                  color: song.featured ? "#fbbf24" : TEXT.tertiary,
-                  borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600,
-                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-              >
-                ★ {song.featured ? "Nổi bật" : "Feature"}
-              </button>
-              {hidden ? (
+              {can("content.edit") && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); openDetail(song, "metadata"); }}
+                  style={{
+                    background: "transparent", border: "1px solid var(--border)",
+                    color: TEXT.tertiary, borderRadius: 9999, padding: "5px 12px",
+                    fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  Sửa
+                </button>
+              )}
+              {can("content.feature") && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); featureSong(song, !song.featured); }}
+                  title={song.featured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid " + (song.featured ? "#fbbf24" : "var(--border)"),
+                    color: song.featured ? "#fbbf24" : TEXT.tertiary,
+                    borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600,
+                    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
+                  }}
+                >
+                  ★ {song.featured ? "Nổi bật" : "Feature"}
+                </button>
+              )}
+              {can("content.delete") && (hidden ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); toggle(song, false); }}
                   style={{
@@ -509,7 +525,7 @@ export default function AdminContent({ songs, authUser }) {
                   <FontAwesomeIcon icon={faEyeSlash} style={{ fontSize: 10 }} />
                   Gỡ bài
                 </button>
-              )}
+              ))}
             </div>
           </motion.div>
         );

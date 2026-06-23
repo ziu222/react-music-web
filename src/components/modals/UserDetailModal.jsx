@@ -88,6 +88,7 @@ export default function UserDetailModal({
   onClose,
   onChanged,
   onImpersonate,
+  can = () => true,
 }) {
   const [banForm, setBanForm] = useState(false);
   const [banReason, setBanReason] = useState("");
@@ -669,7 +670,7 @@ export default function UserDetailModal({
             </div>
           </div>
 
-          {!isPremium && (
+          {!isPremium && can('users.grant_premium') && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
                 {GRANT_DURATIONS.map((d) => (
@@ -710,6 +711,7 @@ export default function UserDetailModal({
                   ? "Hết hạn: " + new Date(activeGrant.expiresAt).toLocaleDateString("vi-VN")
                   : "Premium vĩnh viễn"}
               </div>
+              {can('users.grant_premium') && (
               <button
                 onClick={async () => {
                   await revokePremium(currentAdmin?.email, user.email);
@@ -727,6 +729,7 @@ export default function UserDetailModal({
                 <FontAwesomeIcon icon={faCrown} style={{ fontSize: 11 }} />
                 Hạ xuống Free
               </button>
+              )}
             </div>
           )}
           {grantHistory.length > 0 && (
@@ -779,7 +782,7 @@ export default function UserDetailModal({
             </button>
           )}
 
-          {banForm && (
+          {banForm && can('users.ban') && (
             <div style={{ marginBottom: 8 }}>
               <textarea
                 value={banReason}
@@ -829,8 +832,9 @@ export default function UserDetailModal({
             </div>
           )}
 
-          {user.role === "artist" && (
+          {user.role === "artist" && (can('users.verify') || can('users.suspend')) && (
             <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              {can('users.verify') && (
               <button
                 onClick={() => { act(user.verified ? "unverify_artist" : "verify_artist", { verified: !user.verified }, ""); }}
                 style={{
@@ -843,6 +847,8 @@ export default function UserDetailModal({
               >
                 {user.verified ? "✓ Verified" : "Xác minh Nghệ sĩ"}
               </button>
+              )}
+              {can('users.suspend') && (
               <button
                 onClick={() => { act(user.suspended ? "unsuspend_artist" : "suspend_artist", { suspended: !user.suspended }, ""); }}
                 style={{
@@ -855,11 +861,12 @@ export default function UserDetailModal({
               >
                 {user.suspended ? "Bỏ tạm dừng" : "Tạm dừng Upload"}
               </button>
+              )}
             </div>
           )}
 
           <div style={{ display: "flex", gap: 8 }}>
-            {isBanned ? (
+            {can('users.ban') && (isBanned ? (
               <button
                 onClick={() => act("unban_user", { status: "active", banReason: null }, "")}
                 disabled={isSelf}
@@ -881,9 +888,9 @@ export default function UserDetailModal({
                 <FontAwesomeIcon icon={faBan} style={{ fontSize: 11 }} />
                 {banForm ? "Hủy khóa" : "Khóa tài khoản"}
               </button>
-            )}
+            ))}
 
-            {user.deleted ? (
+            {can('users.ban') && (user.deleted ? (
               <button
                 onClick={() => act("restore_user", { deleted: false }, "")}
                 style={greenBtn}
@@ -911,7 +918,7 @@ export default function UserDetailModal({
                 <FontAwesomeIcon icon={faTrash} style={{ fontSize: 11 }} />
                 {confirmDelete ? "Xác nhận xóa?" : "Xóa tài khoản"}
               </button>
-            )}
+            ))}
           </div>
         </div>
       </div>

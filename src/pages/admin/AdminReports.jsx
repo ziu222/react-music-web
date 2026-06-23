@@ -10,7 +10,7 @@ import { StatusBadge, FilterPills } from "../../components/console/ConsoleUi";
 import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 import useDelayedVisible from "../../hooks/useDelayedVisible";
 
-export default function AdminReports({ authUser }) {
+export default function AdminReports({ authUser, can = () => true }) {
   const [reports, setReports] = useState([]);
   const [reportsStatus, setReportsStatus] = useState("loading");
   const [filter, setFilter] = useState("pending");
@@ -91,7 +91,7 @@ export default function AdminReports({ authUser }) {
               )}
             </div>
             <StatusBadge status={r.status} />
-            {r.status === "pending" && (
+            {r.status === "pending" && can('reports.resolve') && (
               <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 <button onClick={() => { setNoteTarget(r); setNote(""); }} style={{
                   background: "#34d399", border: "none", color: "#08110d",

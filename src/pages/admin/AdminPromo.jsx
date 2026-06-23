@@ -6,7 +6,7 @@ import { createPromoCode, loadPromoCodes, deactivatePromoCode, GRANT_DURATIONS }
 import { logAdminAction } from "../../lib/user/auditLog";
 import { FilterPills } from "../../components/console/ConsoleUi";
 
-export default function AdminPromo({ authUser }) {
+export default function AdminPromo({ authUser, can = () => true }) {
   const [codes, setCodes] = useState([]);
   const [duration, setDuration] = useState("1m");
   const [maxUses, setMaxUses] = useState(1);
@@ -56,14 +56,16 @@ export default function AdminPromo({ authUser }) {
             style={{ flex: 1, background: "var(--overlay-1)", border: "1px solid " + BORDER, borderRadius: 6,
               padding: "6px 10px", color: TEXT.primary, fontSize: 12, outline: "none", fontFamily: "monospace" }} />
         </div>
-        <button onClick={create} style={{
-          background: "#f97316", border: "none", color: "#fff", borderRadius: 9999,
-          padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer",
-          display: "inline-flex", alignItems: "center", gap: 6,
-        }}>
-          <FontAwesomeIcon icon={faPlus} style={{ fontSize: 11 }} />
-          Tạo mã
-        </button>
+        {can('promo.manage') && (
+          <button onClick={create} style={{
+            background: "#f97316", border: "none", color: "#fff", borderRadius: 9999,
+            padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            display: "inline-flex", alignItems: "center", gap: 6,
+          }}>
+            <FontAwesomeIcon icon={faPlus} style={{ fontSize: 11 }} />
+            Tạo mã
+          </button>
+        )}
       </div>
 
       <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
@@ -93,7 +95,7 @@ export default function AdminPromo({ authUser }) {
           }}>
             <FontAwesomeIcon icon={faCopy} />
           </button>
-          {p.active && (
+          {p.active && can('promo.manage') && (
             <button onClick={() => deactivate(p.code)} title="Vô hiệu hóa" style={{
               background: "transparent", border: "1px solid #ef4444", color: "#ef4444",
               borderRadius: 9999, padding: "4px 10px", fontSize: 11, cursor: "pointer",

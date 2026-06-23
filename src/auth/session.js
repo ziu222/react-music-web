@@ -113,6 +113,7 @@ export async function restoreSessionFromSupabase() {
     role: meta.role,
     plan: meta.plan,
     status: meta.status,
+    admin_role: meta.admin_role,
     joinedAt: meta.joined_at,
   }));
   saveSession(user);

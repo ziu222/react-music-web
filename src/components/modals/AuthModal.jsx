@@ -20,6 +20,7 @@ function buildUserFromMeta(authUser, meta) {
     role: meta?.role || "listener",
     plan: meta?.plan || "free",
     status: meta?.status || "active",
+    admin_role: meta?.admin_role,
     joinedAt: meta?.joined_at || new Date().toISOString(),
   };
 }

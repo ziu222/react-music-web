@@ -28,7 +28,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function AdminBroadcast({ authUser, allUsers = [] }) {
+export default function AdminBroadcast({ authUser, allUsers = [], can = () => true }) {
   const [type, setType] = useState("system");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -114,28 +114,30 @@ export default function AdminBroadcast({ authUser, allUsers = [] }) {
           />
         </div>
 
-        <button
-          onClick={send}
-          disabled={!canSend}
-          style={{
-            background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
-            color: "#fff",
-            border: "none",
-            borderRadius: 9999,
-            padding: 11,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: canSend ? "pointer" : "not-allowed",
-            opacity: canSend ? 1 : 0.5,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          <FontAwesomeIcon icon={faBullhorn} style={{ fontSize: 12 }} />
-          Gửi đến tất cả người dùng
-        </button>
+        {can('broadcast.send') && (
+          <button
+            onClick={send}
+            disabled={!canSend}
+            style={{
+              background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
+              color: "#fff",
+              border: "none",
+              borderRadius: 9999,
+              padding: 11,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: canSend ? "pointer" : "not-allowed",
+              opacity: canSend ? 1 : 0.5,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <FontAwesomeIcon icon={faBullhorn} style={{ fontSize: 12 }} />
+            Gửi đến tất cả người dùng
+          </button>
+        )}
 
         {sentMsg && (
           <div

@@ -25,6 +25,7 @@ import AdminReports from "./AdminReports";
 import AdminAudit from "./AdminAudit";
 import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 import useDelayedVisible from "../../hooks/useDelayedVisible";
+import usePermissions from "../../hooks/usePermissions";
 
 const HEADERS = {
   dashboard: { title: "Dashboard", subtitle: "Tổng quan hệ thống Melodies" },
@@ -38,6 +39,7 @@ const HEADERS = {
 };
 
 export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
+  const { can } = usePermissions(authUser);
   const [adminTab, setAdminTab] = useState("dashboard");
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [subs, setSubs] = useState([]);
@@ -70,21 +72,32 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
   const pendingCount = subs.filter((s) => s.status === "pending").length;
 
   const navItems = [
-    { key: "dashboard", label: "Dashboard", icon: faChartPie },
-    { key: "users", label: "Người dùng", icon: faUsers },
-    { key: "review", label: "Duyệt bài hát", icon: faListCheck, badge: pendingCount },
-    { key: "content", label: "Nội dung", icon: faCompactDisc },
-    { key: "broadcast", label: "Thông báo", icon: faBullhorn },
-    { key: "promo", label: "Mã KM", icon: faTicket },
-    { key: "reports", label: "Báo cáo", icon: faFlag },
-    { key: "audit", label: "Nhật ký", icon: faClockRotateLeft },
+    { key: "dashboard", label: "Dashboard", icon: faChartPie, perm: "dashboard.view" },
+    { key: "users", label: "Người dùng", icon: faUsers, perm: "users.view" },
+    { key: "review", label: "Duyệt bài hát", icon: faListCheck, badge: pendingCount, perm: "review.approve" },
+    { key: "content", label: "Nội dung", icon: faCompactDisc, perm: "content.edit" },
+    { key: "broadcast", label: "Thông báo", icon: faBullhorn, perm: "broadcast.send" },
+    { key: "promo", label: "Mã KM", icon: faTicket, perm: "promo.manage" },
+    { key: "reports", label: "Báo cáo", icon: faFlag, perm: "reports.resolve" },
+    { key: "audit", label: "Nhật ký", icon: faClockRotateLeft, perm: "audit.view" },
   ];
+
+  // Chỉ giữ tab mà role hiện tại có quyền truy cập
+  const visibleNavItems = navItems.filter((item) => can(item.perm));
+
+  // Guard: nếu tab đang chọn không còn nằm trong danh sách hiển thị → nhảy về tab đầu
+  useEffect(() => {
+    if (visibleNavItems.length === 0) return;
+    if (!visibleNavItems.some((item) => item.key === adminTab)) {
+      setAdminTab(visibleNavItems[0]?.key);
+    }
+  }, [visibleNavItems, adminTab]);
 
   return (
     <ConsoleShell
       brandIcon={faShieldHalved}
       brandLabel="Melodies Admin"
-      navItems={navItems}
+      navItems={visibleNavItems}
       activeTab={adminTab}
       onSelectTab={setAdminTab}
       user={authUser}
@@ -110,19 +123,20 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
           pendingCount={pendingCount}
           allUsers={allUsers}
           onNavigateUsers={() => setAdminTab("users")}
+          can={can}
         />
       )}
       {adminTab === "users" && !holdUsersSkeleton && !(usersStatus === "error" && allUsers.length === 0) && (
-        <AdminUsers users={allUsers} onOpenUser={(u) => setSelectedUserId(u.id)} authUser={authUser} onRefresh={retryUsers} />
+        <AdminUsers users={allUsers} onOpenUser={(u) => setSelectedUserId(u.id)} authUser={authUser} onRefresh={retryUsers} can={can} />
       )}
       {adminTab === "review" && (
-        <AdminReview subs={subs} setSubs={setSubs} authUser={authUser} />
+        <AdminReview subs={subs} setSubs={setSubs} authUser={authUser} can={can} />
       )}
-      {adminTab === "content" && <AdminContent songs={songs} authUser={authUser} />}
-      {adminTab === "broadcast" && <AdminBroadcast authUser={authUser} allUsers={allUsers} />}
-      {adminTab === "promo" && <AdminPromo authUser={authUser} />}
-      {adminTab === "reports" && <AdminReports authUser={authUser} />}
-      {adminTab === "audit" && <AdminAudit />}
+      {adminTab === "content" && <AdminContent songs={songs} authUser={authUser} can={can} />}
+      {adminTab === "broadcast" && <AdminBroadcast authUser={authUser} allUsers={allUsers} can={can} />}
+      {adminTab === "promo" && <AdminPromo authUser={authUser} can={can} />}
+      {adminTab === "reports" && <AdminReports authUser={authUser} can={can} />}
+      {adminTab === "audit" && <AdminAudit can={can} />}
 
       <UserDetailModal
         user={
@@ -135,6 +149,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
         onClose={() => setSelectedUserId(null)}
         onChanged={handleUserChanged}
         onImpersonate={onImpersonate}
+        can={can}
       />
     </ConsoleShell>
   );
