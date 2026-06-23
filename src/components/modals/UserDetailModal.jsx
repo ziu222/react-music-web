@@ -17,6 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../../constants/theme";
 import { getListenerStats } from "../../data/listenerStats";
+import { loadUserPlayHistory } from "../../lib/supabase/userPlayHistory";
 import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { getRequest, requestMoreInfo, resolveUpgradeRequest, undoRejectUpgradeRequest } from "../../lib/artist/upgradeRequests";
@@ -83,6 +84,7 @@ function SectionLabel({ children }) {
 export default function UserDetailModal({
   user,
   currentAdmin,
+  songs = [],
   onClose,
   onChanged,
   onImpersonate,
@@ -102,6 +104,11 @@ export default function UserDetailModal({
     supabase?.from("users").select("admin_note").eq("email", user.email.toLowerCase()).maybeSingle()
       .then(({ data }) => { if (data) setAdminNote(data.admin_note ?? ""); })
       .catch(() => {});
+  }, [user?.email]);
+  const [userHistory, setUserHistory] = useState([]);
+  useEffect(() => {
+    if (!user?.email) { setUserHistory([]); return; }
+    loadUserPlayHistory(user.email).then(setUserHistory).catch(() => {});
   }, [user?.email]);
   const [grantHistory, setGrantHistory] = useState([]);
   const [activeGrant, setActiveGrant] = useState(null);
@@ -198,7 +205,7 @@ export default function UserDetailModal({
   const isPremium = user.plan === "premium";
   const isBanned = user.status === "banned";
   const roleChip = ROLE_CHIPS[user.role] ?? ROLE_CHIPS.listener;
-  const stats = getListenerStats(user);
+  const stats = getListenerStats(user, { playHistory: userHistory, catalog: songs });
 
   const act = async (action, patch, detail) => {
     onChanged({ email: user.email, patch }); // optimistic update tức thì (không refetch)

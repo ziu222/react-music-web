@@ -35,6 +35,7 @@ import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
 import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
 import { saveLibraryToSupabase } from "./lib/supabase/librarySync";
 import { fetchCuratedPlaylists } from "./lib/supabase/curatedPlaylists";
+import { recordUserPlay, loadUserRecent, loadUserPlayHistory } from "./lib/supabase/userPlayHistory";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -125,6 +126,11 @@ export default function App() {
   const [artistUpgradeOpen, setArtistUpgradeOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [recentIds, setRecentIds] = useState([]);
+  const [myPlayHistory, setMyPlayHistory] = useState([]);
+  // Current user's email in a ref so play() can record per-user plays without
+  // being recreated (and re-propagated as onPlay) on every auth change.
+  const authEmailRef = useRef(authUser?.email);
+  useEffect(() => { authEmailRef.current = authUser?.email; }, [authUser?.email]);
   const [queuedTrackIds, setQueuedTrackIds] = useState([]);
   const [queueFeedback, setQueueFeedback] = useState(null);
   const [userPlaylists, setUserPlaylists] = useState(() => {
@@ -250,6 +256,15 @@ export default function App() {
         }
       })
       .catch(() => {});
+  }, [authUser?.email]);
+
+  // Hydrate per-user play history → cross-device "Nghe gần đây" + real stats.
+  useEffect(() => {
+    if (!authUser?.email) { setMyPlayHistory([]); return; }
+    loadUserPlayHistory(authUser.email).then(setMyPlayHistory).catch(() => {});
+    loadUserRecent(authUser.email).then(ids => {
+      if (ids.length) setRecentIds(prev => [...new Set([...prev, ...ids])].slice(0, 12));
+    }).catch(() => {});
   }, [authUser?.email]);
 
   /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
@@ -505,6 +520,14 @@ export default function App() {
     setProg(0);
     incrementPlay(s.id);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
+    if (authEmailRef.current) {
+      recordUserPlay(authEmailRef.current, s.id);
+      setMyPlayHistory(prev => {
+        const rest = prev.filter(h => h.songId !== s.id);
+        const cur = prev.find(h => h.songId === s.id);
+        return [...rest, { songId: s.id, plays: (cur?.plays ?? 0) + 1 }];
+      });
+    }
   }, []);
 
   // Play a track selected outside the queue (library, home, search) — rebuilds shuffle queue.
@@ -1489,6 +1512,8 @@ export default function App() {
               isPremium={isPremium}
               likedCount={likedIds.size}
               likedSongs={list.filter(s => likedIds.has(s.id))}
+              playHistory={myPlayHistory}
+              catalog={list}
               recentSongs={recentSongs}
               onPlay={togglePlayWithAuth}
               cur={cur}

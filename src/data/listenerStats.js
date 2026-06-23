@@ -49,33 +49,64 @@ function pickDistinct(rand, pool, n) {
 }
 
 /**
- * Deterministic stats for a user. `likedSongs` (optional) overlays REAL taste:
- * when provided, topGenres/topArtists are derived from the user's liked songs.
+ * Real per-user stats from play history (user_play_history) joined with the
+ * song catalog. Returns null when the user has no recorded plays.
+ *   history: [{ songId, plays }]   catalog: full song list
  */
-export function getListenerStats(user, likedSongs = []) {
+export function computePlayStats(history, catalog = []) {
+  if (!history?.length) return null;
+  const byId = new Map(catalog.map(s => [s.id, s]));
+  let totalSecs = 0, totalPlays = 0;
+  const genre = new Map(), artist = new Map();
+  for (const h of history) {
+    const s = byId.get(h.songId);
+    totalPlays += h.plays;
+    if (!s) continue;
+    totalSecs += (s.durationSecs || 0) * h.plays;
+    genre.set(s.genre, (genre.get(s.genre) ?? 0) + h.plays);
+    artist.set(s.artist, (artist.get(s.artist) ?? 0) + h.plays);
+  }
+  return {
+    songsListened: totalPlays,
+    totalHours: Math.round(totalSecs / 3600),
+    topGenres: rankBy(genre).slice(0, 3),
+    topArtists: rankBy(artist).slice(0, 3),
+  };
+}
+
+/**
+ * Stats for a user. Prefers REAL data when available:
+ *   1. playHistory + catalog → fully real (counts, hours, top genres/artists)
+ *   2. likedSongs → real taste overlay (top genres/artists) on seeded totals
+ *   3. otherwise → deterministic seeded figures (stable per user)
+ */
+export function getListenerStats(user, { likedSongs = [], playHistory = null, catalog = [] } = {}) {
+  const real = computePlayStats(playHistory, catalog);
+  if (real) return real;
+
   const seed = user?.email || String(user?.id ?? "guest");
   const rand = mulberry32(hashStr(seed));
-
   const songsListened = 40 + Math.round(rand() * 2400);
   const totalHours = Math.round(songsListened * (0.18 + rand() * 0.12));
 
   let topGenres = pickDistinct(rand, GENRES, 3);
   let topArtists = pickDistinct(rand, ARTISTS, 3);
-
-  // Real overlay: rank the user's actual liked songs by genre / artist.
   if (likedSongs.length) {
-    topGenres = rankBy(likedSongs, s => s.genre).slice(0, 3);
-    topArtists = rankBy(likedSongs, s => s.artist).slice(0, 3);
+    topGenres = rankByList(likedSongs, s => s.genre).slice(0, 3);
+    topArtists = rankByList(likedSongs, s => s.artist).slice(0, 3);
   }
-
   return { songsListened, totalHours, topGenres, topArtists };
 }
 
-function rankBy(items, keyFn) {
+function rankBy(countsMap) {
+  return [...countsMap.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+}
+
+function rankByList(items, keyFn) {
   const counts = new Map();
   for (const it of items) {
     const k = keyFn(it);
     if (k) counts.set(k, (counts.get(k) ?? 0) + 1);
   }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  return rankBy(counts);
 }

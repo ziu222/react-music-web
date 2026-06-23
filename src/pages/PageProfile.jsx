@@ -70,6 +70,8 @@ export default function PageProfile({
   isPremium,
   likedCount,
   likedSongs = [],
+  playHistory = [],
+  catalog = [],
   recentSongs = [],
   onPlay,
   cur,
@@ -114,7 +116,7 @@ export default function PageProfile({
     );
   }
 
-  const stats = getListenerStats(user, likedSongs);
+  const stats = getListenerStats(user, { likedSongs, playHistory, catalog });
 
   const joined = new Date(user.joinedAt).toLocaleDateString("vi-VN", {
     year: "numeric",

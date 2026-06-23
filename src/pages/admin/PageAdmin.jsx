@@ -131,6 +131,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
             : null
         }
         currentAdmin={authUser}
+        songs={songs}
         onClose={() => setSelectedUserId(null)}
         onChanged={handleUserChanged}
         onImpersonate={onImpersonate}
