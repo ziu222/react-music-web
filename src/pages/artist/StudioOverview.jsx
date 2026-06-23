@@ -93,7 +93,7 @@ export default function StudioOverview({ authUser, mySubs, onGoSubmit }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subsKey]);
 
-  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
+  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs, authUser?.name);
   const trend = weeklyTrend(analytics.dailyPlays);
 
   const approved = mySubs.filter((s) => s.status === "approved");

@@ -70,7 +70,7 @@ export default function StudioProfile({ authUser, mySubs, onSaved, onChanged }) 
     };
   }, [profile?.avatarBlobId]);
 
-  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
+  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs, authUser?.name);
   if (!profile) return null;
   const themeColor = profile.themeColor || authUser?.color || C[500];
   const stageName = profile.displayName?.trim() || authUser?.name;

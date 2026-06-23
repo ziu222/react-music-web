@@ -16,7 +16,7 @@ import {
   faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../../constants/theme";
-import { listenerStats } from "../../data/listenerStats";
+import { getListenerStats } from "../../data/listenerStats";
 import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { getRequest, requestMoreInfo, resolveUpgradeRequest, undoRejectUpgradeRequest } from "../../lib/artist/upgradeRequests";
@@ -198,7 +198,7 @@ export default function UserDetailModal({
   const isPremium = user.plan === "premium";
   const isBanned = user.status === "banned";
   const roleChip = ROLE_CHIPS[user.role] ?? ROLE_CHIPS.listener;
-  const stats = listenerStats.find((s) => s.userId === user.id);
+  const stats = getListenerStats(user);
 
   const act = async (action, patch, detail) => {
     onChanged({ email: user.email, patch }); // optimistic update tức thì (không refetch)

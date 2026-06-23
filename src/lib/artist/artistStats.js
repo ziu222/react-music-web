@@ -3,6 +3,7 @@
  * được overlay lên trên — dữ liệu thực luôn thắng seeded.
  */
 import { getPlayCounts } from "../music/playLog";
+import { getFollowers } from "../social/followerIndex";
 
 function hashStr(str) {
   let h = 2166136261;
@@ -35,10 +36,14 @@ const LOCATIONS = [
   "Singapore",
 ];
 
-export function getArtistAnalytics(email, subs = []) {
+export function getArtistAnalytics(email, subs = [], artistName = "") {
   const rand = mulberry32(hashStr(email || "artist"));
 
-  const followers = 1200 + Math.round(rand() * 48000);
+  // Seeded baseline keeps the demo dashboard rich; REAL followers from the
+  // Supabase-backed `follows` index (synced into the local index on login)
+  // are added on top so genuine follows always count.
+  const realFollowers = artistName ? getFollowers(artistName).length : 0;
+  const followers = 1200 + Math.round(rand() * 48000) + realFollowers;
   const monthlyListeners = Math.round(followers * (2.6 + rand() * 3.4));
 
   const dailyPlays = [];

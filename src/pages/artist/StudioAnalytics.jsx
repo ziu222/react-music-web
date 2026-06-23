@@ -90,7 +90,7 @@ function PanelCard({ title, children, stagger = 0 }) {
 
 export default function StudioAnalytics({ authUser, mySubs }) {
   const [period, setPeriod] = useState("14");
-  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
+  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs, authUser?.name);
 
   const points = analytics.dailyPlays.slice(-Number(period));
   const totalPlays = points.reduce((s, d) => s + d.plays, 0);

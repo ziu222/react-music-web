@@ -42,7 +42,7 @@ export default function StudioSongs({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subsKey]);
 
-  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs);
+  const analytics = getArtistAnalytics(authUser?.email ?? "", mySubs, authUser?.name);
 
   if (!mySubs.length) {
     return (

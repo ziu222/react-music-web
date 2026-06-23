@@ -17,7 +17,7 @@ import {
 import { C, BORDER, BG, TEXT } from "../constants/theme";
 import EmptyState from "../components/ui/EmptyState";
 import PlanBadge from "../components/primitives/PlanBadge";
-import { listenerStats } from "../data/listenerStats";
+import { getListenerStats } from "../data/listenerStats";
 import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/artist/upgradeRequests";
 import { createNotification, loadNotifications, saveNotifications } from "../lib/social/notifications";
 
@@ -69,6 +69,7 @@ export default function PageProfile({
   user,
   isPremium,
   likedCount,
+  likedSongs = [],
   recentSongs = [],
   onPlay,
   cur,
@@ -113,13 +114,7 @@ export default function PageProfile({
     );
   }
 
-  const stats =
-    listenerStats.find(s => s.userId === user.id) ?? {
-      songsListened: 0,
-      totalHours: 0,
-      topGenres: [],
-      topArtists: [],
-    };
+  const stats = getListenerStats(user, likedSongs);
 
   const joined = new Date(user.joinedAt).toLocaleDateString("vi-VN", {
     year: "numeric",

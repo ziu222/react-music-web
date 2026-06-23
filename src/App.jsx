@@ -34,6 +34,7 @@ import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
 import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
 import { saveLibraryToSupabase } from "./lib/supabase/librarySync";
+import { fetchCuratedPlaylists } from "./lib/supabase/curatedPlaylists";
 import { addFollower, removeFollower } from "./lib/social/followerIndex";
 import PageHome from "./pages/PageHome";
 import PageSearch from "./pages/PageSearch";
@@ -185,6 +186,17 @@ export default function App() {
   }, [savedAlbums]);
 
   useEffect(() => () => { clearTimeout(feedbackTimerRef.current); }, []);
+
+  // Refresh curated (seed) playlists from Supabase; keep personal ones.
+  // Falls back to the bundled static seed if the fetch fails.
+  useEffect(() => {
+    fetchCuratedPlaylists()
+      .then((curated) => {
+        if (!curated) return;
+        setUserPlaylists((prev) => [...curated, ...prev.filter((pl) => pl.isPersonal)]);
+      })
+      .catch(() => {});
+  }, []);
 
   const done = useCallback(() => setScreen("app"), []);
 
@@ -1476,6 +1488,7 @@ export default function App() {
               user={authUser}
               isPremium={isPremium}
               likedCount={likedIds.size}
+              likedSongs={list.filter(s => likedIds.has(s.id))}
               recentSongs={recentSongs}
               onPlay={togglePlayWithAuth}
               cur={cur}
