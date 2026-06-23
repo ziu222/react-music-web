@@ -9,6 +9,7 @@ import {
   faClockRotateLeft,
   faTicket,
   faFlag,
+  faUserShield,
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
@@ -23,6 +24,7 @@ import AdminBroadcast from "./AdminBroadcast";
 import AdminPromo from "./AdminPromo";
 import AdminReports from "./AdminReports";
 import AdminAudit from "./AdminAudit";
+import AdminRoles from "./AdminRoles";
 import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 import useDelayedVisible from "../../hooks/useDelayedVisible";
 import usePermissions from "../../hooks/usePermissions";
@@ -36,6 +38,7 @@ const HEADERS = {
   promo: { title: "Mã khuyến mãi", subtitle: "Tạo và quản lý mã premium" },
   reports: { title: "Báo cáo vi phạm", subtitle: "Xử lý nội dung bị người dùng báo cáo" },
   audit: { title: "Nhật ký", subtitle: "Lịch sử hành động quản trị" },
+  roles: { title: "Phân quyền", subtitle: "Gán vai trò & quyền cho quản trị viên" },
 };
 
 export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
@@ -80,6 +83,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
     { key: "promo", label: "Mã KM", icon: faTicket, perm: "promo.manage" },
     { key: "reports", label: "Báo cáo", icon: faFlag, perm: "reports.resolve" },
     { key: "audit", label: "Nhật ký", icon: faClockRotateLeft, perm: "audit.view" },
+    { key: "roles", label: "Phân quyền", icon: faUserShield, perm: "roles.manage" },
   ];
 
   // Chỉ giữ tab mà role hiện tại có quyền truy cập
@@ -137,6 +141,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
       {adminTab === "promo" && <AdminPromo authUser={authUser} can={can} />}
       {adminTab === "reports" && <AdminReports authUser={authUser} can={can} />}
       {adminTab === "audit" && <AdminAudit can={can} />}
+      {adminTab === "roles" && <AdminRoles authUser={authUser} users={allUsers} can={can} onRefresh={retryUsers} />}
 
       <UserDetailModal
         user={

@@ -52,6 +52,55 @@ export const DEFAULT_ROLE_PERMISSIONS = {
   admin_marketing: ["dashboard.view", "promo.manage", "broadcast.send"],
 };
 
+/* PERMISSION_GROUPS — catalog hiển thị, gom quyền theo nhóm để render toggle
+ * ở màn Phân quyền. Mỗi perm là cặp [key, nhãn tiếng Việt]. */
+export const PERMISSION_GROUPS = [
+  {
+    group: "Tổng quan",
+    perms: [
+      ["dashboard.view", "Xem dashboard"],
+      ["system.view", "Xem sức khỏe hệ thống"],
+      ["audit.view", "Xem nhật ký"],
+    ],
+  },
+  {
+    group: "Người dùng",
+    perms: [
+      ["users.view", "Xem người dùng"],
+      ["users.ban", "Khóa/mở tài khoản"],
+      ["users.grant_premium", "Cấp/thu hồi Premium"],
+      ["users.verify", "Xác minh nghệ sĩ"],
+      ["users.suspend", "Tạm dừng nghệ sĩ"],
+      ["admins.manage", "Quản lý đội admin"],
+    ],
+  },
+  {
+    group: "Nội dung",
+    perms: [
+      ["review.approve", "Duyệt bài hát"],
+      ["content.edit", "Sửa metadata"],
+      ["content.delete", "Gỡ/xóa bài"],
+      ["content.feature", "Feature bài"],
+      ["content.takedown", "Gỡ bản quyền (DMCA)"],
+      ["reports.resolve", "Xử lý báo cáo"],
+    ],
+  },
+  {
+    group: "Marketing",
+    perms: [
+      ["promo.manage", "Quản lý mã KM"],
+      ["broadcast.send", "Gửi thông báo"],
+    ],
+  },
+  {
+    group: "Hệ thống",
+    perms: [
+      ["roles.manage", "Phân quyền admin"],
+      ["config.manage", "Cấu hình hệ thống"],
+    ],
+  },
+];
+
 /* can(permissions, perm) → true nếu mảng chứa '*' hoặc chứa đúng perm.
  * An toàn với null/undefined: trả false khi permissions rỗng. */
 export function can(permissions, perm) {

@@ -14,6 +14,8 @@ export const ACTION_LABELS = {
   undo_reject:  "Hoàn tác từ chối",
   broadcast:    "Thông báo hệ thống",
   impersonate:  "Xem với tư cách",
+  change_admin_role: "Đổi sub-role admin",
+  edit_role_perms:   "Sửa quyền vai trò",
 };
 
 let counter = 0;

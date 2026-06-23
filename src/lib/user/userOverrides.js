@@ -21,6 +21,7 @@ export async function setUserOverride(email, patch) {
     if (patch.deleted   !== undefined) dbPatch.deleted    = patch.deleted;
     if (patch.verified  !== undefined) dbPatch.verified   = patch.verified;
     if (patch.suspended !== undefined) dbPatch.suspended  = patch.suspended;
+    if (patch.adminRole !== undefined) dbPatch.admin_role = patch.adminRole;
 
     if (Object.keys(dbPatch).length) {
       const { error } = await supabase.from("users").update(dbPatch).eq("email", key);
@@ -46,6 +47,7 @@ export async function getAllUsersWithOverrides() {
     deleted:    r.deleted ?? false,
     verified:   r.verified ?? false,
     suspended:  r.suspended ?? false,
+    adminRole:  r.admin_role ?? null,
     joinedAt:   r.joined_at,
   }));
 }
