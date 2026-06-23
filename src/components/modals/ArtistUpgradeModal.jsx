@@ -88,7 +88,7 @@ function FieldLabel({ children }) {
   );
 }
 
-export default function ArtistUpgradeModal({ open, onClose, authUser }) {
+export default function ArtistUpgradeModal({ open, onClose, authUser, registrationOpen = true }) {
   const [step, setStep]         = useState(0);
   const [busy, setBusy]         = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -234,8 +234,8 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
           </div>
         </div>
 
-        {/* Step bar */}
-        {!submitted && (
+        {/* Step bar — ẩn khi đăng ký đang đóng hoặc đã gửi xong */}
+        {registrationOpen && !submitted && (
           <div style={{ padding:"18px 24px 0", flexShrink:0 }}>
             <StepBar current={step} />
           </div>
@@ -243,6 +243,33 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
 
         {/* Content */}
         <div style={{ flex:1, overflowY:"auto", padding:"0 24px 24px" }}>
+
+          {/* Đăng ký tạm đóng — thay toàn bộ form bằng thông báo + nút Đóng */}
+          {!registrationOpen && (
+            <div style={{ textAlign:"center", padding:"48px 8px 36px" }}>
+              <div style={{
+                width:60, height:60, borderRadius:"50%", margin:"0 auto 18px",
+                background:`${DS.primary}18`, border:`1px solid ${DS.primary}44`,
+                display:"flex", alignItems:"center", justifyContent:"center",
+              }}>
+                <FontAwesomeIcon icon={faMicrophone} style={{ fontSize:22, color:DS.primary }} />
+              </div>
+              <div style={{ fontSize:17, fontWeight:700, color:DS.textPrimary, marginBottom:10 }}>
+                Đăng ký Nghệ sĩ đang tạm đóng
+              </div>
+              <div style={{ fontSize:13, color:DS.textSecondary, lineHeight:1.7, maxWidth:320, margin:"0 auto 28px" }}>
+                Chúng tôi đang tạm ngừng nhận đơn đăng ký nghệ sĩ. Vui lòng quay lại sau — cảm ơn bạn đã quan tâm!
+              </div>
+              <button onClick={handleClose} style={{
+                background:`linear-gradient(90deg, ${DS.primaryDim}, ${DS.primary})`,
+                color:"#fff", border:"none", borderRadius:DS.radiusPill,
+                padding:"9px 32px", fontSize:13, fontWeight:700, cursor:"pointer",
+                fontFamily:DS.font,
+              }}>
+                Đóng
+              </button>
+            </div>
+          )}
 
           {/* Success */}
           {submitted && (
@@ -271,7 +298,7 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
           )}
 
           {/* Step 0 */}
-          {!submitted && step === 0 && (
+          {registrationOpen && !submitted && step === 0 && (
             <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
               <div>
                 <FieldLabel>Tên nghệ sĩ *</FieldLabel>
@@ -326,7 +353,7 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
           )}
 
           {/* Step 1 */}
-          {!submitted && step === 1 && (
+          {registrationOpen && !submitted && step === 1 && (
             <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
               <p style={{ fontSize:13, color:DS.textSecondary, lineHeight:1.65, margin:0 }}>
                 Giúp admin nghe nhạc của bạn. Upload file audio hoặc dán link ngoài — ít nhất 1 mẫu.
@@ -421,7 +448,7 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
           )}
 
           {/* Step 2 */}
-          {!submitted && step === 2 && (
+          {registrationOpen && !submitted && step === 2 && (
             <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
               <div style={{ fontSize:13, fontWeight:700, color:DS.textPrimary, marginBottom:4 }}>
                 Xem lại thông tin
@@ -473,8 +500,8 @@ export default function ArtistUpgradeModal({ open, onClose, authUser }) {
           )}
         </div>
 
-        {/* Footer */}
-        {!submitted && (
+        {/* Footer — ẩn khi đăng ký đang đóng (nút Đóng đã nằm trong body) */}
+        {registrationOpen && !submitted && (
           <div style={{
             display:"flex", justifyContent:"space-between", alignItems:"center",
             padding:"14px 24px",

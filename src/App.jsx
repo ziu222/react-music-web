@@ -13,6 +13,7 @@ import AuthGateModal from "./components/modals/AuthGateModal";
 import NavbarUserActions from "./components/nav/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
 import ArtistUpgradeModal from "./components/modals/ArtistUpgradeModal";
+import MaintenanceScreen from "./components/MaintenanceScreen";
 import ModalSkeleton from "./components/ui/skeleton/ModalSkeleton";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
@@ -29,6 +30,7 @@ import { loadNotifications, saveNotifications, createNotification } from "./lib/
 import { syncFromSupabase } from "./lib/supabase/syncFromSupabase";
 import { applyUserOverride } from "./lib/user/userOverrides";
 import { logAdminAction } from "./lib/user/auditLog";
+import { loadAppConfig, toConfigMap } from "./lib/admin/appConfig";
 import { applySongOverrides } from "./lib/music/songOverrides";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
@@ -62,6 +64,7 @@ export default function App() {
   const feedbackTimerRef = useRef(null);
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
+  const [appConfig, setAppConfig] = useState({});
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [prog, setProg] = useState(0);
@@ -201,6 +204,14 @@ export default function App() {
         if (!curated) return;
         setUserPlaylists((prev) => [...curated, ...prev.filter((pl) => pl.isPersonal)]);
       })
+      .catch(() => {});
+  }, []);
+
+  // Nạp cờ cấu hình hệ thống (feature flags) từ bảng app_config.
+  // Lỗi -> giữ appConfig {} (fail-safe: không chặn người dùng).
+  useEffect(() => {
+    loadAppConfig()
+      .then((list) => setAppConfig(toConfigMap(list)))
       .catch(() => {});
   }, []);
 
@@ -1059,6 +1070,10 @@ export default function App() {
     );
   }
 
+  // Chế độ bảo trì: chặn toàn bộ app, trừ admin (để còn tắt được cờ).
+  // Fail-safe: nếu config chưa nạp xong thì maintenance_mode undefined -> không chặn.
+  if (appConfig.maintenance_mode && authUser?.role !== "admin") return <MaintenanceScreen />;
+
   return (
     <div
       style={{
@@ -1582,6 +1597,7 @@ export default function App() {
         open={artistUpgradeOpen}
         onClose={() => setArtistUpgradeOpen(false)}
         authUser={authUser}
+        registrationOpen={appConfig.artist_registration_open !== false}
       />
 
       {queueFeedback && (

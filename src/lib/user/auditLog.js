@@ -16,6 +16,7 @@ export const ACTION_LABELS = {
   impersonate:  "Xem với tư cách",
   change_admin_role: "Đổi sub-role admin",
   edit_role_perms:   "Sửa quyền vai trò",
+  toggle_config:     "Đổi cấu hình",
 };
 
 let counter = 0;

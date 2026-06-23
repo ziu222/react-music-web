@@ -10,6 +10,7 @@ import {
   faTicket,
   faFlag,
   faUserShield,
+  faSliders,
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
@@ -25,6 +26,7 @@ import AdminPromo from "./AdminPromo";
 import AdminReports from "./AdminReports";
 import AdminAudit from "./AdminAudit";
 import AdminRoles from "./AdminRoles";
+import AdminConfig from "./AdminConfig";
 import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 import useDelayedVisible from "../../hooks/useDelayedVisible";
 import usePermissions from "../../hooks/usePermissions";
@@ -39,6 +41,7 @@ const HEADERS = {
   reports: { title: "Báo cáo vi phạm", subtitle: "Xử lý nội dung bị người dùng báo cáo" },
   audit: { title: "Nhật ký", subtitle: "Lịch sử hành động quản trị" },
   roles: { title: "Phân quyền", subtitle: "Gán vai trò & quyền cho quản trị viên" },
+  config: { title: "Cấu hình", subtitle: "Bật/tắt tính năng hệ thống" },
 };
 
 export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
@@ -84,6 +87,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
     { key: "reports", label: "Báo cáo", icon: faFlag, perm: "reports.resolve" },
     { key: "audit", label: "Nhật ký", icon: faClockRotateLeft, perm: "audit.view" },
     { key: "roles", label: "Phân quyền", icon: faUserShield, perm: "roles.manage" },
+    { key: "config", label: "Cấu hình", icon: faSliders, perm: "config.manage" },
   ];
 
   // Chỉ giữ tab mà role hiện tại có quyền truy cập
@@ -142,6 +146,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
       {adminTab === "reports" && <AdminReports authUser={authUser} can={can} />}
       {adminTab === "audit" && <AdminAudit can={can} />}
       {adminTab === "roles" && <AdminRoles authUser={authUser} users={allUsers} can={can} onRefresh={retryUsers} />}
+      {adminTab === "config" && <AdminConfig authUser={authUser} can={can} />}
 
       <UserDetailModal
         user={
