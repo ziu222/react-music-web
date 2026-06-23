@@ -153,26 +153,35 @@ export default function App() {
   const [librarySort, setLibrarySort] = useState("recent");
   const [libraryViewMode, setLibraryViewMode] = useState("list");
 
+  // Every library write pushes the FULL snapshot — the debounced upsert in
+  // librarySync is last-write-wins, so a partial payload would clobber the
+  // fields it omitted (e.g. a like toggle wiping followed artists).
+  const librarySnapshot = () => ({ likedIds, playlists: userPlaylists, followedArtists, savedAlbums });
+
   useEffect(() => {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }
     catch (err) { void err; }
-    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPlaylists]);
 
   useEffect(() => {
-    if (authUser?.email) saveLibraryToSupabase(authUser.email, { likedIds, playlists: userPlaylists });
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [likedIds]);
 
   useEffect(() => {
     try { localStorage.setItem("melodies_followed_artists", JSON.stringify([...followedArtists])); }
     catch (err) { void err; }
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [followedArtists]);
 
   useEffect(() => {
     try { localStorage.setItem("melodies_saved_albums", JSON.stringify([...savedAlbums])); }
     catch (err) { void err; }
+    if (authUser?.email) saveLibraryToSupabase(authUser.email, librarySnapshot());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedAlbums]);
 
   useEffect(() => () => { clearTimeout(feedbackTimerRef.current); }, []);
@@ -202,16 +211,6 @@ export default function App() {
     }
   }, [authUser]);
 
-  // Sync settings from DB after login — cross-device preferences
-  useEffect(() => {
-    if (!authUser?.email) return;
-    const key = authUser.email.toLowerCase();
-    syncSettingsFromDB(key).then(dbSettings => {
-      if (!dbSettings) return;
-      setSettingsState(s => s.key === key ? { ...s, value: dbSettings } : s);
-    }).catch(() => {});
-  }, [authUser?.email]);
-
   // Sync from Supabase whenever user logs in — hydrate liked songs + playlists
   useEffect(() => {
     if (!authUser?.email) return;
@@ -229,6 +228,14 @@ export default function App() {
             return [...prev.filter(pl => !pl.isPersonal), ...personal];
           });
         }
+        // Merge follows/saves (union) so a fresh device picks up server state
+        // without dropping anything toggled locally before sync landed.
+        if (Array.isArray(library.followed_artists) && library.followed_artists.length > 0) {
+          setFollowedArtists(prev => new Set([...library.followed_artists, ...prev]));
+        }
+        if (Array.isArray(library.saved_albums) && library.saved_albums.length > 0) {
+          setSavedAlbums(prev => new Set([...library.saved_albums, ...prev]));
+        }
       })
       .catch(() => {});
   }, [authUser?.email]);
@@ -240,6 +247,16 @@ export default function App() {
   // High quality chỉ hợp lệ khi premium — guest/free luôn thấy normal dù stored là high
   const settings = normalizeSettingsForEntitlement(settingsState.value, isPremium);
   const notifications = notifState.value;
+
+  // Sync settings from DB after login — cross-device preferences
+  useEffect(() => {
+    if (!authUser?.email) return;
+    const key = authUser.email.toLowerCase();
+    syncSettingsFromDB(key).then(dbSettings => {
+      if (!dbSettings) return;
+      setSettingsState(s => s.key === key ? { ...s, value: dbSettings } : s);
+    }).catch(() => {});
+  }, [authUser?.email]);
 
   // Realtime: push notifications from Supabase (admin broadcast, song approved, etc.)
   useEffect(() => {
