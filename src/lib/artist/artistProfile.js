@@ -39,6 +39,21 @@ export async function loadArtistProfile(email) {
   return profile;
 }
 
+/* Tìm artist profile theo tên hiển thị (dùng cho listener view).
+ * Thử khớp users.name trước, sau đó artist_profiles.display_name.
+ * Trả về profile object hoặc null nếu không tìm thấy. */
+export async function loadArtistProfileByName(name) {
+  if (!supabase || !name) return null;
+  const trimmed = name.trim();
+  const [{ data: u }, { data: p }] = await Promise.all([
+    supabase.from("users").select("email").eq("role", "artist").ilike("name", trimmed).maybeSingle(),
+    supabase.from("artist_profiles").select("email").ilike("display_name", trimmed).maybeSingle(),
+  ]);
+  const email = u?.email ?? p?.email ?? null;
+  if (!email) return null;
+  return loadArtistProfile(email);
+}
+
 export async function saveArtistProfile(email, profile) {
   const key = String(email).toLowerCase();
   _cache.set(key, profile);

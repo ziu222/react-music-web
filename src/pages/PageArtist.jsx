@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useImageAccent } from "../lib/ui/colorExtract";
 import { useContextPlay } from "../hooks/useContextPlay";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -11,6 +11,8 @@ import { TEXT } from "../constants/theme";
 import { getArtist, deriveAlbums, formatPlays } from "../data/derived";
 import EntityHeaderSkeleton from "../components/ui/skeleton/EntityHeaderSkeleton";
 import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
+import { loadArtistProfileByName } from "../lib/artist/artistProfile";
+import { getMediaBlobUrl, revokeMediaBlobUrl } from "../lib/music/mediaStore";
 
 export default function PageArtist({
   artistName,
@@ -29,7 +31,27 @@ export default function PageArtist({
 }) {
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
-  const imageAccent = useImageAccent(artist?.image, "#f97316");
+  const [profileImage, setProfileImage] = useState(null);
+
+  // Load ảnh từ artist_profiles (IndexedDB blob) — artist.image chỉ là static fallback
+  useEffect(() => {
+    if (!artistName) return;
+    let alive = true;
+    let blobUrl = null;
+    setProfileImage(null);
+    loadArtistProfileByName(artistName).then(async (profile) => {
+      if (!alive || !profile?.avatarBlobId) return;
+      const u = await getMediaBlobUrl(profile.avatarBlobId);
+      if (alive && u) { blobUrl = u; setProfileImage(u); }
+    });
+    return () => {
+      alive = false;
+      if (blobUrl) revokeMediaBlobUrl(blobUrl);
+    };
+  }, [artistName]);
+
+  const displayImage = profileImage ?? artist?.image;
+  const imageAccent = useImageAccent(displayImage, "#f97316");
 
   // Context-aware play/pause for the big button (toggle if a track by this
   // artist is current, else start from their top track).
@@ -72,7 +94,7 @@ export default function PageArtist({
         type="Nghệ sĩ"
         title={artist.name}
         round
-        image={artist.image}
+        image={displayImage}
         fallback={artist.name[0]}
         accent={accent}
         meta={

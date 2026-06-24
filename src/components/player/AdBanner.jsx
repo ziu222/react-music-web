@@ -27,7 +27,7 @@ export default function AdBanner({ onOpenPremium, adIndex = 0 }) {
     >
       <FontAwesomeIcon icon={faRectangleAd} style={{ fontSize: 14, color: TEXT.tertiary, flexShrink: 0 }} />
       <span style={{ flex: 1, fontSize: 12, color: TEXT.secondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        Quảng cáo · {msg}
+        Đây là quảng cáo · Muốn xóa? Mua Premium đi :D
       </span>
       <button
         type="button"
@@ -45,7 +45,7 @@ export default function AdBanner({ onOpenPremium, adIndex = 0 }) {
           whiteSpace: 'nowrap',
         }}
       >
-        Gỡ quảng cáo
+        Mua Premium
       </button>
     </div>
   );

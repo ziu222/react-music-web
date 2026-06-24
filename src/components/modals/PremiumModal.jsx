@@ -81,7 +81,7 @@ function PlanBadge({ children, premium }) {
   );
 }
 
-export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRequireAuth }) {
+export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRequireAuth, onOpenPayment }) {
   const [justUpgraded, setJustUpgraded] = useState(false);
 
   useEffect(() => {
@@ -96,6 +96,10 @@ export default function PremiumModal({ onClose, user, isPremium, onUpgrade, onRe
       return;
     }
     if (isPremium) return;
+    if (onOpenPayment) {
+      onOpenPayment();
+      return;
+    }
     onUpgrade();
     setJustUpgraded(true);
   };
