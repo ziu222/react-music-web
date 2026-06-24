@@ -78,10 +78,36 @@ export default function PageProfile({
   playing = false,
   onOpenPremium,
   onOpenArtistUpgrade,
+  premiumExpiresAt = null,
+  onRedeemCode,
 }) {
   const [upgradeReq, setUpgradeReq] = useState(() => user ? getRequest(user.email) : null);
   const [infoReply, setInfoReply] = useState("");
   const [replySent, setReplySent] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [promoMsg, setPromoMsg] = useState(null); // {ok, text}
+
+  const handleRedeemCode = async () => {
+    if (!promoCode.trim() || redeeming) return;
+    setRedeeming(true);
+    setPromoMsg(null);
+    try {
+      const { redeemPromoCode } = await import('../lib/user/premiumGrants.js');
+      const result = await redeemPromoCode(promoCode.trim(), user?.email);
+      if (result.ok) {
+        setPromoMsg({ ok: true, text: `Mã hợp lệ! Bạn đã nhận ${result.durationLabel} Premium.` });
+        setPromoCode('');
+        if (onRedeemCode) onRedeemCode(result);
+      } else {
+        setPromoMsg({ ok: false, text: result.error });
+      }
+    } catch {
+      setPromoMsg({ ok: false, text: 'Có lỗi xảy ra. Vui lòng thử lại.' });
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   useEffect(() => {
     if (user) setUpgradeReq(getRequest(user.email)); // eslint-disable-line react-hooks/set-state-in-effect
@@ -206,6 +232,109 @@ export default function PageProfile({
               Nâng cấp Premium
             </button>
           )}
+        </div>
+      </div>
+
+      {/* ── Gói của bạn ── */}
+      <div style={{ padding: '0 24px', marginBottom: 24 }}>
+        <div style={{
+          background: BG.card,
+          border: '1px solid ' + BORDER,
+          borderRadius: 12,
+          padding: '20px 22px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.strong }}>Gói của bạn</div>
+
+          {/* Current plan row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                {isPremium ? (
+                  <span style={{
+                    background: 'linear-gradient(90deg, #f97316, #22c55e)',
+                    color: '#fff', fontSize: 11, fontWeight: 800,
+                    borderRadius: 9999, padding: '3px 10px', letterSpacing: 0.4,
+                  }}>PREMIUM</span>
+                ) : (
+                  <span style={{
+                    background: 'var(--overlay-1)', color: TEXT.secondary,
+                    fontSize: 11, fontWeight: 700,
+                    borderRadius: 9999, padding: '3px 10px',
+                  }}>FREE</span>
+                )}
+              </div>
+              {isPremium && premiumExpiresAt && (
+                <div style={{ fontSize: 12, color: TEXT.secondary }}>
+                  Hết hạn: {new Date(premiumExpiresAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  {' '}({Math.max(0, Math.ceil((new Date(premiumExpiresAt) - Date.now()) / 86400000))} ngày còn lại)
+                </div>
+              )}
+              {isPremium && !premiumExpiresAt && (
+                <div style={{ fontSize: 12, color: TEXT.secondary }}>Không giới hạn thời gian</div>
+              )}
+              {!isPremium && (
+                <div style={{ fontSize: 12, color: TEXT.secondary }}>Nâng cấp để nghe không quảng cáo, tải nhạc và nhiều hơn nữa</div>
+              )}
+            </div>
+            {!isPremium && (
+              <button
+                type="button"
+                onClick={onOpenPremium}
+                style={{
+                  flexShrink: 0,
+                  background: C[500], border: 'none',
+                  borderRadius: 9999, padding: '8px 18px',
+                  fontSize: 13, fontWeight: 700, color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >Nâng cấp</button>
+            )}
+          </div>
+
+          {/* Promo code form */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: TEXT.secondary, marginBottom: 8 }}>Nhập mã khuyến mãi</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                placeholder="VD: SUMMER24"
+                value={promoCode}
+                onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                style={{
+                  flex: 1, background: BG.el, border: '1px solid ' + BORDER,
+                  borderRadius: 8, padding: '8px 12px',
+                  color: TEXT.primary, fontSize: 13, outline: 'none',
+                }}
+                onKeyDown={e => { if (e.key === 'Enter') handleRedeemCode(); }}
+              />
+              <button
+                type="button"
+                onClick={handleRedeemCode}
+                disabled={!promoCode.trim() || redeeming}
+                style={{
+                  flexShrink: 0,
+                  background: promoCode.trim() && !redeeming ? C[500] : 'var(--overlay-2)',
+                  border: 'none', borderRadius: 8, padding: '8px 16px',
+                  fontSize: 13, fontWeight: 700,
+                  color: promoCode.trim() && !redeeming ? '#fff' : TEXT.tertiary,
+                  cursor: promoCode.trim() && !redeeming ? 'pointer' : 'default',
+                }}
+              >
+                {redeeming ? 'Đang đổi…' : 'Đổi mã'}
+              </button>
+            </div>
+            {promoMsg && (
+              <div style={{
+                marginTop: 8, fontSize: 12, fontWeight: 500,
+                color: promoMsg.ok ? '#4ade80' : '#f87171',
+              }}>
+                {promoMsg.text}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

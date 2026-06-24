@@ -39,7 +39,7 @@ function notifyArtist(sub, approved, reason) {
   saveNotifications(key, [notif, ...loadNotifications(key)]);
 }
 
-export default function AdminReview({ subs, setSubs, authUser }) {
+export default function AdminReview({ subs, setSubs, authUser, can = () => true }) {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [mediaUrls, setMediaUrls] = useState({});
@@ -191,14 +191,18 @@ export default function AdminReview({ subs, setSubs, authUser }) {
           {selected.size > 0 && (
             <>
               <span style={{ fontSize: 11, color: TEXT.tertiary }}>Đã chọn {selected.size}</span>
-              <button onClick={bulkApprove} disabled={bulkLoading} style={{
-                background: "#34d399", border: "none", color: "#08110d",
-                borderRadius: 9999, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer",
-              }}>Duyệt tất cả</button>
-              <button onClick={bulkReject} disabled={bulkLoading} style={{
-                background: "transparent", border: "1px solid #ef4444", color: "#ef4444",
-                borderRadius: 9999, padding: "5px 14px", fontSize: 11, fontWeight: 600, cursor: "pointer",
-              }}>Từ chối tất cả</button>
+              {can('review.approve') && (
+                <button onClick={bulkApprove} disabled={bulkLoading} style={{
+                  background: "#34d399", border: "none", color: "#08110d",
+                  borderRadius: 9999, padding: "5px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                }}>Duyệt tất cả</button>
+              )}
+              {can('review.approve') && (
+                <button onClick={bulkReject} disabled={bulkLoading} style={{
+                  background: "transparent", border: "1px solid #ef4444", color: "#ef4444",
+                  borderRadius: 9999, padding: "5px 14px", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                }}>Từ chối tất cả</button>
+              )}
             </>
           )}
         </div>
@@ -292,6 +296,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {can('review.approve') && (
             <button
               onClick={() => approve(sub)}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
@@ -314,6 +319,8 @@ export default function AdminReview({ subs, setSubs, authUser }) {
               <FontAwesomeIcon icon={faCheck} style={{ fontSize: 11 }} />
               Duyệt
             </button>
+            )}
+            {can('review.approve') && (
             <button
               onClick={() => {
                 setRejectTarget(sub);
@@ -341,6 +348,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 11 }} />
               Từ chối
             </button>
+            )}
             </div>
           </div>
 
@@ -433,7 +441,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
                   <div style={{ fontSize: 11, color: TEXT.tertiary }}>{sub.artistName}</div>
                 </div>
                 <StatusBadge status={sub.status} />
-                {sub.status === "rejected" && (
+                {sub.status === "rejected" && can('review.approve') && (
                   <button
                     onClick={() => undoReject(sub)}
                     title="Hoàn tác từ chối — đưa lại hàng chờ duyệt"
@@ -575,6 +583,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
               >
                 Hủy
               </button>
+              {can('review.approve') && (
               <button
                 onClick={confirmReject}
                 disabled={!rejectReason.trim()}
@@ -592,6 +601,7 @@ export default function AdminReview({ subs, setSubs, authUser }) {
               >
                 Xác nhận từ chối
               </button>
+              )}
             </div>
           </div>
         </>

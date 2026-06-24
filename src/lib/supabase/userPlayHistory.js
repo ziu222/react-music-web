@@ -33,3 +33,20 @@ export async function loadUserPlayHistory(userEmail) {
     .eq("user_email", userEmail.toLowerCase());
   return (data ?? []).map(r => ({ songId: Number(r.song_id), plays: r.play_count }));
 }
+
+// Recent activity with timestamps for the admin user detail view:
+// [{ songId, plays, lastPlayedAt }], newest first, capped at `limit`.
+export async function loadUserActivity(userEmail, limit = 15) {
+  if (!supabase || !userEmail) return [];
+  const { data } = await supabase
+    .from("user_play_history")
+    .select("song_id, play_count, last_played_at")
+    .eq("user_email", userEmail.toLowerCase())
+    .order("last_played_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map(r => ({
+    songId: Number(r.song_id),
+    plays: r.play_count,
+    lastPlayedAt: r.last_played_at,
+  }));
+}

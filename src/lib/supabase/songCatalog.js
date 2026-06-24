@@ -19,6 +19,8 @@ function mapRow(r) {
     lyricsText: r.lyrics_text ?? null,
     artistEmail: r.artist_email ?? null,
     hidden: r.hidden ?? false,
+    takenDownAt: r.taken_down_at ?? null,
+    takedownReason: r.takedown_reason ?? null,
   };
 }
 

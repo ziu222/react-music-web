@@ -51,7 +51,7 @@ function InlinePill({ color, children }) {
   );
 }
 
-export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
+export default function AdminUsers({ users, onOpenUser, authUser, onRefresh, can = () => true }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
@@ -98,6 +98,7 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
         <FilterPills options={PLAN_PILLS} active={planFilter} onSelect={setPlanFilter} />
       </div>
 
+      {can('users.grant_premium') && (
       <div style={{
         background: "var(--overlay-1)", border: "1px solid var(--border)", borderRadius: 10,
         padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
@@ -123,6 +124,7 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh }) {
           <div style={{ fontSize: 12, color: "#34d399" }}>✓ Đã grant {bulkDone} tài khoản</div>
         )}
       </div>
+      )}
 
       <div
         style={{

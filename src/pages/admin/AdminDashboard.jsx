@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,6 +18,7 @@ import { getDailyTotals } from "../../lib/music/playSnapshots";
 import { formatNotificationTime } from "../../lib/social/notifications";
 import { actionColor } from "./AdminAudit";
 import { getPendingRequests } from "../../lib/artist/upgradeRequests";
+import { getDashboardStats, formatVnd } from "../../data/dashboardStats";
 
 function compactNum(n) {
   if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
@@ -51,6 +52,19 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
     .slice(0, 5)
     .map((s, i) => ({ label: s.title, value: s.plays ?? 0, display: compactNum(s.plays), highlight: i === 0 }));
 
+  // Stat ảo (deterministic theo ngày) — lai số thật để vẽ biểu đồ xu hướng
+  const stats = useMemo(
+    () =>
+      getDashboardStats({
+        totalUsers: activeUsers.length,
+        activeUsers: activeUsers.length,
+        premiumCount,
+        totalPlays: (songs ?? []).reduce((s, sg) => s + (sg.plays ?? 0), 0),
+        songCount: (songs ?? []).length,
+      }),
+    [activeUsers.length, premiumCount, songs],
+  );
+
   const statCards = [
     { number: activeUsers.length, label: "Người dùng", icon: faUsers, accent: C[500] },
     { number: premiumCount, label: "Premium", icon: faCrown, accent: "#fbbf24" },
@@ -74,6 +88,83 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
             <StatCard {...card} />
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* KPI strip — 5 chỉ số ảo kèm delta so với 7 ngày trước */}
+      <motion.div variants={staggerContainer} style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 20 }}>
+        {stats.kpis.map((kpi) => {
+          const up = kpi.trend === "up";
+          const deltaColor = up ? "#34d399" : "#fb7185"; // xanh tăng / đỏ giảm
+          return (
+            <motion.div
+              key={kpi.key}
+              variants={cardVariants}
+              style={{
+                flex: 1,
+                minWidth: 180,
+                background: BG.card,
+                border: "1px solid " + BORDER,
+                borderRadius: 10,
+                padding: "14px 16px",
+              }}
+            >
+              <div style={{ fontSize: 11, color: TEXT.tertiary, marginBottom: 6 }}>{kpi.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: TEXT.strong, lineHeight: 1.1 }}>
+                {kpi.valueLabel ?? compactNum(kpi.value)}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 3,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: deltaColor,
+                    background: deltaColor + "1f",
+                    borderRadius: 9999,
+                    padding: "2px 7px",
+                  }}
+                >
+                  {/* mũi tên ký tự, không dùng icon lucide */}
+                  <span style={{ fontSize: 10 }}>{up ? "▲" : "▼"}</span>
+                  {Math.abs(kpi.deltaPct)}%
+                </span>
+                <span style={{ fontSize: 11, color: TEXT.tertiary }}>so với 7 ngày trước</span>
+              </div>
+            </motion.div>
+          );
+        })}
+      </motion.div>
+
+      {/* Xu hướng 30 ngày — lưới small-multiples 4 ô */}
+      <motion.div
+        variants={cardVariants}
+        style={{
+          background: BG.card,
+          border: "1px solid " + BORDER,
+          borderRadius: 10,
+          padding: 18,
+          marginBottom: 20,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 14 }}>
+          Xu hướng 30 ngày
+        </div>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {[
+            { key: "dau", title: "Người nghe", data: stats.series.dau, color: C[500], display: compactNum(stats.series.dau[stats.series.dau.length - 1]) },
+            { key: "signups", title: "Đăng ký mới", data: stats.series.signups, color: "#60a5fa", display: compactNum(stats.series.signups[stats.series.signups.length - 1]) },
+            { key: "revenue", title: "Doanh thu", data: stats.series.revenue, color: "#fbbf24", display: formatVnd(stats.series.revenue[stats.series.revenue.length - 1]) },
+            { key: "conversions", title: "Nâng Premium", data: stats.series.conversions, color: "#34d399", display: compactNum(stats.series.conversions[stats.series.conversions.length - 1]) },
+          ].map((cell) => (
+            <div key={cell.key} style={{ flex: 1, minWidth: 260 }}>
+              <div style={{ fontSize: 12, color: TEXT.secondary, marginBottom: 2 }}>{cell.title}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: TEXT.strong, marginBottom: 6 }}>{cell.display}</div>
+              <Sparkline data={cell.data} color={cell.color} height={70} />
+            </div>
+          ))}
+        </div>
       </motion.div>
 
       {upgradeRequestCount > 0 && (

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import useDelayedVisible from "./hooks/useDelayedVisible";
 import { useApplyTheme } from "./lib/theme/useTheme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye, faCrown } from "@fortawesome/free-solid-svg-icons";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/ui/Splash";
 import Player from "./components/player/Player";
@@ -13,6 +13,8 @@ import AuthGateModal from "./components/modals/AuthGateModal";
 import NavbarUserActions from "./components/nav/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
 import ArtistUpgradeModal from "./components/modals/ArtistUpgradeModal";
+import MaintenanceScreen from "./components/MaintenanceScreen";
+import AdBanner from "./components/player/AdBanner";
 import ModalSkeleton from "./components/ui/skeleton/ModalSkeleton";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
@@ -27,12 +29,14 @@ import {
 import { loadSettings, saveSettings, syncSettingsFromDB, normalizeSettingsForEntitlement } from "./lib/user/settings";
 import { loadNotifications, saveNotifications, createNotification } from "./lib/social/notifications";
 import { syncFromSupabase } from "./lib/supabase/syncFromSupabase";
-import { applyUserOverride } from "./lib/user/userOverrides";
+import { applyUserOverride, setUserOverride } from "./lib/user/userOverrides";
+import { grantPremium, getActiveGrant } from "./lib/user/premiumGrants";
 import { logAdminAction } from "./lib/user/auditLog";
+import { loadAppConfig, toConfigMap } from "./lib/admin/appConfig";
 import { applySongOverrides } from "./lib/music/songOverrides";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
-import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
+import { subscribeToNotifications, subscribeToSongs, subscribeToUsers } from "./lib/supabase/realtime";
 import { saveLibraryToSupabase } from "./lib/supabase/librarySync";
 import { fetchCuratedPlaylists } from "./lib/supabase/curatedPlaylists";
 import { recordUserPlay, loadUserRecent, loadUserPlayHistory } from "./lib/supabase/userPlayHistory";
@@ -60,8 +64,10 @@ function fisherYates(arr) {
 export default function App() {
   const audioRef = useRef(new Audio());
   const feedbackTimerRef = useRef(null);
+  const skipWindowRef = useRef({ count: 0, windowStart: 0 });
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
+  const [appConfig, setAppConfig] = useState({});
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [prog, setProg] = useState(0);
@@ -121,6 +127,7 @@ export default function App() {
   const [impersonatorAdmin, setImpersonatorAdmin] = useState(null);
   const [authGate, setAuthGate] = useState(null);
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [adIndex, setAdIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [artistUpgradeOpen, setArtistUpgradeOpen] = useState(false);
@@ -204,9 +211,22 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  // Nạp cờ cấu hình hệ thống (feature flags) từ bảng app_config.
+  // Lỗi -> giữ appConfig {} (fail-safe: không chặn người dùng).
+  useEffect(() => {
+    loadAppConfig()
+      .then((list) => setAppConfig(toConfigMap(list)))
+      .catch(() => {});
+  }, []);
+
   const done = useCallback(() => setScreen("app"), []);
 
   const isPremium = isPremiumUser(authUser);
+  const premiumExpiresAt = authUser?.premiumExpiresAt ?? null;
+  const daysUntilExpiry = premiumExpiresAt
+    ? Math.ceil((new Date(premiumExpiresAt).getTime() - Date.now()) / 86400000)
+    : null;
+  const showExpiryWarning = isPremium && daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
 
   // Restore Supabase session on mount (token còn hạn → tự động đăng nhập lại)
   useEffect(() => {
@@ -266,6 +286,31 @@ export default function App() {
       if (ids.length) setRecentIds(prev => [...new Set([...prev, ...ids])].slice(0, 12));
     }).catch(() => {});
   }, [authUser?.email]);
+
+  // Realtime: admin cấp/thu hồi Premium (hoặc đổi plan) trên hàng users của mình
+  // → session listener cập nhật plan + hạn trực tiếp, không cần đăng nhập lại.
+  // RLS chỉ đẩy hàng của chính user (listener) nên callback chỉ chạy cho đúng người.
+  useEffect(() => {
+    const myId = authUser?.id;
+    const myEmail = authUser?.email;
+    if (!myId) return undefined;
+    return subscribeToUsers((row) => {
+      if (row.id !== myId) return;
+      if (row.plan === PLAN_PREMIUM) {
+        // Lấy hạn thật từ grant; không có grant (self-upgrade cũ) coi như vĩnh viễn.
+        getActiveGrant(myEmail)
+          .then((g) => setAuthUser(prev => prev && prev.id === myId
+            ? { ...prev, plan: PLAN_PREMIUM, premiumExpiresAt: g?.expiresAt ?? null } : prev))
+          .catch(() => setAuthUser(prev => prev && prev.id === myId
+            ? { ...prev, plan: PLAN_PREMIUM } : prev));
+      } else {
+        // Admin thu hồi → hạ free + xoá cache entitlement để không "hồi sinh" lần sau.
+        saveEntitlement(myEmail, "free", null);
+        setAuthUser(prev => prev && prev.id === myId
+          ? { ...prev, plan: "free", premiumExpiresAt: null } : prev);
+      }
+    });
+  }, [authUser?.id, authUser?.email]);
 
   /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
   const userKey = authUser?.email?.toLowerCase() ?? "guest";
@@ -406,8 +451,14 @@ export default function App() {
 
   const upgradeToPremium = () => {
     if (!authUser) return;
-    saveEntitlement(authUser.email, PLAN_PREMIUM);
-    setAuthUser(prev => prev ? { ...prev, plan: PLAN_PREMIUM } : prev);
+    const email = authUser.email;
+    // 1. Cache cục bộ để UI phản hồi tức thì (offline-first).
+    saveEntitlement(email, PLAN_PREMIUM, null); // null = lifetime/no expiry
+    setAuthUser(prev => prev ? { ...prev, plan: PLAN_PREMIUM, premiumExpiresAt: null } : prev);
+    // 2. Persist DB (chạy nền): grant lifetime để qua được kiểm tra hết hạn ở lần đăng nhập sau,
+    //    + users.plan để màn admin (đọc users.plan) thấy đúng trạng thái. RLS: user ghi được hàng của chính mình.
+    grantPremium(email, email, "lifetime", "Tự nâng cấp (preview)").catch(() => {});
+    setUserOverride(email, { plan: PLAN_PREMIUM }).catch(() => {});
     pushNotification(
       "premium",
       "Chào mừng đến Melodies Premium",
@@ -519,6 +570,7 @@ export default function App() {
     setPlaying(true);
     setProg(0);
     incrementPlay(s.id);
+    if (!isPremiumUser(authUser)) setAdIndex(i => (i + 1) % 4);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
     if (authEmailRef.current) {
       recordUserPlay(authEmailRef.current, s.id);
@@ -629,6 +681,24 @@ export default function App() {
 
     playByIndex(currentIndex + 1);
   }, [cur, list, play, playByIndex, shuffle, shuffleQueue, shufflePos, queuedTrackIds]);
+
+  const handleSkipNext = useCallback(() => {
+    if (!isPremium) {
+      const now = Date.now();
+      const sw = skipWindowRef.current;
+      if (now - sw.windowStart > 3600000) { // reset every hour
+        sw.count = 0;
+        sw.windowStart = now;
+      }
+      const SKIP_LIMIT = 6;
+      if (sw.count >= SKIP_LIMIT) {
+        setPremiumOpen(true);
+        return;
+      }
+      sw.count += 1;
+    }
+    playNext();
+  }, [isPremium, playNext]);
 
   const playPrevious = useCallback(() => {
     if (!list.length) return;
@@ -1059,6 +1129,10 @@ export default function App() {
     );
   }
 
+  // Chế độ bảo trì: chặn toàn bộ app, trừ admin (để còn tắt được cờ).
+  // Fail-safe: nếu config chưa nạp xong thì maintenance_mode undefined -> không chặn.
+  if (appConfig.maintenance_mode && authUser?.role !== "admin") return <MaintenanceScreen />;
+
   return (
     <div
       style={{
@@ -1105,6 +1179,26 @@ export default function App() {
           >
             Quay lại Admin
           </button>
+        </div>
+      )}
+
+      {showExpiryWarning && (
+        <div style={{
+          height: 32, flexShrink: 0, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', gap: 10,
+          background: 'linear-gradient(90deg, #92400e, #b45309)',
+          color: '#fef3c7', fontSize: 12, fontWeight: 600,
+        }}>
+          <FontAwesomeIcon icon={faCrown} style={{ fontSize: 10 }} />
+          <span>
+            Premium hết hạn {daysUntilExpiry === 0 ? 'hôm nay' : `sau ${daysUntilExpiry} ngày`} —{' '}
+            <span
+              style={{ textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={() => setPremiumOpen(true)}
+            >
+              Gia hạn ngay
+            </span>
+          </span>
         </div>
       )}
 
@@ -1520,6 +1614,13 @@ export default function App() {
               playing={playing}
               onOpenPremium={() => setPremiumOpen(true)}
               onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
+              premiumExpiresAt={authUser?.premiumExpiresAt ?? null}
+              onRedeemCode={(result) => {
+                setAuthUser(prev => prev ? { ...prev, plan: 'premium', premiumExpiresAt: result.expiresAt ?? null } : prev);
+                // redeemPromoCode đã tạo grant; ghi thêm users.plan để màn admin thấy đúng (RLS: hàng của chính mình).
+                if (authUser?.email) setUserOverride(authUser.email, { plan: 'premium' }).catch(() => {});
+                pushNotification('premium', 'Mã khuyến mãi đã áp dụng', `Bạn đã nhận ${result.durationLabel} Premium.`);
+              }}
             />
           )}
           </motion.div>
@@ -1527,6 +1628,12 @@ export default function App() {
         </div>
       </div>
 
+      {cur && !isPremium && (
+        <AdBanner
+          onOpenPremium={() => setPremiumOpen(true)}
+          adIndex={adIndex}
+        />
+      )}
       {/* ── Player ── */}
       <Player
         s={cur}
@@ -1541,7 +1648,7 @@ export default function App() {
         queuedTracks={queuedTracks}
         onToggle={() => setPlaying(p => !p)}
         onPrevious={playPrevious}
-        onNext={() => playNext()}
+        onNext={handleSkipNext}
         onSeek={seekTo}
         onVolumeChange={changeVolume}
         onMuteToggle={() => setMuted(p => !p)}
@@ -1559,6 +1666,8 @@ export default function App() {
         userPlaylists={userPlaylists}
         onToggleSongInPlaylist={toggleSongInPlaylist}
         onCreatePlaylistWithSong={createPlaylistWithSong}
+        isPremium={isPremium}
+        onOpenPremium={() => setPremiumOpen(true)}
       />
 
       <SupportWidget
@@ -1582,6 +1691,7 @@ export default function App() {
         open={artistUpgradeOpen}
         onClose={() => setArtistUpgradeOpen(false)}
         authUser={authUser}
+        registrationOpen={appConfig.artist_registration_open !== false}
       />
 
       {queueFeedback && (

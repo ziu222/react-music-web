@@ -36,13 +36,15 @@ export function normalizeUser(user) {
   if (!user) return null;
   const role = VALID_ROLES.has(user.role) ? user.role : ROLE_LISTENER;
   const plan = user.plan === PLAN_PREMIUM ? PLAN_PREMIUM : PLAN_FREE;
-  const normalized = { ...user, role, plan };
+  const normalized = { ...user, role, plan, premiumExpiresAt: user.premiumExpiresAt ?? null };
   delete normalized.password;
   return normalized;
 }
 
 export function isPremiumUser(user) {
-  return user?.plan === PLAN_PREMIUM;
+  if (user?.plan !== PLAN_PREMIUM) return false;
+  if (user.premiumExpiresAt && new Date(user.premiumExpiresAt) <= new Date()) return false;
+  return true;
 }
 
 /* ── Session ── */
@@ -68,10 +70,10 @@ function loadEntitlements() {
   return stored && typeof stored === "object" ? stored : {};
 }
 
-export function saveEntitlement(email, plan) {
+export function saveEntitlement(email, plan, expiresAt = null) {
   if (!email) return;
   const entitlements = loadEntitlements();
-  entitlements[email.toLowerCase()] = plan;
+  entitlements[email.toLowerCase()] = { plan, expiresAt };
   writeJSON(ENTITLEMENT_KEY, entitlements);
 }
 
@@ -79,7 +81,12 @@ export function saveEntitlement(email, plan) {
 export function applyEntitlement(user) {
   if (!user?.email) return user;
   const owned = loadEntitlements()[user.email.toLowerCase()];
-  return owned === PLAN_PREMIUM ? { ...user, plan: PLAN_PREMIUM } : user;
+  if (!owned) return user;
+  const plan = typeof owned === 'string' ? owned : (owned.plan ?? owned);
+  const expiresAt = (typeof owned === 'object' && owned !== null) ? (owned.expiresAt ?? null) : null;
+  if (plan !== PLAN_PREMIUM) return user;
+  if (expiresAt && new Date(expiresAt) <= new Date()) return user;
+  return { ...user, plan: PLAN_PREMIUM, premiumExpiresAt: expiresAt };
 }
 
 /* ── Supabase session restore ──
@@ -104,17 +111,40 @@ export async function restoreSessionFromSupabase() {
 
   if (!meta) return null;
 
-  const user = normalizeUser(applyEntitlement({
+  // Grant DB là NGUỒN SỰ THẬT cho Premium (kèm hạn). meta.plan chỉ là bản denormalize
+  // phục vụ màn admin. Không grant hợp lệ = free, kể cả khi meta.plan/localStorage nói premium
+  // (nếu không, admin thu hồi premium sẽ bị localStorage "hồi sinh" ở lần đăng nhập sau).
+  let premiumExpiresAt = null;
+  let effectivePlan = meta.plan; // fallback nếu không đọc được grant (lỗi mạng)
+  let grantResolved = false;
+  try {
+    const { getActiveGrant } = await import('../lib/user/premiumGrants.js');
+    const grant = await getActiveGrant(session.user.email);
+    grantResolved = true;
+    if (grant) {
+      effectivePlan = PLAN_PREMIUM;
+      premiumExpiresAt = grant.expiresAt;
+    } else {
+      effectivePlan = PLAN_FREE;
+    }
+  } catch { /* giữ meta.plan làm fallback */ }
+
+  // KHÔNG dùng applyEntitlement ở đây: localStorage chỉ là cache cho loadSession đồng bộ.
+  const user = normalizeUser({
     id: session.user.id,
     email: session.user.email,
     name: meta.name,
     initial: meta.initial,
     color: meta.color,
     role: meta.role,
-    plan: meta.plan,
+    plan: effectivePlan,
+    premiumExpiresAt,
     status: meta.status,
+    admin_role: meta.admin_role,
     joinedAt: meta.joined_at,
-  }));
+  });
+  // Đồng bộ cache localStorage theo quyết định từ DB để loadSession lần sau khớp.
+  if (grantResolved) saveEntitlement(session.user.email, effectivePlan, premiumExpiresAt);
   saveSession(user);
   return user;
 }

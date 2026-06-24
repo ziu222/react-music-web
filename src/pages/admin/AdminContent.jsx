@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEyeSlash, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
+import { faEyeSlash, faRotateLeft, faBan } from "@fortawesome/free-solid-svg-icons";
 import { TEXT } from "../../constants/theme";
 import { staggerContainer, cardVariants, rowVariants } from "../../lib/ui/consoleMotion";
 import { supabase } from "../../lib/supabase/supabase";
 import { toggleSongHidden } from "../../lib/music/songOverrides";
 import { recordDailySnapshot } from "../../lib/music/playSnapshots";
 import { logAdminAction } from "../../lib/user/auditLog";
+import { takedownSong, restoreTakedownSong, canRestoreTakedown } from "../../lib/admin/takedown";
 import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
 import SongDetailDrawer from "../../components/modals/SongDetailDrawer";
 import { getSongImage } from "../../data/media";
@@ -25,7 +26,7 @@ function bulkBtn(accent) {
   };
 }
 
-export default function AdminContent({ songs, authUser }) {
+export default function AdminContent({ songs, authUser, can = () => true, onRefresh }) {
   const [hiddenIds, setHiddenIds] = useState(() => songs.filter(s => s.hidden).map(s => s.id));
   // Catalog reloaded → re-sync hiddenIds từ DB state
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function AdminContent({ songs, authUser }) {
   const [viewMode, setViewMode] = useState("songs"); // "songs" | "albums"
   const [albumFilter, setAlbumFilter] = useState(null);
   const [selected, setSelected] = useState(() => new Set());
+  const [dmcaOnly, setDmcaOnly] = useState(false); // pill lọc nhanh bài đã gỡ DMCA
 
   // Ghi snapshot tổng lượt nghe theo ngày (1 lần/ngày) để dựng chart
   useEffect(() => { recordDailySnapshot(songs); }, [songs]);
@@ -55,8 +57,14 @@ export default function AdminContent({ songs, authUser }) {
     (s.album || "").toLowerCase().includes(q);
 
   const filtered = songs.map(merge).filter(
-    (s) => matchesSearch(s) && (!albumFilter || albumOf(s) === albumFilter)
+    (s) =>
+      matchesSearch(s) &&
+      (!albumFilter || albumOf(s) === albumFilter) &&
+      (!dmcaOnly || s.takenDownAt != null)
   );
+
+  // Số bài đang bị gỡ bản quyền (sau khi merge optimistic) — cho badge pill
+  const dmcaCount = songs.map(merge).filter((s) => s.takenDownAt != null).length;
 
   // Gom theo album cho view "Album"
   const albumGroups = (() => {
@@ -93,6 +101,30 @@ export default function AdminContent({ songs, authUser }) {
     }
     applyLocal(song.id, { featured });
     logAdminAction(authUser, featured ? "feature_song" : "unfeature_song", song.title, song.artist);
+  };
+
+  // ── DMCA takedown (hành động RIÊNG, mạnh hơn hide) ─────────────
+  // Gỡ bản quyền: nhập lý do -> ghi DB -> optimistic (hidden + takenDownAt + reason).
+  const takedown = async (song) => {
+    const reason = window.prompt(`Gỡ bản quyền (DMCA) — "${song.title}"\nNhập lý do:`);
+    if (!reason || !reason.trim()) return; // hủy / để trống
+    const { error } = await takedownSong(song.id, reason.trim());
+    if (error) return;
+    const now = new Date().toISOString();
+    setHiddenIds((prev) => (prev.includes(song.id) ? prev : [...prev, song.id]));
+    applyLocal(song.id, { hidden: true, takenDownAt: now, takedownReason: reason.trim() });
+    logAdminAction(authUser, "takedown_song", song.title, reason.trim());
+    onRefresh?.();
+  };
+
+  // Khôi phục bản quyền (chỉ khi còn trong cửa sổ 30 ngày).
+  const restoreTakedown = async (song) => {
+    const { error } = await restoreTakedownSong(song.id);
+    if (error) return;
+    setHiddenIds((prev) => prev.filter((id) => id !== song.id));
+    applyLocal(song.id, { hidden: false, takenDownAt: null, takedownReason: null });
+    logAdminAction(authUser, "restore_takedown", song.title, "");
+    onRefresh?.();
   };
 
   // Lưu metadata từ drawer (form camelCase → cột songs)
@@ -212,6 +244,23 @@ export default function AdminContent({ songs, authUser }) {
         </div>
       </div>
 
+      {/* Pill lọc nhanh bài đã gỡ bản quyền (DMCA) — chỉ hiện khi có quyền & có bài bị gỡ */}
+      {viewMode === "songs" && can("content.takedown") && dmcaCount > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          <button
+            onClick={() => { setDmcaOnly((v) => !v); setPage(0); clearSel(); }}
+            style={{
+              background: dmcaOnly ? "#ef4444" : "transparent",
+              border: "1px solid #ef4444",
+              color: dmcaOnly ? "#0a0a08" : "#ef4444",
+              borderRadius: 9999, padding: "5px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            Đã gỡ DMCA · {dmcaCount}
+          </button>
+        </div>
+      )}
+
       {viewMode === "songs" && albumFilter && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           <button
@@ -223,15 +272,17 @@ export default function AdminContent({ songs, authUser }) {
           >
             ← Tất cả album · <span style={{ color: TEXT.strong, fontWeight: 600 }}>{albumFilter}</span>
           </button>
-          <button
-            onClick={renameAlbum}
-            style={{
-              background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
-              borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
-            }}
-          >
-            Sửa tên album
-          </button>
+          {can("content.edit") && (
+            <button
+              onClick={renameAlbum}
+              style={{
+                background: "transparent", border: "1px solid var(--border)", color: TEXT.secondary,
+                borderRadius: 9999, padding: "5px 14px", fontSize: 12, cursor: "pointer",
+              }}
+            >
+              Sửa tên album
+            </button>
+          )}
         </div>
       )}
 
@@ -293,11 +344,21 @@ export default function AdminContent({ songs, authUser }) {
           }}
         >
           <span style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid }}>Đã chọn {selected.size}</span>
-          <button onClick={() => bulkFeature(true)} style={bulkBtn("#fbbf24")}>★ Feature</button>
-          <button onClick={() => bulkFeature(false)} style={bulkBtn()}>Bỏ feature</button>
-          <button onClick={() => bulkHide(true)} style={bulkBtn("#ef4444")}>Gỡ bài</button>
-          <button onClick={() => bulkHide(false)} style={bulkBtn("#34d399")}>Khôi phục</button>
-          <button onClick={bulkGenre} style={bulkBtn()}>Đổi thể loại</button>
+          {can("content.feature") && (
+            <button onClick={() => bulkFeature(true)} style={bulkBtn("#fbbf24")}>★ Feature</button>
+          )}
+          {can("content.feature") && (
+            <button onClick={() => bulkFeature(false)} style={bulkBtn()}>Bỏ feature</button>
+          )}
+          {can("content.delete") && (
+            <button onClick={() => bulkHide(true)} style={bulkBtn("#ef4444")}>Gỡ bài</button>
+          )}
+          {can("content.delete") && (
+            <button onClick={() => bulkHide(false)} style={bulkBtn("#34d399")}>Khôi phục</button>
+          )}
+          {can("content.edit") && (
+            <button onClick={bulkGenre} style={bulkBtn()}>Đổi thể loại</button>
+          )}
           <button onClick={clearSel} style={{ ...bulkBtn(), marginLeft: "auto" }}>Bỏ chọn</button>
         </div>
       )}
@@ -326,7 +387,7 @@ export default function AdminContent({ songs, authUser }) {
           <div style={{ flex: 1, minWidth: 110 }}>Album</div>
           <div style={{ width: 76, flexShrink: 0 }}>Thể loại</div>
           <div style={{ width: 56, flexShrink: 0, textAlign: "right" }}>Lượt nghe</div>
-          <div style={{ width: 260, flexShrink: 0, textAlign: "right" }}>Thao tác</div>
+          <div style={{ width: 300, flexShrink: 0, textAlign: "right" }}>Thao tác</div>
         </div>
       )}
 
@@ -334,6 +395,7 @@ export default function AdminContent({ songs, authUser }) {
        <motion.div key={"songs-" + safePage} variants={staggerContainer} initial="initial" animate="animate">
        {paged.map((song) => {
         const hidden = hiddenIds.includes(song.id);
+        const takenDown = song.takenDownAt != null; // bị gỡ bản quyền (DMCA)
         const cover = getSongImage(song);
         return (
           <motion.div
@@ -384,17 +446,42 @@ export default function AdminContent({ songs, authUser }) {
               )}
             </div>
             <div style={{ flex: 1.4, minWidth: 140, opacity: hidden ? 0.45 : 1 }}>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: TEXT.strong,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {song.title}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: TEXT.strong,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {song.title}
+                </div>
+                {/* Badge DMCA: bài đã bị gỡ bản quyền — tooltip kèm lý do + thời điểm */}
+                {takenDown && (
+                  <span
+                    title={
+                      "Gỡ bản quyền (DMCA)" +
+                      (song.takedownReason ? " · " + song.takedownReason : "") +
+                      " · " + new Date(song.takenDownAt).toLocaleString("vi-VN")
+                    }
+                    style={{
+                      flexShrink: 0,
+                      background: "rgba(239,68,68,0.15)",
+                      border: "1px solid #ef4444",
+                      color: "#ef4444",
+                      borderRadius: 9999,
+                      padding: "1px 7px",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    DMCA
+                  </span>
+                )}
               </div>
               <div
                 style={{
@@ -438,38 +525,43 @@ export default function AdminContent({ songs, authUser }) {
             </div>
             <div
               style={{
-                width: 260,
+                width: 300,
                 flexShrink: 0,
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 8,
                 alignItems: "center",
+                flexWrap: "wrap",
               }}
             >
-              <button
-                onClick={(e) => { e.stopPropagation(); openDetail(song, "metadata"); }}
-                style={{
-                  background: "transparent", border: "1px solid var(--border)",
-                  color: TEXT.tertiary, borderRadius: 9999, padding: "5px 12px",
-                  fontSize: 11, fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                Sửa
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); featureSong(song, !song.featured); }}
-                title={song.featured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
-                style={{
-                  background: "transparent",
-                  border: "1px solid " + (song.featured ? "#fbbf24" : "var(--border)"),
-                  color: song.featured ? "#fbbf24" : TEXT.tertiary,
-                  borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600,
-                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-              >
-                ★ {song.featured ? "Nổi bật" : "Feature"}
-              </button>
-              {hidden ? (
+              {can("content.edit") && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); openDetail(song, "metadata"); }}
+                  style={{
+                    background: "transparent", border: "1px solid var(--border)",
+                    color: TEXT.tertiary, borderRadius: 9999, padding: "5px 12px",
+                    fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  Sửa
+                </button>
+              )}
+              {can("content.feature") && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); featureSong(song, !song.featured); }}
+                  title={song.featured ? "Bỏ nổi bật" : "Đánh dấu nổi bật"}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid " + (song.featured ? "#fbbf24" : "var(--border)"),
+                    color: song.featured ? "#fbbf24" : TEXT.tertiary,
+                    borderRadius: 9999, padding: "5px 12px", fontSize: 11, fontWeight: 600,
+                    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
+                  }}
+                >
+                  ★ {song.featured ? "Nổi bật" : "Feature"}
+                </button>
+              )}
+              {can("content.delete") && (hidden ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); toggle(song, false); }}
                   style={{
@@ -509,7 +601,70 @@ export default function AdminContent({ songs, authUser }) {
                   <FontAwesomeIcon icon={faEyeSlash} style={{ fontSize: 10 }} />
                   Gỡ bài
                 </button>
-              )}
+              ))}
+              {/* DMCA takedown — hành động RIÊNG, mạnh hơn hide */}
+              {can("content.takedown") && (takenDown ? (
+                canRestoreTakedown(song.takenDownAt) ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); restoreTakedown(song); }}
+                    title="Khôi phục bản quyền (còn trong cửa sổ 30 ngày)"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #34d399",
+                      color: "#34d399",
+                      borderRadius: 9999,
+                      padding: "5px 12px",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faRotateLeft} style={{ fontSize: 10 }} />
+                    Khôi phục bản quyền
+                  </button>
+                ) : (
+                  <span
+                    title="Đã quá cửa sổ khôi phục 30 ngày kể từ thời điểm gỡ"
+                    style={{
+                      border: "1px solid var(--border)",
+                      color: TEXT.tertiary,
+                      borderRadius: 9999,
+                      padding: "5px 12px",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "default",
+                      opacity: 0.6,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Quá hạn khôi phục (30 ngày)
+                  </span>
+                )
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); takedown(song); }}
+                  title="Gỡ bản quyền (DMCA) — loại khỏi catalog, có thể khôi phục trong 30 ngày"
+                  style={{
+                    background: "rgba(239,68,68,0.12)",
+                    border: "1px solid #ef4444",
+                    color: "#ef4444",
+                    borderRadius: 9999,
+                    padding: "5px 12px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  <FontAwesomeIcon icon={faBan} style={{ fontSize: 10 }} />
+                  Gỡ bản quyền (DMCA)
+                </button>
+              ))}
             </div>
           </motion.div>
         );
