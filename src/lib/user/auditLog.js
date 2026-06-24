@@ -17,6 +17,8 @@ export const ACTION_LABELS = {
   change_admin_role: "Đổi sub-role admin",
   edit_role_perms:   "Sửa quyền vai trò",
   toggle_config:     "Đổi cấu hình",
+  grant_admin:       "Cấp quyền admin",
+  revoke_admin:      "Thu hồi quyền admin",
 };
 
 let counter = 0;
@@ -42,6 +44,45 @@ export async function loadAuditLog() {
     .limit(200);
   if (error) return [];
   return (data || []).map(fromRow);
+}
+
+/* Lấy thời điểm hoạt động gần nhất của mỗi admin (theo email).
+ * Trả về map { [email_lowercase]: maxTimeMs }. Dùng để hiển thị "Hoạt động lần cuối".
+ * Vì order time desc nên row đầu tiên gặp mỗi email đã là mới nhất. */
+export async function loadAdminLastActive() {
+  if (!supabase) return {};
+  try {
+    const { data, error } = await supabase
+      .from("admin_logs")
+      .select("admin_email, time")
+      .order("time", { ascending: false })
+      .limit(500);
+    if (error) return {};
+    return (data || []).reduce((acc, r) => {
+      const email = (r.admin_email || "").toLowerCase();
+      if (!email) return acc;
+      const t = new Date(r.time).getTime();
+      // order desc -> lần đầu gặp email là mới nhất; chỉ set nếu chưa có
+      if (acc[email] == null) acc[email] = t;
+      return acc;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+/* Chuyển 1 row admin_logs thô (payload.new từ realtime) -> shape giống item của loadAuditLog.
+ * Để AdminAudit map row realtime cho đồng nhất với list đã load. */
+export function fromRowRealtime(rawRow) {
+  return {
+    id:         rawRow.id,
+    time:       new Date(rawRow.time).getTime(),
+    adminEmail: rawRow.admin_email,
+    adminName:  rawRow.admin_name,
+    action:     rawRow.action,
+    target:     rawRow.target ?? "",
+    detail:     rawRow.detail ?? "",
+  };
 }
 
 export function logAdminAction(admin, action, target, detail) {

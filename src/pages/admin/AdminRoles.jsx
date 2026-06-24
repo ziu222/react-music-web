@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFloppyDisk, faLock, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faFloppyDisk, faLock, faCheck, faUserPlus, faUserSlash } from "@fortawesome/free-solid-svg-icons";
 import { TEXT, BORDER, BG, C } from "../../constants/theme";
 import { PERMISSION_GROUPS } from "../../lib/user/permissions";
 import { loadAdminRoles, updateRolePermissions } from "../../lib/user/adminRoles";
 import { setUserOverride } from "../../lib/user/userOverrides";
-import { logAdminAction } from "../../lib/user/auditLog";
+import { logAdminAction, loadAdminLastActive } from "../../lib/user/auditLog";
+import { formatNotificationTime } from "../../lib/social/notifications";
 
 /* ── Màn Phân quyền ──
  * (A) Vai trò & quyền: mỗi role 1 card, toggle quyền theo PERMISSION_GROUPS.
@@ -31,6 +32,11 @@ export default function AdminRoles({ authUser, users = [], can = () => true, onR
   const [draft, setDraft] = useState({});
   const [savingKey, setSavingKey] = useState(null);
   const [savedKey, setSavedKey] = useState(null);
+  // Map { [email_lowercase]: lastTimeMs } cho cột "Hoạt động cuối"
+  const [lastActive, setLastActive] = useState({});
+  // Khối "Thêm quản trị viên": email nhập + thông báo lỗi nhẹ
+  const [grantEmail, setGrantEmail] = useState("");
+  const [grantError, setGrantError] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -43,6 +49,13 @@ export default function AdminRoles({ authUser, users = [], can = () => true, onR
         setLoading(false);
       })
       .catch(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  // Lấy thời điểm hoạt động gần nhất của mỗi admin (theo email)
+  useEffect(() => {
+    let alive = true;
+    loadAdminLastActive().then((m) => { if (alive) setLastActive(m || {}); });
     return () => { alive = false; };
   }, []);
 
@@ -77,6 +90,31 @@ export default function AdminRoles({ authUser, users = [], can = () => true, onR
     const value = newKey || null; // option trống → bỏ gán
     await setUserOverride(user.email, { adminRole: value });
     logAdminAction(authUser, "change_admin_role", user.email, value ?? "— Chưa gán —");
+    onRefresh?.();
+  };
+
+  // Vô hiệu hóa 1 admin: hạ về listener + bỏ sub-role (không xóa tài khoản)
+  const revokeAdmin = async (user) => {
+    if (!window.confirm(`Vô hiệu hóa quyền quản trị của ${user.name || user.email}?`)) return;
+    await setUserOverride(user.email, { role: "listener", adminRole: null });
+    logAdminAction(authUser, "revoke_admin", user.email, "");
+    onRefresh?.();
+  };
+
+  // Thêm quản trị viên: chỉ nâng quyền 1 user sẵn có (không tạo tài khoản mới)
+  const grantAdmin = async () => {
+    setGrantError("");
+    const target = grantEmail.trim().toLowerCase();
+    if (!target) return;
+    // Tìm user khớp email (lowercase) & chưa bị xóa
+    const found = users.find(
+      (u) => String(u.email).toLowerCase() === target && !u.deleted
+    );
+    if (!found) { setGrantError("Không tìm thấy người dùng"); return; }
+    if (found.role === "admin") { setGrantError("Đã là admin"); return; }
+    await setUserOverride(found.email, { role: "admin", adminRole: null });
+    logAdminAction(authUser, "grant_admin", found.email, "");
+    setGrantEmail("");
     onRefresh?.();
   };
 
@@ -252,6 +290,18 @@ export default function AdminRoles({ authUser, users = [], can = () => true, onR
               </div>
             </div>
 
+            {/* Cột Hoạt động cuối — lấy từ map auditLog theo email */}
+            <div style={{ flexShrink: 0, textAlign: "right", minWidth: 96 }}>
+              <div style={{ fontSize: 10, color: TEXT.tertiary, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>
+                Hoạt động cuối
+              </div>
+              <div style={{ fontSize: 12, color: TEXT.secondary }}>
+                {lastActive[String(user.email).toLowerCase()]
+                  ? formatNotificationTime(lastActive[String(user.email).toLowerCase()])
+                  : "—"}
+              </div>
+            </div>
+
             {/* SAFEGUARD self-lockout: không cho tự đổi quyền chính mình */}
             {isSelf ? (
               <span style={{ fontSize: 11, color: TEXT.tertiary, fontStyle: "italic", flexShrink: 0 }}>
@@ -279,9 +329,97 @@ export default function AdminRoles({ authUser, users = [], can = () => true, onR
                 ))}
               </select>
             )}
+
+            {/* Nút Vô hiệu hóa — ẩn với chính mình; chỉ hiện khi có quyền admins.manage */}
+            {!isSelf && can("admins.manage") && (
+              <button
+                onClick={() => revokeAdmin(user)}
+                title="Vô hiệu hóa quyền quản trị"
+                style={{
+                  background: "#ef44441f",
+                  border: "1px solid #ef444444",
+                  color: "#f87171",
+                  borderRadius: 6,
+                  padding: "6px 12px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  flexShrink: 0,
+                }}
+              >
+                <FontAwesomeIcon icon={faUserSlash} style={{ fontSize: 11 }} />
+                Vô hiệu hóa
+              </button>
+            )}
           </div>
         );
       })}
+
+      {/* Khối Thêm quản trị viên — chỉ khi có quyền admins.manage. Chỉ nâng quyền user sẵn có. */}
+      {can("admins.manage") && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 14px",
+            background: BG.card,
+            border: "1px dashed " + BORDER,
+            borderRadius: 8,
+            marginTop: 4,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 700, color: TEXT.mid, flexShrink: 0 }}>
+            Thêm quản trị viên
+          </div>
+          <input
+            type="email"
+            value={grantEmail}
+            onChange={(e) => { setGrantEmail(e.target.value); if (grantError) setGrantError(""); }}
+            onKeyDown={(e) => { if (e.key === "Enter") grantAdmin(); }}
+            placeholder="Email người dùng sẵn có"
+            style={{
+              flex: 1,
+              minWidth: 200,
+              background: BG.el,
+              border: "1px solid " + BORDER,
+              borderRadius: 6,
+              padding: "7px 10px",
+              color: TEXT.primary,
+              fontSize: 12,
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={grantAdmin}
+            disabled={!grantEmail.trim()}
+            style={{
+              background: grantEmail.trim() ? "#f97316" : "var(--overlay-1)",
+              border: "none",
+              color: grantEmail.trim() ? "#fff" : TEXT.tertiary,
+              borderRadius: 9999,
+              padding: "8px 18px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: grantEmail.trim() ? "pointer" : "default",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              flexShrink: 0,
+            }}
+          >
+            <FontAwesomeIcon icon={faUserPlus} style={{ fontSize: 11 }} />
+            Cấp quyền admin
+          </button>
+          {grantError && (
+            <span style={{ fontSize: 12, color: "#f87171", flexShrink: 0 }}>{grantError}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -37,3 +37,21 @@ export function subscribeToSongs(onInsert) {
 
   return () => { supabase.removeChannel(channel); };
 }
+
+/* Subscribe to new admin audit log rows (INSERT on admin_logs table).
+ * Calls onInsert(row) khi có hành động admin mới được ghi nhận.
+ * Trả về hàm unsubscribe. */
+export function subscribeToAuditLog(onInsert) {
+  if (!supabase) return () => {};
+
+  const channel = supabase
+    .channel("admin_logs:live")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "admin_logs" },
+      (payload) => { if (payload.new) onInsert(payload.new); }
+    )
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}
