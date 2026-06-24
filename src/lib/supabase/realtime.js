@@ -55,3 +55,22 @@ export function subscribeToAuditLog(onInsert) {
 
   return () => { supabase.removeChannel(channel); };
 }
+
+/* Subscribe to user row changes (UPDATE/INSERT on users table).
+ * Dùng cho màn admin: khi listener tự nâng Premium / đổi plan-role-status,
+ * danh sách người dùng cập nhật trực tiếp không cần refetch.
+ * Calls onChange(row) với hàng users mới. Trả về hàm unsubscribe. */
+export function subscribeToUsers(onChange) {
+  if (!supabase) return () => {};
+
+  const channel = supabase
+    .channel("users:live")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "users" },
+      (payload) => { if (payload.new && payload.new.id) onChange(payload.new); }
+    )
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}

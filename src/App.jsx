@@ -29,13 +29,14 @@ import {
 import { loadSettings, saveSettings, syncSettingsFromDB, normalizeSettingsForEntitlement } from "./lib/user/settings";
 import { loadNotifications, saveNotifications, createNotification } from "./lib/social/notifications";
 import { syncFromSupabase } from "./lib/supabase/syncFromSupabase";
-import { applyUserOverride } from "./lib/user/userOverrides";
+import { applyUserOverride, setUserOverride } from "./lib/user/userOverrides";
+import { grantPremium, getActiveGrant } from "./lib/user/premiumGrants";
 import { logAdminAction } from "./lib/user/auditLog";
 import { loadAppConfig, toConfigMap } from "./lib/admin/appConfig";
 import { applySongOverrides } from "./lib/music/songOverrides";
 import { incrementPlay, incrementLike, decrementLike } from "./lib/music/playLog";
 import { fetchSongsFromSupabase } from "./lib/supabase/songCatalog";
-import { subscribeToNotifications, subscribeToSongs } from "./lib/supabase/realtime";
+import { subscribeToNotifications, subscribeToSongs, subscribeToUsers } from "./lib/supabase/realtime";
 import { saveLibraryToSupabase } from "./lib/supabase/librarySync";
 import { fetchCuratedPlaylists } from "./lib/supabase/curatedPlaylists";
 import { recordUserPlay, loadUserRecent, loadUserPlayHistory } from "./lib/supabase/userPlayHistory";
@@ -286,6 +287,31 @@ export default function App() {
     }).catch(() => {});
   }, [authUser?.email]);
 
+  // Realtime: admin cấp/thu hồi Premium (hoặc đổi plan) trên hàng users của mình
+  // → session listener cập nhật plan + hạn trực tiếp, không cần đăng nhập lại.
+  // RLS chỉ đẩy hàng của chính user (listener) nên callback chỉ chạy cho đúng người.
+  useEffect(() => {
+    const myId = authUser?.id;
+    const myEmail = authUser?.email;
+    if (!myId) return undefined;
+    return subscribeToUsers((row) => {
+      if (row.id !== myId) return;
+      if (row.plan === PLAN_PREMIUM) {
+        // Lấy hạn thật từ grant; không có grant (self-upgrade cũ) coi như vĩnh viễn.
+        getActiveGrant(myEmail)
+          .then((g) => setAuthUser(prev => prev && prev.id === myId
+            ? { ...prev, plan: PLAN_PREMIUM, premiumExpiresAt: g?.expiresAt ?? null } : prev))
+          .catch(() => setAuthUser(prev => prev && prev.id === myId
+            ? { ...prev, plan: PLAN_PREMIUM } : prev));
+      } else {
+        // Admin thu hồi → hạ free + xoá cache entitlement để không "hồi sinh" lần sau.
+        saveEntitlement(myEmail, "free", null);
+        setAuthUser(prev => prev && prev.id === myId
+          ? { ...prev, plan: "free", premiumExpiresAt: null } : prev);
+      }
+    });
+  }, [authUser?.id, authUser?.email]);
+
   /* ── Per-user settings + notifications (key theo email hoặc guest) ── */
   const userKey = authUser?.email?.toLowerCase() ?? "guest";
   const [settingsState, setSettingsState] = useState(() => ({ key: userKey, value: loadSettings(userKey) }));
@@ -425,8 +451,14 @@ export default function App() {
 
   const upgradeToPremium = () => {
     if (!authUser) return;
-    saveEntitlement(authUser.email, PLAN_PREMIUM, null); // null = lifetime/no expiry
+    const email = authUser.email;
+    // 1. Cache cục bộ để UI phản hồi tức thì (offline-first).
+    saveEntitlement(email, PLAN_PREMIUM, null); // null = lifetime/no expiry
     setAuthUser(prev => prev ? { ...prev, plan: PLAN_PREMIUM, premiumExpiresAt: null } : prev);
+    // 2. Persist DB (chạy nền): grant lifetime để qua được kiểm tra hết hạn ở lần đăng nhập sau,
+    //    + users.plan để màn admin (đọc users.plan) thấy đúng trạng thái. RLS: user ghi được hàng của chính mình.
+    grantPremium(email, email, "lifetime", "Tự nâng cấp (preview)").catch(() => {});
+    setUserOverride(email, { plan: PLAN_PREMIUM }).catch(() => {});
     pushNotification(
       "premium",
       "Chào mừng đến Melodies Premium",
@@ -1585,6 +1617,8 @@ export default function App() {
               premiumExpiresAt={authUser?.premiumExpiresAt ?? null}
               onRedeemCode={(result) => {
                 setAuthUser(prev => prev ? { ...prev, plan: 'premium', premiumExpiresAt: result.expiresAt ?? null } : prev);
+                // redeemPromoCode đã tạo grant; ghi thêm users.plan để màn admin thấy đúng (RLS: hàng của chính mình).
+                if (authUser?.email) setUserOverride(authUser.email, { plan: 'premium' }).catch(() => {});
                 pushNotification('premium', 'Mã khuyến mãi đã áp dụng', `Bạn đã nhận ${result.durationLabel} Premium.`);
               }}
             />

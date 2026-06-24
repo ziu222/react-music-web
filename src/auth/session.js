@@ -111,21 +111,26 @@ export async function restoreSessionFromSupabase() {
 
   if (!meta) return null;
 
-  // Fetch active grant to get authoritative expiry
+  // Grant DB là NGUỒN SỰ THẬT cho Premium (kèm hạn). meta.plan chỉ là bản denormalize
+  // phục vụ màn admin. Không grant hợp lệ = free, kể cả khi meta.plan/localStorage nói premium
+  // (nếu không, admin thu hồi premium sẽ bị localStorage "hồi sinh" ở lần đăng nhập sau).
   let premiumExpiresAt = null;
-  let effectivePlan = meta.plan;
+  let effectivePlan = meta.plan; // fallback nếu không đọc được grant (lỗi mạng)
+  let grantResolved = false;
   try {
     const { getActiveGrant } = await import('../lib/user/premiumGrants.js');
     const grant = await getActiveGrant(session.user.email);
+    grantResolved = true;
     if (grant) {
-      effectivePlan = 'premium';
+      effectivePlan = PLAN_PREMIUM;
       premiumExpiresAt = grant.expiresAt;
-    } else if (meta.plan === 'premium') {
-      effectivePlan = 'free'; // grant revoked or expired in DB
+    } else {
+      effectivePlan = PLAN_FREE;
     }
-  } catch { /* keep meta.plan as fallback */ }
+  } catch { /* giữ meta.plan làm fallback */ }
 
-  const user = normalizeUser(applyEntitlement({
+  // KHÔNG dùng applyEntitlement ở đây: localStorage chỉ là cache cho loadSession đồng bộ.
+  const user = normalizeUser({
     id: session.user.id,
     email: session.user.email,
     name: meta.name,
@@ -137,7 +142,9 @@ export async function restoreSessionFromSupabase() {
     status: meta.status,
     admin_role: meta.admin_role,
     joinedAt: meta.joined_at,
-  }));
+  });
+  // Đồng bộ cache localStorage theo quyết định từ DB để loadSession lần sau khớp.
+  if (grantResolved) saveEntitlement(session.user.email, effectivePlan, premiumExpiresAt);
   saveSession(user);
   return user;
 }

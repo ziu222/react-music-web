@@ -17,7 +17,8 @@ import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
 import UserDetailModal from "../../components/modals/UserDetailModal";
 import { fetchSubmissions } from "../../lib/artist/submissions";
-import { getAllUsersWithOverrides } from "../../lib/user/userOverrides";
+import { getAllUsersWithOverrides, mapUserRow } from "../../lib/user/userOverrides";
+import { subscribeToUsers } from "../../lib/supabase/realtime";
 import AdminDashboard from "./AdminDashboard";
 import AdminSystem from "./AdminSystem";
 import AdminUsers from "./AdminUsers";
@@ -75,6 +76,22 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
   };
 
   useEffect(() => { refreshUsers(); }, [refreshUsers]);
+
+  // Realtime: listener tự nâng Premium / admin khác đổi plan-role-status -> cập nhật list trực tiếp.
+  // Merge tại chỗ theo id; nếu là user mới (chưa có trong list) thì refetch để lấy đủ thứ tự.
+  useEffect(() => {
+    return subscribeToUsers((row) => {
+      const mapped = mapUserRow(row);
+      setAllUsers((prev) => {
+        const idx = prev.findIndex((u) => u.id === mapped.id);
+        if (idx === -1) { refreshUsers(); return prev; }
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...mapped };
+        return next;
+      });
+    });
+  }, [refreshUsers]);
+
   const showUsersSkeleton = useDelayedVisible(usersStatus === "loading" && allUsers.length === 0);
   const holdUsersSkeleton = (usersStatus === "loading" && allUsers.length === 0) || showUsersSkeleton;
 

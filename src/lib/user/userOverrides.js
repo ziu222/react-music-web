@@ -30,11 +30,9 @@ export async function setUserOverride(email, patch) {
   }
 }
 
-export async function getAllUsersWithOverrides() {
-  if (!supabase) return [];
-  const { data } = await supabase.from("users").select("*").order("joined_at");
-  if (!data?.length) return [];
-  return data.map(r => ({
+// Map 1 hàng users (snake_case từ DB / realtime payload) -> shape camelCase dùng ở UI.
+export function mapUserRow(r) {
+  return {
     id:         r.id,
     email:      r.email,
     name:       r.name,
@@ -49,5 +47,12 @@ export async function getAllUsersWithOverrides() {
     suspended:  r.suspended ?? false,
     adminRole:  r.admin_role ?? null,
     joinedAt:   r.joined_at,
-  }));
+  };
+}
+
+export async function getAllUsersWithOverrides() {
+  if (!supabase) return [];
+  const { data } = await supabase.from("users").select("*").order("joined_at");
+  if (!data?.length) return [];
+  return data.map(mapUserRow);
 }
