@@ -19,6 +19,7 @@ import ModalSkeleton from "./components/ui/skeleton/ModalSkeleton";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/modals/PremiumModal"));
+const PaymentModal = lazy(() => import("./components/modals/PaymentModal"));
 const SettingsModal = lazy(() => import("./components/modals/SettingsModal"));
 import {
   loadSession, saveSession, clearSession,
@@ -127,6 +128,7 @@ export default function App() {
   const [impersonatorAdmin, setImpersonatorAdmin] = useState(null);
   const [authGate, setAuthGate] = useState(null);
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [adIndex, setAdIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -440,6 +442,7 @@ export default function App() {
     setAuthGate(null);
     setAuthMode(null);
     setPremiumOpen(false);
+    setPaymentOpen(false);
     setSettingsOpen(false);
     setSupportOpen(false);
     setCur(null);
@@ -1741,6 +1744,18 @@ export default function App() {
             isPremium={isPremium}
             onUpgrade={upgradeToPremium}
             onRequireAuth={() => setAuthGate({ reason: "premium", afterAuth: () => setPremiumOpen(true) })}
+            onOpenPayment={() => { setPremiumOpen(false); setPaymentOpen(true); }}
+          />
+        </Suspense>
+      )}
+
+      {paymentOpen && (
+        <Suspense fallback={<ModalSkeleton />}>
+          <PaymentModal
+            onClose={() => setPaymentOpen(false)}
+            onUpgrade={upgradeToPremium}
+            user={authUser}
+            onBack={() => { setPaymentOpen(false); setPremiumOpen(true); }}
           />
         </Suspense>
       )}
