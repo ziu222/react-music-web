@@ -60,11 +60,14 @@ export function subscribeToAuditLog(onInsert) {
  * Dùng cho màn admin: khi listener tự nâng Premium / đổi plan-role-status,
  * danh sách người dùng cập nhật trực tiếp không cần refetch.
  * Calls onChange(row) với hàng users mới. Trả về hàm unsubscribe. */
+let usersChannelSeq = 0;
 export function subscribeToUsers(onChange) {
   if (!supabase) return () => {};
 
+  // Tên channel phải DUY NHẤT mỗi subscriber — App (listener) và PageAdmin có thể
+  // cùng subscribe lúc admin đăng nhập; trùng tên -> "cannot add callbacks after subscribe()".
   const channel = supabase
-    .channel("users:live")
+    .channel(`users:live:${++usersChannelSeq}`)
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "users" },
