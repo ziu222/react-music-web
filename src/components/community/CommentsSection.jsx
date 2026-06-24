@@ -268,6 +268,9 @@ function CommentRow({ comment, authUser, onDelete }) {
 
 /* ─── main component ───────────────────────────────────────────────────────── */
 
+const ELEVATED = "#1e1e1e";
+const ACCENT   = C[500]; // #f97316
+
 export default function CommentsSection({
   songId,
   authUser,
@@ -358,6 +361,8 @@ export default function CommentsSection({
   // display newest first
   const displayed = [...comments].reverse();
 
+  const hasContent = draft.trim().length > 0;
+
   return (
     <section style={{ paddingTop: 4 }}>
       <style>{`
@@ -365,127 +370,109 @@ export default function CommentsSection({
           0%, 100% { opacity: 0.35; }
           50%       { opacity: 0.7; }
         }
+        .cd-send-btn:hover:not(:disabled) { opacity: 0.82; }
       `}</style>
 
-      {/* ── Compose form ── */}
+      {/* ── Compose bar ── */}
       {authUser ? (
-        <form
-          onSubmit={handleSubmit}
-          style={{ marginBottom: 16 }}
-        >
-          <div style={{ position: "relative" }}>
-            <textarea
-              ref={textareaRef}
-              rows={2}
-              maxLength={MAX}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Viết bình luận… (Ctrl+Enter để gửi)"
-              aria-label="Nội dung bình luận"
-              style={{
-                display: "block",
-                width: "100%",
-                boxSizing: "border-box",
-                background: "var(--overlay-1)",
-                border: `1px solid ${BORDER}`,
-                borderRadius: 8,
-                color: "var(--text-primary)",
-                fontSize: 13,
-                lineHeight: 1.5,
-                resize: "none",
-                padding: "9px 12px 28px",
-                outline: "none",
-                fontFamily: "inherit",
-                transition: "border-color 0.15s",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "rgba(249,115,22,0.5)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = BORDER;
-              }}
-            />
-
-            {/* Counter + send button row inside textarea */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: 8,
-                left: 12,
-                right: 8,
+        <form onSubmit={handleSubmit} style={{ marginBottom: 14 }}>
+          <div style={{
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 8,
+            background: ELEVATED,
+            border: `1px solid ${BORDER}`,
+            borderRadius: 12,
+            padding: "10px 10px 10px 14px",
+            transition: "border-color 0.15s",
+          }}
+          onFocusCapture={(e) => { e.currentTarget.style.borderColor = "rgba(249,115,22,0.4)"; }}
+          onBlurCapture={(e)  => { e.currentTarget.style.borderColor = BORDER; }}
+          >
+            <div style={{ flex: 1 }}>
+              <textarea
+                ref={textareaRef}
+                rows={2}
+                maxLength={MAX}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Viết bình luận…"
+                aria-label="Nội dung bình luận"
+                style={{
+                  display: "block",
+                  width: "100%",
+                  boxSizing: "border-box",
+                  background: "transparent",
+                  border: "none",
+                  color: TEXT.primary,
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  resize: "none",
+                  padding: 0,
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
+              />
+              <div style={{
+                marginTop: 4,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                pointerEvents: "none",
-              }}
-            >
-              <span
-                style={{
+              }}>
+                <span style={{
                   fontSize: 10,
-                  color:
-                    draft.length > MAX * 0.9
-                      ? C[400]
-                      : "var(--text-tertiary)",
+                  color: draft.length > MAX * 0.9 ? C[400] : TEXT.tertiary,
                   fontVariantNumeric: "tabular-nums",
                   transition: "color 0.2s",
-                }}
-              >
-                {draft.length}/{MAX}
-              </span>
-
-              <button
-                type="submit"
-                disabled={!draft.trim() || submitting}
-                aria-label="Gửi bình luận"
-                style={{
-                  pointerEvents: "auto",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  height: 28,
-                  padding: "0 12px",
-                  borderRadius: 9999,
-                  border: "none",
-                  background:
-                    !draft.trim() || submitting
-                      ? "var(--overlay-2)"
-                      : C[500],
-                  color: !draft.trim() || submitting
-                    ? "var(--text-tertiary)"
-                    : "#fff",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor:
-                    !draft.trim() || submitting ? "not-allowed" : "pointer",
-                  transition: "background 0.15s, color 0.15s",
-                  flexShrink: 0,
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faPaperPlane}
-                  style={{ fontSize: 10 }}
-                />
-                Gửi
-              </button>
+                }}>
+                  {draft.length}/{MAX}
+                </span>
+                <span style={{ fontSize: 10, color: TEXT.tertiary }}>
+                  Ctrl+Enter để gửi
+                </span>
+              </div>
             </div>
+
+            {/* send button */}
+            <button
+              type="submit"
+              disabled={!hasContent || submitting}
+              aria-label="Gửi bình luận"
+              className="cd-send-btn"
+              style={{
+                flexShrink: 0,
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                border: "none",
+                background: hasContent && !submitting ? ACCENT : "rgba(255,255,255,0.07)",
+                color: hasContent && !submitting ? "#fff" : TEXT.tertiary,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: hasContent && !submitting ? "pointer" : "not-allowed",
+                transition: "background 0.2s, color 0.2s, opacity 0.15s",
+                alignSelf: "flex-end",
+              }}
+            >
+              <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: 13 }} />
+            </button>
           </div>
         </form>
       ) : (
         /* ── Login prompt ── */
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            padding: "10px 14px",
-            background: "var(--overlay-1)",
-            border: `1px solid ${BORDER}`,
-            borderRadius: 8,
-            marginBottom: 16,
-          }}
-        >
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "10px 14px",
+          background: ELEVATED,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 10,
+          marginBottom: 14,
+        }}>
           <span style={{ fontSize: 13, color: TEXT.secondary }}>
             Đăng nhập để bình luận
           </span>
@@ -496,21 +483,16 @@ export default function CommentsSection({
               flexShrink: 0,
               border: "none",
               borderRadius: 9999,
-              background: C[500],
+              background: ACCENT,
               color: "#fff",
               fontSize: 12,
               fontWeight: 700,
               padding: "6px 14px",
-              height: 32,
               cursor: "pointer",
-              transition: "background 0.15s",
+              transition: "opacity 0.15s",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = C[600];
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = C[500];
-            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.82"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
           >
             Đăng nhập
           </button>
