@@ -62,6 +62,7 @@ function fisherYates(arr) {
 export default function App() {
   const audioRef = useRef(new Audio());
   const feedbackTimerRef = useRef(null);
+  const skipWindowRef = useRef({ count: 0, windowStart: 0 });
   const [screen, setScreen] = useState("splash");
   const [page, setPage] = useState("home");
   const [appConfig, setAppConfig] = useState({});
@@ -645,6 +646,24 @@ export default function App() {
 
     playByIndex(currentIndex + 1);
   }, [cur, list, play, playByIndex, shuffle, shuffleQueue, shufflePos, queuedTrackIds]);
+
+  const handleSkipNext = useCallback(() => {
+    if (!isPremium) {
+      const now = Date.now();
+      const sw = skipWindowRef.current;
+      if (now - sw.windowStart > 3600000) { // reset every hour
+        sw.count = 0;
+        sw.windowStart = now;
+      }
+      const SKIP_LIMIT = 6;
+      if (sw.count >= SKIP_LIMIT) {
+        setPremiumOpen(true);
+        return;
+      }
+      sw.count += 1;
+    }
+    playNext();
+  }, [isPremium, playNext]);
 
   const playPrevious = useCallback(() => {
     if (!list.length) return;
@@ -1581,7 +1600,7 @@ export default function App() {
         queuedTracks={queuedTracks}
         onToggle={() => setPlaying(p => !p)}
         onPrevious={playPrevious}
-        onNext={() => playNext()}
+        onNext={handleSkipNext}
         onSeek={seekTo}
         onVolumeChange={changeVolume}
         onMuteToggle={() => setMuted(p => !p)}
