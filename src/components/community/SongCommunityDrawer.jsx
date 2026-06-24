@@ -8,7 +8,7 @@ import {
   faCircleCheck,
   faMusic,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, BG, TEXT, BORDER } from "../../constants/theme";
+import { C, BG, TEXT, BORDER, OVERLAY } from "../../constants/theme";
 import StarRating from "./StarRating";
 import CommentsSection from "./CommentsSection";
 import {
@@ -29,10 +29,11 @@ const drawerV = {
   exit:    { y: "100%", transition: { type: "spring", stiffness: 300, damping: 30 } },
 };
 
-/* ─── tokens (raw values so they work in both themes) ─────────────────── */
-const CARD_BG    = "#282828";          /* high-contrast card on #181818 */
-const CARD_BD    = "rgba(255,255,255,0.14)";
-const ACCENT     = C[500];             /* #f97316 */
+/* ─── tokens — CSS-variable-based, auto-adapt dark/light ─────────────── */
+const CARD_BG    = BG.menu;            /* dark #282828 / light #ffffff */
+const CARD_BD    = OVERLAY[2];         /* dark rgba(255,255,255,0.12) / light rgba(26,22,20,0.10) */
+const CARD_SH    = "var(--shadow-card)"; /* theme-adaptive depth */
+const ACCENT     = C[500];             /* #f97316 always */
 const ACCENT_DIM = "rgba(249,115,22,0.13)";
 const ACCENT_BD  = "rgba(249,115,22,0.28)";
 
@@ -60,6 +61,7 @@ function InteractiveStars({ userRating, onRate }) {
       marginTop: 14,
       background: CARD_BG,
       border: `1px solid ${CARD_BD}`,
+      boxShadow: CARD_SH,
       borderRadius: 12,
       padding: "14px 16px",
     }}>
@@ -90,6 +92,7 @@ function RatingStats({ average, count, userRating, loading }) {
     <div style={{
       background: CARD_BG,
       border: `1px solid ${CARD_BD}`,
+      boxShadow: CARD_SH,
       borderRadius: 12,
       padding: "14px 16px",
       display: "flex",
@@ -196,7 +199,7 @@ export default function SongCommunityDrawer({
             onClick={onClose}
             style={{
               position: "fixed", inset: 0, zIndex: 1800,
-              background: "rgba(0,0,0,0.70)",
+              background: "var(--scrim)",
               backdropFilter: "blur(6px)",
               WebkitBackdropFilter: "blur(6px)",
             }}
@@ -218,14 +221,14 @@ export default function SongCommunityDrawer({
               background: BG.card,
               borderRadius: "20px 20px 0 0",
               borderTop: `1px solid ${CARD_BD}`,
-              boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
+              boxShadow: "var(--shadow-modal)",
               overflow: "hidden",
             }}
           >
             {/* drag handle */}
             <div aria-hidden="true" style={{
               width: 40, height: 4,
-              background: "rgba(255,255,255,0.22)",
+              background: CARD_BD,
               borderRadius: 2,
               margin: "12px auto 0",
               flexShrink: 0,
@@ -281,8 +284,8 @@ export default function SongCommunityDrawer({
                 onClick={onClose} aria-label="Đóng"
                 style={{
                   flexShrink: 0,
-                  background: "rgba(255,255,255,0.10)",
-                  border: `1px solid rgba(255,255,255,0.12)`,
+                  background: OVERLAY[1],
+                  border: `1px solid ${CARD_BD}`,
                   borderRadius: "50%",
                   width: 36, height: 36,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -290,11 +293,11 @@ export default function SongCommunityDrawer({
                   transition: "background 0.15s, color 0.15s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.18)";
+                  e.currentTarget.style.background = OVERLAY[2];
                   e.currentTarget.style.color = TEXT.strong;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+                  e.currentTarget.style.background = OVERLAY[1];
                   e.currentTarget.style.color = TEXT.secondary;
                 }}
               >
@@ -341,7 +344,7 @@ export default function SongCommunityDrawer({
                   marginTop: 14,
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   gap: 12, background: CARD_BG, border: `1px solid ${CARD_BD}`,
-                  borderRadius: 12, padding: "12px 16px",
+                  boxShadow: CARD_SH, borderRadius: 12, padding: "12px 16px",
                 }}>
                   <span style={{ fontSize: 13, color: TEXT.secondary }}>
                     Đăng nhập để đánh giá bài hát

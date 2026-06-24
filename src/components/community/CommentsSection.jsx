@@ -6,7 +6,7 @@ import {
   faMicrophone,
   faComment,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, BG, TEXT, BORDER } from "../../constants/theme";
+import { C, BG, TEXT, BORDER, OVERLAY } from "../../constants/theme";
 import {
   getComments,
   addComment,
@@ -268,9 +268,9 @@ function CommentRow({ comment, authUser, onDelete }) {
 
 /* ─── main component ───────────────────────────────────────────────────────── */
 
-const ELEVATED = "#282828";           /* high-contrast on #181818 drawer */
-const ACCENT   = C[500];             /* #f97316 */
-const CARD_BD  = "rgba(255,255,255,0.14)";
+const ELEVATED = BG.menu;             /* dark #282828 / light #ffffff */
+const ACCENT   = C[500];             /* #f97316 always */
+const CARD_BD  = OVERLAY[2];         /* dark rgba(255,255,255,0.12) / light rgba(26,22,20,0.10) */
 
 export default function CommentsSection({
   songId,
@@ -383,6 +383,7 @@ export default function CommentsSection({
             gap: 8,
             background: ELEVATED,
             border: `1px solid ${CARD_BD}`,
+            boxShadow: "var(--shadow-card)",
             borderRadius: 12,
             padding: "10px 10px 10px 14px",
             transition: "border-color 0.15s",
