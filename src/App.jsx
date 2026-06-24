@@ -14,6 +14,7 @@ import NavbarUserActions from "./components/nav/NavbarUserActions";
 import SupportWidget from "./components/SupportWidget";
 import ArtistUpgradeModal from "./components/modals/ArtistUpgradeModal";
 import MaintenanceScreen from "./components/MaintenanceScreen";
+import AdBanner from "./components/player/AdBanner";
 import ModalSkeleton from "./components/ui/skeleton/ModalSkeleton";
 
 // Modal ít dùng — tách chunk để giảm bundle chính
@@ -125,6 +126,7 @@ export default function App() {
   const [impersonatorAdmin, setImpersonatorAdmin] = useState(null);
   const [authGate, setAuthGate] = useState(null);
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [adIndex, setAdIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [artistUpgradeOpen, setArtistUpgradeOpen] = useState(false);
@@ -536,6 +538,7 @@ export default function App() {
     setPlaying(true);
     setProg(0);
     incrementPlay(s.id);
+    if (!isPremiumUser(authUser)) setAdIndex(i => (i + 1) % 4);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
     if (authEmailRef.current) {
       recordUserPlay(authEmailRef.current, s.id);
@@ -1586,6 +1589,12 @@ export default function App() {
         </div>
       </div>
 
+      {cur && !isPremium && (
+        <AdBanner
+          onOpenPremium={() => setPremiumOpen(true)}
+          adIndex={adIndex}
+        />
+      )}
       {/* ── Player ── */}
       <Player
         s={cur}
