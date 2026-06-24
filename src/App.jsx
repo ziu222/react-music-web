@@ -1618,6 +1618,8 @@ export default function App() {
         userPlaylists={userPlaylists}
         onToggleSongInPlaylist={toggleSongInPlaylist}
         onCreatePlaylistWithSong={createPlaylistWithSong}
+        isPremium={isPremium}
+        onOpenPremium={() => setPremiumOpen(true)}
       />
 
       <SupportWidget

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Music2, X } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMusic, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { getCachedLyricsForSong, loadLyricsForSong, loadLyricsOffsetMs, saveLyricsOffsetMs } from "../../lib/music/lyrics";
 import useDelayedVisible from "../../hooks/useDelayedVisible";
 import PanelSkeleton from "../ui/skeleton/PanelSkeleton";
 
-export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime = 0, onSeek }) {
+const FREE_LINE_LIMIT = 4;
+
+export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime = 0, onSeek, isPremium = false, onOpenPremium }) {
   const [status, setStatus] = useState("idle");
   const [lyrics, setLyrics] = useState(null);
   const [offsetMs, setOffsetMs] = useState(0);
@@ -144,7 +147,7 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
           onMouseEnter={e => { e.currentTarget.style.color = "var(--island-text)"; }}
           onMouseLeave={e => { e.currentTarget.style.color = "var(--island-muted)"; }}
         >
-          <X size={18} />
+          <FontAwesomeIcon icon={faXmark} style={{ fontSize: 18 }} />
         </button>
       </div>
 
@@ -167,9 +170,10 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
             style={{
               padding: "34px 0 56px",
               animation: "lyrics-panel-content-in 260ms cubic-bezier(0.2, 0, 0, 1)",
+              position: "relative",
             }}
           >
-            {syncedLines.map((line, i) => {
+            {(isPremium ? syncedLines : syncedLines.slice(0, FREE_LINE_LIMIT)).map((line, i) => {
               const active = i === activeIndex;
               const past = i < activeIndex;
               return (
@@ -202,6 +206,9 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
                 </button>
               );
             })}
+            {!isPremium && syncedLines.length > FREE_LINE_LIMIT && (
+              <LyricsPaywall onOpenPremium={onOpenPremium} />
+            )}
           </div>
         ) : (
           <div
@@ -209,9 +216,10 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
             style={{
               padding: "24px 0 40px",
               animation: "lyrics-panel-content-in 260ms cubic-bezier(0.2, 0, 0, 1)",
+              position: "relative",
             }}
           >
-            {plainLines.map((line, i) => (
+            {(isPremium ? plainLines : plainLines.slice(0, FREE_LINE_LIMIT)).map((line, i) => (
               <p
                 key={`${line}-${i}`}
                 style={{
@@ -225,6 +233,9 @@ export default function LyricsPanel({ isOpen, onClose, currentSong, currentTime 
                 {line}
               </p>
             ))}
+            {!isPremium && plainLines.length > FREE_LINE_LIMIT && (
+              <LyricsPaywall onOpenPremium={onOpenPremium} />
+            )}
           </div>
         )}
       </div>
@@ -302,7 +313,7 @@ function EmptyLyricsState({ title, description }) {
         background: "var(--island-hover)",
         border: "1px solid var(--island-border)",
       }}>
-        <Music2 size={22} />
+        <FontAwesomeIcon icon={faMusic} style={{ fontSize: 22 }} />
       </div>
       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--island-muted)", marginBottom: 6 }}>
         {title}
@@ -310,6 +321,45 @@ function EmptyLyricsState({ title, description }) {
       <div style={{ fontSize: 12, color: "var(--island-faint)", lineHeight: 1.5 }}>
         {description}
       </div>
+    </div>
+  );
+}
+
+function LyricsPaywall({ onOpenPremium }) {
+  return (
+    <div style={{
+      position: 'sticky',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 120,
+      background: 'linear-gradient(to bottom, transparent, var(--bg-card, #1a1a1a) 80%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      paddingBottom: 16,
+      gap: 8,
+    }}>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
+        Xem toàn bộ lời với Premium
+      </div>
+      <button
+        type="button"
+        onClick={onOpenPremium}
+        style={{
+          background: 'var(--color-primary, #f97316)',
+          border: 'none',
+          borderRadius: 9999,
+          padding: '7px 20px',
+          fontSize: 12,
+          fontWeight: 700,
+          color: '#fff',
+          cursor: 'pointer',
+        }}
+      >
+        Nâng cấp Premium
+      </button>
     </div>
   );
 }

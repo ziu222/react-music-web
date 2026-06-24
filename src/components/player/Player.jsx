@@ -57,6 +57,8 @@ export default function Player({
   userPlaylists = [],
   onToggleSongInPlaylist,
   onCreatePlaylistWithSong,
+  isPremium = false,
+  onOpenPremium,
 }) {
   const [hovProgress, setHovProgress] = useState(false);
   const [hoverRatio, setHoverRatio] = useState(0);
@@ -223,6 +225,8 @@ export default function Player({
         currentSong={songForLyrics}
         currentTime={prog}
         onSeek={onSeek}
+        isPremium={isPremium}
+        onOpenPremium={onOpenPremium}
       />
       <QueuePanel
         isOpen={queueOpen}
