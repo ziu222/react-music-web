@@ -36,13 +36,15 @@ export function normalizeUser(user) {
   if (!user) return null;
   const role = VALID_ROLES.has(user.role) ? user.role : ROLE_LISTENER;
   const plan = user.plan === PLAN_PREMIUM ? PLAN_PREMIUM : PLAN_FREE;
-  const normalized = { ...user, role, plan };
+  const normalized = { ...user, role, plan, premiumExpiresAt: user.premiumExpiresAt ?? null };
   delete normalized.password;
   return normalized;
 }
 
 export function isPremiumUser(user) {
-  return user?.plan === PLAN_PREMIUM;
+  if (user?.plan !== PLAN_PREMIUM) return false;
+  if (user.premiumExpiresAt && new Date(user.premiumExpiresAt) <= new Date()) return false;
+  return true;
 }
 
 /* ── Session ── */
@@ -68,10 +70,10 @@ function loadEntitlements() {
   return stored && typeof stored === "object" ? stored : {};
 }
 
-export function saveEntitlement(email, plan) {
+export function saveEntitlement(email, plan, expiresAt = null) {
   if (!email) return;
   const entitlements = loadEntitlements();
-  entitlements[email.toLowerCase()] = plan;
+  entitlements[email.toLowerCase()] = { plan, expiresAt };
   writeJSON(ENTITLEMENT_KEY, entitlements);
 }
 
@@ -79,7 +81,12 @@ export function saveEntitlement(email, plan) {
 export function applyEntitlement(user) {
   if (!user?.email) return user;
   const owned = loadEntitlements()[user.email.toLowerCase()];
-  return owned === PLAN_PREMIUM ? { ...user, plan: PLAN_PREMIUM } : user;
+  if (!owned) return user;
+  const plan = typeof owned === 'string' ? owned : (owned.plan ?? owned);
+  const expiresAt = (typeof owned === 'object' && owned !== null) ? (owned.expiresAt ?? null) : null;
+  if (plan !== PLAN_PREMIUM) return user;
+  if (expiresAt && new Date(expiresAt) <= new Date()) return user;
+  return { ...user, plan: PLAN_PREMIUM, premiumExpiresAt: expiresAt };
 }
 
 /* ── Supabase session restore ──
@@ -104,6 +111,20 @@ export async function restoreSessionFromSupabase() {
 
   if (!meta) return null;
 
+  // Fetch active grant to get authoritative expiry
+  let premiumExpiresAt = null;
+  let effectivePlan = meta.plan;
+  try {
+    const { getActiveGrant } = await import('../lib/user/premiumGrants.js');
+    const grant = await getActiveGrant(session.user.email);
+    if (grant) {
+      effectivePlan = 'premium';
+      premiumExpiresAt = grant.expiresAt;
+    } else if (meta.plan === 'premium') {
+      effectivePlan = 'free'; // grant revoked or expired in DB
+    }
+  } catch { /* keep meta.plan as fallback */ }
+
   const user = normalizeUser(applyEntitlement({
     id: session.user.id,
     email: session.user.email,
@@ -111,7 +132,8 @@ export async function restoreSessionFromSupabase() {
     initial: meta.initial,
     color: meta.color,
     role: meta.role,
-    plan: meta.plan,
+    plan: effectivePlan,
+    premiumExpiresAt,
     status: meta.status,
     admin_role: meta.admin_role,
     joinedAt: meta.joined_at,

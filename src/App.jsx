@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import useDelayedVisible from "./hooks/useDelayedVisible";
 import { useApplyTheme } from "./lib/theme/useTheme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight, faEye, faCrown } from "@fortawesome/free-solid-svg-icons";
 import playlistsSeed from "./data/playlists";
 import Splash from "./components/ui/Splash";
 import Player from "./components/player/Player";
@@ -218,6 +218,11 @@ export default function App() {
   const done = useCallback(() => setScreen("app"), []);
 
   const isPremium = isPremiumUser(authUser);
+  const premiumExpiresAt = authUser?.premiumExpiresAt ?? null;
+  const daysUntilExpiry = premiumExpiresAt
+    ? Math.ceil((new Date(premiumExpiresAt).getTime() - Date.now()) / 86400000)
+    : null;
+  const showExpiryWarning = isPremium && daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
 
   // Restore Supabase session on mount (token còn hạn → tự động đăng nhập lại)
   useEffect(() => {
@@ -417,8 +422,8 @@ export default function App() {
 
   const upgradeToPremium = () => {
     if (!authUser) return;
-    saveEntitlement(authUser.email, PLAN_PREMIUM);
-    setAuthUser(prev => prev ? { ...prev, plan: PLAN_PREMIUM } : prev);
+    saveEntitlement(authUser.email, PLAN_PREMIUM, null); // null = lifetime/no expiry
+    setAuthUser(prev => prev ? { ...prev, plan: PLAN_PREMIUM, premiumExpiresAt: null } : prev);
     pushNotification(
       "premium",
       "Chào mừng đến Melodies Premium",
@@ -1120,6 +1125,26 @@ export default function App() {
           >
             Quay lại Admin
           </button>
+        </div>
+      )}
+
+      {showExpiryWarning && (
+        <div style={{
+          height: 32, flexShrink: 0, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', gap: 10,
+          background: 'linear-gradient(90deg, #92400e, #b45309)',
+          color: '#fef3c7', fontSize: 12, fontWeight: 600,
+        }}>
+          <FontAwesomeIcon icon={faCrown} style={{ fontSize: 10 }} />
+          <span>
+            Premium hết hạn {daysUntilExpiry === 0 ? 'hôm nay' : `sau ${daysUntilExpiry} ngày`} —{' '}
+            <span
+              style={{ textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={() => setPremiumOpen(true)}
+            >
+              Gia hạn ngay
+            </span>
+          </span>
         </div>
       )}
 
