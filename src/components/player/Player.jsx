@@ -22,6 +22,8 @@ import QueuePanel from "./QueuePanel";
 import SaveToPlaylistPopover from "../modals/SaveToPlaylistPopover";
 import LyricsPanel from "./LyricsPanel";
 import ExpandedPlayer from "./ExpandedPlayer";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faComments } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../../constants/theme";
 import { getSongImage } from "../../data/media";
 import { prefetchLyricsForSong } from "../../lib/music/lyrics";
@@ -59,6 +61,7 @@ export default function Player({
   onCreatePlaylistWithSong,
   isPremium = false,
   onOpenPremium,
+  onOpenCommunity,
 }) {
   const [hovProgress, setHovProgress] = useState(false);
   const [hoverRatio, setHoverRatio] = useState(0);
@@ -423,6 +426,14 @@ export default function Player({
 
         {/* ── Side Tools ── */}
         <div className="player-side-tools" style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", minWidth: 0 }}>
+          <button type="button" aria-label="Bình luận & đánh giá"
+            className={btnClass("community")}
+            onClick={() => pressAnim("community", onOpenCommunity)}
+            style={iconButton(false)}
+            onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+            <FontAwesomeIcon icon={faComments} style={{ fontSize: 15 }} />
+          </button>
+
           <button type="button" aria-label="Lyrics"
             className={btnClass("lyrics")}
             onClick={() => { pressAnim("lyrics"); toggleLyrics(); }}
