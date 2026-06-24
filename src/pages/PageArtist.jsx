@@ -13,6 +13,9 @@ import EntityHeaderSkeleton from "../components/ui/skeleton/EntityHeaderSkeleton
 import TrackRowSkeleton from "../components/ui/skeleton/TrackRowSkeleton";
 import { loadArtistProfileByName } from "../lib/artist/artistProfile";
 import { getMediaBlobUrl, revokeMediaBlobUrl } from "../lib/music/mediaStore";
+import PostCard from "../components/community/PostCard";
+import PostViewModal from "../components/community/PostViewModal";
+import { getPublishedPosts } from "../lib/artist/artistPosts";
 
 export default function PageArtist({
   artistName,
@@ -32,6 +35,8 @@ export default function PageArtist({
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [viewPost, setViewPost] = useState(null);
 
   // Load ảnh từ artist_profiles (IndexedDB blob) — artist.image chỉ là static fallback
   useEffect(() => {
@@ -49,6 +54,16 @@ export default function PageArtist({
       if (blobUrl) revokeMediaBlobUrl(blobUrl);
     };
   }, [artistName]);
+
+  useEffect(() => {
+    setPosts([]);
+    setViewPost(null);
+    if (!artist) return;
+    // Get artist email from songs (community songs have artistEmail)
+    const email = artist.songs.find(s => s.artistEmail)?.artistEmail ?? null;
+    if (!email) return;
+    getPublishedPosts(email).then(setPosts).catch(() => {});
+  }, [artist]);
 
   const displayImage = profileImage ?? artist?.image;
   const imageAccent = useImageAccent(displayImage, "#f97316");
@@ -233,6 +248,36 @@ export default function PageArtist({
           )}
         </section>
       )}
+
+      {posts.length > 0 && (
+        <section style={{ padding: "36px 32px 0" }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.3, marginBottom: 14 }}>
+            Stories
+          </h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: 14,
+            }}
+          >
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onClick={() => setViewPost(post)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <PostViewModal
+        post={viewPost}
+        artistName={artist.name}
+        artistColor={imageAccent}
+        onClose={() => setViewPost(null)}
+      />
     </div>
   );
 }

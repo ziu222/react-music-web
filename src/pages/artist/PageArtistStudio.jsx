@@ -7,6 +7,7 @@ import {
   faMusic,
   faCloudArrowUp,
   faUserPen,
+  faNewspaper,
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
@@ -18,6 +19,7 @@ import StudioAnalytics from "./StudioAnalytics";
 import StudioSongs from "./StudioSongs";
 import StudioSubmit from "./StudioSubmit";
 import StudioProfile from "./StudioProfile";
+import StudioBlog from "./StudioBlog";
 
 export default function PageArtistStudio({ authUser, onExit }) {
   const [studioTab, setStudioTab] = useState("overview");
@@ -83,6 +85,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
       title: "Hồ sơ nghệ sĩ",
       subtitle: "Cách bạn xuất hiện trước người hâm mộ",
     },
+    blog: { title: "Stories", subtitle: "Chia sẻ câu chuyện với người hâm mộ" },
   };
 
   const navItems = [
@@ -91,6 +94,7 @@ export default function PageArtistStudio({ authUser, onExit }) {
     { key: "songs", label: "Bài hát của tôi", icon: faMusic },
     { key: "submit", label: "Đăng bài mới", icon: faCloudArrowUp },
     { key: "profile", label: "Hồ sơ nghệ sĩ", icon: faUserPen },
+    { key: "blog", label: "Stories", icon: faNewspaper },
   ];
 
   return (
@@ -172,6 +176,9 @@ export default function PageArtistStudio({ authUser, onExit }) {
         />
       )}
 
+      {studioTab === "blog" && (
+        <StudioBlog authUser={authUser} />
+      )}
     </ConsoleShell>
   );
 }

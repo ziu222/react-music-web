@@ -20,6 +20,7 @@ import ModalSkeleton from "./components/ui/skeleton/ModalSkeleton";
 // Modal ít dùng — tách chunk để giảm bundle chính
 const PremiumModal = lazy(() => import("./components/modals/PremiumModal"));
 const PaymentModal = lazy(() => import("./components/modals/PaymentModal"));
+const SongCommunityDrawer = lazy(() => import("./components/community/SongCommunityDrawer"));
 const SettingsModal = lazy(() => import("./components/modals/SettingsModal"));
 import {
   loadSession, saveSession, clearSession,
@@ -129,6 +130,7 @@ export default function App() {
   const [authGate, setAuthGate] = useState(null);
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [communityOpen, setCommunityOpen] = useState(false);
   const [adIndex, setAdIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -443,6 +445,7 @@ export default function App() {
     setAuthMode(null);
     setPremiumOpen(false);
     setPaymentOpen(false);
+    setCommunityOpen(false);
     setSettingsOpen(false);
     setSupportOpen(false);
     setCur(null);
@@ -1671,6 +1674,7 @@ export default function App() {
         onCreatePlaylistWithSong={createPlaylistWithSong}
         isPremium={isPremium}
         onOpenPremium={() => setPremiumOpen(true)}
+        onOpenCommunity={() => setCommunityOpen(true)}
       />
 
       <SupportWidget
@@ -1756,6 +1760,18 @@ export default function App() {
             onUpgrade={upgradeToPremium}
             user={authUser}
             onBack={() => { setPaymentOpen(false); setPremiumOpen(true); }}
+          />
+        </Suspense>
+      )}
+
+      {communityOpen && cur && (
+        <Suspense fallback={<ModalSkeleton />}>
+          <SongCommunityDrawer
+            song={cur}
+            authUser={authUser}
+            open={communityOpen}
+            onClose={() => setCommunityOpen(false)}
+            onRequireAuth={() => { setCommunityOpen(false); setAuthGate({ reason: "community", afterAuth: () => setCommunityOpen(true) }); }}
           />
         </Suspense>
       )}
