@@ -17,12 +17,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../../constants/theme";
 import { getListenerStats } from "../../data/listenerStats";
-import { loadUserPlayHistory } from "../../lib/supabase/userPlayHistory";
+import { loadUserPlayHistory, loadUserActivity } from "../../lib/supabase/userPlayHistory";
 import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { getRequest, requestMoreInfo, resolveUpgradeRequest, undoRejectUpgradeRequest } from "../../lib/artist/upgradeRequests";
 import { grantPremium, revokePremium, getGrantHistory, getActiveGrant, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
-import { createNotification, loadNotifications, saveNotifications } from "../../lib/social/notifications";
+import { createNotification, loadNotifications, saveNotifications, formatNotificationTime } from "../../lib/social/notifications";
 import { getMediaBlobUrl } from "../../lib/music/mediaStore";
 import { supabase } from "../../lib/supabase/supabase";
 
@@ -110,6 +110,16 @@ export default function UserDetailModal({
   useEffect(() => {
     if (!user?.email) { setUserHistory([]); return; }
     loadUserPlayHistory(user.email).then(setUserHistory).catch(() => {});
+  }, [user?.email]);
+  // Timeline nghe nhạc THẬT (order theo last_played_at desc)
+  const [userActivity, setUserActivity] = useState([]);
+  useEffect(() => {
+    if (!user?.email) { setUserActivity([]); return undefined; }
+    let active = true; // cờ chống setState sau khi unmount / đổi user
+    loadUserActivity(user.email)
+      .then((rows) => { if (active) setUserActivity(rows); })
+      .catch(() => {});
+    return () => { active = false; };
   }, [user?.email]);
   const [grantHistory, setGrantHistory] = useState([]);
   const [activeGrant, setActiveGrant] = useState(null);
@@ -397,6 +407,68 @@ export default function UserDetailModal({
             </div>
           </div>
         )}
+
+        <div style={{ padding: "16px 24px 0" }}>
+          <SectionLabel>Hoạt động gần đây</SectionLabel>
+          {userActivity.length === 0 ? (
+            <div style={{ fontSize: 12, color: "var(--island-faint)" }}>
+              Chưa có hoạt động nghe nhạc
+            </div>
+          ) : (
+            // Timeline: chấm tròn nhỏ + đường nối nhẹ bên trái
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {userActivity.map((item, i) => {
+                const title =
+                  songs.find((s) => String(s.id) === String(item.songId))?.title ??
+                  "Bài #" + item.songId;
+                const last = i === userActivity.length - 1;
+                return (
+                  <div key={i} style={{ display: "flex", gap: 10, position: "relative" }}>
+                    {/* Cột chấm + đường timeline */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 8, flexShrink: 0 }}>
+                      <span
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: "50%",
+                          background: C[400],
+                          marginTop: 5,
+                          flexShrink: 0,
+                        }}
+                      />
+                      {!last && (
+                        <span style={{ flex: 1, width: 1, background: "var(--island-border)", marginTop: 2 }} />
+                      )}
+                    </div>
+                    {/* Nội dung mục */}
+                    <div style={{ paddingBottom: last ? 0 : 12, minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--island-text)",
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {title}
+                        <span style={{ color: "var(--island-faint)", fontWeight: 400 }}>
+                          {" · "}{item.plays} lượt
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--island-muted)", marginTop: 1 }}>
+                        {item.lastPlayedAt
+                          ? formatNotificationTime(new Date(item.lastPlayedAt).getTime())
+                          : ""}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {upgradeReq && (upgradeReq.status === "pending" || upgradeReq.status === "info_requested") && (
           <div style={{ padding: "16px 24px 0", borderTop: "1px solid var(--island-border)", marginTop: 16 }}>

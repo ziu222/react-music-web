@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   faShieldHalved,
   faChartPie,
+  faHeartPulse,
   faUsers,
   faListCheck,
   faCompactDisc,
@@ -18,6 +19,7 @@ import UserDetailModal from "../../components/modals/UserDetailModal";
 import { fetchSubmissions } from "../../lib/artist/submissions";
 import { getAllUsersWithOverrides } from "../../lib/user/userOverrides";
 import AdminDashboard from "./AdminDashboard";
+import AdminSystem from "./AdminSystem";
 import AdminUsers from "./AdminUsers";
 import AdminReview from "./AdminReview";
 import AdminContent from "./AdminContent";
@@ -33,6 +35,7 @@ import usePermissions from "../../hooks/usePermissions";
 
 const HEADERS = {
   dashboard: { title: "Dashboard", subtitle: "Tổng quan hệ thống Melodies" },
+  system: { title: "Sức khỏe hệ thống", subtitle: "Giám sát vận hành Melodies" },
   users: { title: "Người dùng", subtitle: "Quản lý toàn bộ tài khoản" },
   review: { title: "Duyệt bài hát", subtitle: "Phê duyệt bài hát do nghệ sĩ gửi lên" },
   content: { title: "Nội dung", subtitle: "Quản lý catalog bài hát" },
@@ -79,6 +82,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
 
   const navItems = [
     { key: "dashboard", label: "Dashboard", icon: faChartPie, perm: "dashboard.view" },
+    { key: "system", label: "Sức khỏe", icon: faHeartPulse, perm: "system.view" },
     { key: "users", label: "Người dùng", icon: faUsers, perm: "users.view" },
     { key: "review", label: "Duyệt bài hát", icon: faListCheck, badge: pendingCount, perm: "review.approve" },
     { key: "content", label: "Nội dung", icon: faCompactDisc, perm: "content.edit" },
@@ -133,6 +137,9 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
           onNavigateUsers={() => setAdminTab("users")}
           can={can}
         />
+      )}
+      {adminTab === "system" && (
+        <AdminSystem authUser={authUser} can={can} users={allUsers} songs={songs} />
       )}
       {adminTab === "users" && !holdUsersSkeleton && !(usersStatus === "error" && allUsers.length === 0) && (
         <AdminUsers users={allUsers} onOpenUser={(u) => setSelectedUserId(u.id)} authUser={authUser} onRefresh={retryUsers} can={can} />
