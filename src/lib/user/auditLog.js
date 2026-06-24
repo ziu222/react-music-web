@@ -19,6 +19,8 @@ export const ACTION_LABELS = {
   toggle_config:     "Đổi cấu hình",
   grant_admin:       "Cấp quyền admin",
   revoke_admin:      "Thu hồi quyền admin",
+  takedown_song:     "Gỡ bản quyền (DMCA)",
+  restore_takedown:  "Khôi phục bản quyền",
 };
 
 let counter = 0;
