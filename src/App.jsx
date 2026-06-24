@@ -1582,6 +1582,11 @@ export default function App() {
               playing={playing}
               onOpenPremium={() => setPremiumOpen(true)}
               onOpenArtistUpgrade={() => { setArtistUpgradeOpen(true); }}
+              premiumExpiresAt={authUser?.premiumExpiresAt ?? null}
+              onRedeemCode={(result) => {
+                setAuthUser(prev => prev ? { ...prev, plan: 'premium', premiumExpiresAt: result.expiresAt ?? null } : prev);
+                pushNotification('premium', 'Mã khuyến mãi đã áp dụng', `Bạn đã nhận ${result.durationLabel} Premium.`);
+              }}
             />
           )}
           </motion.div>
