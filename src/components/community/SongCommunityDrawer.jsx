@@ -6,6 +6,7 @@ import {
   faStar,
   faComments,
   faCircleCheck,
+  faMusic,
 } from "@fortawesome/free-solid-svg-icons";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 import StarRating from "./StarRating";
@@ -16,59 +17,79 @@ import {
   getSongRatingStats,
 } from "../../lib/social/songRatings";
 
-/* ─── motion variants ───────────────────────────────────────────── */
+/* ─── motion ─────────────────────────────────────────────────────────── */
 const overlayV = {
-  hidden: { opacity: 0 },
+  hidden:  { opacity: 0 },
   visible: { opacity: 1 },
-  exit: { opacity: 0 },
+  exit:    { opacity: 0 },
 };
 const drawerV = {
-  hidden: { y: "100%" },
-  visible: { y: 0, transition: { type: "spring", stiffness: 320, damping: 32 } },
-  exit:   { y: "100%", transition: { type: "spring", stiffness: 320, damping: 32 } },
+  hidden:  { y: "100%" },
+  visible: { y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
+  exit:    { y: "100%", transition: { type: "spring", stiffness: 300, damping: 30 } },
 };
 
-/* ─── design tokens ─────────────────────────────────────────────── */
-const ELEVATED   = "#1e1e1e";
-const ELEVATED_2 = "#252525";
-const ACCENT     = C[500];                       // #f97316
-const ACCENT_BG  = "rgba(249,115,22,0.10)";
-const ACCENT_BD  = "rgba(249,115,22,0.22)";
+/* ─── tokens (raw values so they work in both themes) ─────────────────── */
+const CARD_BG    = "#282828";          /* high-contrast card on #181818 */
+const CARD_BD    = "rgba(255,255,255,0.14)";
+const ACCENT     = C[500];             /* #f97316 */
+const ACCENT_DIM = "rgba(249,115,22,0.13)";
+const ACCENT_BD  = "rgba(249,115,22,0.28)";
 
-/* ─── helper: section label ─────────────────────────────────────── */
-function SectionHead({ icon, children, badge }) {
+/* ─── section label ─────────────────────────────────────────────────── */
+function SectionLabel({ icon, children }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 14 }}>
-      <FontAwesomeIcon icon={icon} style={{ color: ACCENT, fontSize: 11 }} />
+    <div style={{
+      display: "flex", alignItems: "center", gap: 7, marginBottom: 14,
+    }}>
+      <FontAwesomeIcon icon={icon} style={{ color: ACCENT, fontSize: 12 }} />
       <span style={{
-        fontSize: 10.5,
-        fontWeight: 700,
-        letterSpacing: "0.09em",
-        textTransform: "uppercase",
-        color: TEXT.secondary,
+        fontSize: 10.5, fontWeight: 800, letterSpacing: "0.1em",
+        textTransform: "uppercase", color: TEXT.secondary,
       }}>
         {children}
       </span>
-      {badge != null && (
-        <span style={{
-          fontSize: 10,
-          fontWeight: 600,
-          color: TEXT.tertiary,
-          marginLeft: 2,
-        }}>
-          ({badge})
-        </span>
-      )}
     </div>
   );
 }
 
-/* ─── rating stats card ─────────────────────────────────────────── */
-function RatingCard({ average, count, userRating, loading }) {
+/* ─── star row (visible interactive container) ──────────────────────── */
+function InteractiveStars({ userRating, onRate }) {
   return (
     <div style={{
-      background: ELEVATED,
-      border: `1px solid ${BORDER}`,
+      marginTop: 14,
+      background: CARD_BG,
+      border: `1px solid ${CARD_BD}`,
+      borderRadius: 12,
+      padding: "14px 16px",
+    }}>
+      <div style={{
+        fontSize: 11.5, color: TEXT.secondary, fontWeight: 600, marginBottom: 12,
+      }}>
+        {userRating != null ? "Cập nhật đánh giá của bạn:" : "Đánh giá của bạn:"}
+      </div>
+      <StarRating
+        value={userRating ?? 0}
+        onChange={onRate}
+        size="lg"
+        showValue={false}
+      />
+      <div style={{ marginTop: 8, fontSize: 10.5, color: TEXT.tertiary }}>
+        Nhấn sao để đánh giá
+      </div>
+    </div>
+  );
+}
+
+/* ─── rating stats block ─────────────────────────────────────────────── */
+function RatingStats({ average, count, userRating, loading }) {
+  const fmtCount = (n) =>
+    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+
+  return (
+    <div style={{
+      background: CARD_BG,
+      border: `1px solid ${CARD_BD}`,
       borderRadius: 12,
       padding: "14px 16px",
       display: "flex",
@@ -76,50 +97,39 @@ function RatingCard({ average, count, userRating, loading }) {
       justifyContent: "space-between",
       gap: 16,
     }}>
-      {/* Left: big score */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {/* left: score + stars + count */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <span style={{
-          fontSize: 40,
-          fontWeight: 800,
-          color: loading ? TEXT.tertiary : TEXT.primary,
+          fontSize: 44, fontWeight: 800, lineHeight: 1,
+          letterSpacing: "-0.03em",
+          color: loading ? TEXT.tertiary : TEXT.strong,
           fontVariantNumeric: "tabular-nums",
-          lineHeight: 1,
-          letterSpacing: "-0.02em",
         }}>
           {loading ? "—" : average.toFixed(1)}
         </span>
         <div>
           <StarRating value={average} readonly size="sm" showValue={false} />
           <div style={{
-            marginTop: 4,
-            fontSize: 11,
-            color: TEXT.tertiary,
+            marginTop: 4, fontSize: 11, color: TEXT.tertiary,
             fontVariantNumeric: "tabular-nums",
           }}>
-            {loading ? "…" : count === 0
-              ? "Chưa có đánh giá"
-              : `${count.toLocaleString("vi")} đánh giá`}
+            {loading ? "đang tải…"
+              : count === 0 ? "Chưa có đánh giá"
+              : `${fmtCount(count)} đánh giá`}
           </div>
         </div>
       </div>
 
-      {/* Right: user's rating badge */}
-      {userRating != null && (
+      {/* right: user badge */}
+      {!loading && userRating != null && (
         <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 5,
-          background: ACCENT_BG,
-          border: `1px solid ${ACCENT_BD}`,
-          borderRadius: 8,
-          padding: "6px 11px",
-          flexShrink: 0,
+          display: "flex", alignItems: "center", gap: 6,
+          background: ACCENT_DIM, border: `1px solid ${ACCENT_BD}`,
+          borderRadius: 8, padding: "7px 12px", flexShrink: 0,
         }}>
           <FontAwesomeIcon icon={faStar} style={{ color: C[400], fontSize: 11 }} />
           <span style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: C[400],
+            fontSize: 12, fontWeight: 800, color: C[400],
             fontVariantNumeric: "tabular-nums",
           }}>
             Bạn: {userRating}/5
@@ -130,20 +140,15 @@ function RatingCard({ average, count, userRating, loading }) {
   );
 }
 
-/* ─── main component ─────────────────────────────────────────────── */
+/* ─── main ───────────────────────────────────────────────────────────── */
 export default function SongCommunityDrawer({
-  song,
-  authUser,
-  open,
-  onClose,
-  onRequireAuth,
+  song, authUser, open, onClose, onRequireAuth,
 }) {
   const [stats,       setStats]       = useState({ average: 0, count: 0 });
   const [userRating,  setUserRating]  = useState(null);
   const [thanked,     setThanked]     = useState(false);
   const [loadingRate, setLoadingRate] = useState(false);
 
-  /* load rating data */
   const loadRating = useCallback(async () => {
     if (!song?.id) return;
     setLoadingRate(true);
@@ -152,18 +157,14 @@ export default function SongCommunityDrawer({
         getSongRatingStats(song.id),
         authUser ? getRating(song.id, authUser.email) : null,
       ]);
-      setStats(s);
-      setUserRating(r);
-    } finally {
-      setLoadingRate(false);
-    }
+      setStats(s); setUserRating(r);
+    } finally { setLoadingRate(false); }
   }, [song?.id, authUser]);
 
   useEffect(() => {
     if (open && song?.id) { setThanked(false); loadRating(); }
   }, [open, song?.id, loadRating]);
 
-  /* ESC */
   useEffect(() => {
     if (!open) return;
     const fn = (e) => { if (e.key === "Escape") onClose(); };
@@ -171,7 +172,6 @@ export default function SongCommunityDrawer({
     return () => document.removeEventListener("keydown", fn);
   }, [open, onClose]);
 
-  /* handle rate */
   async function handleRate(value) {
     if (!authUser || !song?.id) return;
     setUserRating(value);
@@ -179,7 +179,7 @@ export default function SongCommunityDrawer({
     const fresh = await getSongRatingStats(song.id);
     setStats(fresh);
     setThanked(true);
-    setTimeout(() => setThanked(false), 2200);
+    setTimeout(() => setThanked(false), 2500);
   }
 
   const isArtist = authUser?.email === song?.artistEmail;
@@ -190,135 +190,111 @@ export default function SongCommunityDrawer({
         <>
           {/* overlay */}
           <motion.div
-            key="cd-overlay"
-            variants={overlayV}
-            initial="hidden" animate="visible" exit="exit"
+            key="cdo"
+            variants={overlayV} initial="hidden" animate="visible" exit="exit"
             transition={{ duration: 0.2 }}
             onClick={onClose}
             style={{
               position: "fixed", inset: 0, zIndex: 1800,
-              background: "rgba(0,0,0,0.65)",
-              backdropFilter: "blur(5px)",
-              WebkitBackdropFilter: "blur(5px)",
+              background: "rgba(0,0,0,0.70)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
             }}
           />
 
           {/* drawer */}
           <motion.div
-            key="cd-drawer"
-            role="dialog"
-            aria-modal="true"
+            key="cdd"
+            role="dialog" aria-modal="true"
             aria-label={song ? `Cộng đồng: ${song.title}` : "Cộng đồng"}
-            variants={drawerV}
-            initial="hidden" animate="visible" exit="exit"
+            variants={drawerV} initial="hidden" animate="visible" exit="exit"
             style={{
               position: "fixed",
               bottom: 0, left: 0, right: 0,
               zIndex: 1801,
-              maxHeight: "80vh",
+              maxHeight: "82vh",
               display: "flex",
               flexDirection: "column",
               background: BG.card,
-              borderRadius: "18px 18px 0 0",
-              borderTop: `1px solid ${BORDER}`,
+              borderRadius: "20px 20px 0 0",
+              borderTop: `1px solid ${CARD_BD}`,
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.55)",
               overflow: "hidden",
             }}
           >
             {/* drag handle */}
             <div aria-hidden="true" style={{
-              width: 38, height: 4,
-              background: "rgba(255,255,255,0.15)",
+              width: 40, height: 4,
+              background: "rgba(255,255,255,0.22)",
               borderRadius: 2,
-              margin: "10px auto 0",
+              margin: "12px auto 0",
               flexShrink: 0,
             }} />
 
-            {/* ── sticky header ── */}
+            {/* ── header ── */}
             <div style={{
               flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "10px 16px 14px",
-              borderBottom: `1px solid ${BORDER}`,
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "12px 16px 14px",
+              borderBottom: `1px solid ${CARD_BD}`,
             }}>
-              {/* cover art */}
+              {/* cover / fallback */}
               {song?.cover_url ? (
                 <img
-                  src={song.cover_url}
-                  alt={song.title}
+                  src={song.cover_url} alt={song.title}
                   style={{
-                    width: 48, height: 48,
-                    borderRadius: 8,
-                    objectFit: "cover",
-                    flexShrink: 0,
-                    border: `1px solid ${BORDER}`,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                    width: 48, height: 48, borderRadius: 8, objectFit: "cover",
+                    flexShrink: 0, border: `1px solid ${CARD_BD}`,
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.5)",
                   }}
                 />
               ) : (
                 <div style={{
-                  width: 48, height: 48,
-                  borderRadius: 8,
-                  flexShrink: 0,
-                  background: song?.bg ?? ACCENT_BG,
-                  border: `1px solid ${BORDER}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  width: 48, height: 48, borderRadius: 8, flexShrink: 0,
+                  background: "linear-gradient(135deg,#7c2d12,#f97316)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 2px 10px rgba(249,115,22,0.3)",
                 }}>
-                  <FontAwesomeIcon icon={faComments} style={{ color: ACCENT, fontSize: 18 }} />
+                  <FontAwesomeIcon icon={faMusic} style={{ color: "#fff", fontSize: 18 }} />
                 </div>
               )}
 
-              {/* meta */}
+              {/* title / artist */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: TEXT.primary,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  lineHeight: 1.3,
+                  fontSize: 14, fontWeight: 700, color: TEXT.strong,
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  lineHeight: 1.35,
                 }}>
                   {song?.title ?? "—"}
                 </div>
                 <div style={{
-                  fontSize: 12,
-                  color: TEXT.secondary,
-                  marginTop: 2,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  fontSize: 12, color: TEXT.secondary, marginTop: 2,
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 }}>
                   {song?.artist ?? ""}
                 </div>
               </div>
 
-              {/* close */}
+              {/* close button */}
               <button
-                onClick={onClose}
-                aria-label="Đóng"
+                onClick={onClose} aria-label="Đóng"
                 style={{
                   flexShrink: 0,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "none",
+                  background: "rgba(255,255,255,0.10)",
+                  border: `1px solid rgba(255,255,255,0.12)`,
                   borderRadius: "50%",
-                  width: 34, height: 34,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: TEXT.secondary,
+                  width: 36, height: 36,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: TEXT.secondary,
                   transition: "background 0.15s, color 0.15s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.13)";
-                  e.currentTarget.style.color = TEXT.primary;
+                  e.currentTarget.style.background = "rgba(255,255,255,0.18)";
+                  e.currentTarget.style.color = TEXT.strong;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.10)";
                   e.currentTarget.style.color = TEXT.secondary;
                 }}
               >
@@ -327,110 +303,73 @@ export default function SongCommunityDrawer({
             </div>
 
             {/* ── scrollable body ── */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 28px" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
 
-              {/* ── Rating section ── */}
-              <SectionHead icon={faStar}>Đánh giá</SectionHead>
+              {/* RATING */}
+              <SectionLabel icon={faStar}>Đánh giá</SectionLabel>
 
-              {/* stats card */}
-              <RatingCard
-                average={stats.average}
-                count={stats.count}
-                userRating={userRating}
-                loading={loadingRate}
+              <RatingStats
+                average={stats.average} count={stats.count}
+                userRating={userRating} loading={loadingRate}
               />
 
-              {/* interactive stars / login prompt */}
-              <div style={{ marginTop: 16, marginBottom: 6 }}>
-                {authUser ? (
-                  <div>
-                    <div style={{
-                      fontSize: 11.5,
-                      color: TEXT.secondary,
-                      marginBottom: 10,
-                      fontWeight: 500,
-                    }}>
-                      {userRating != null ? "Cập nhật đánh giá của bạn:" : "Đánh giá của bạn:"}
-                    </div>
-                    <StarRating
-                      value={userRating ?? 0}
-                      onChange={handleRate}
-                      size="lg"
-                      showValue={false}
-                    />
-                    <AnimatePresence>
-                      {thanked && (
-                        <motion.div
-                          key="thanked"
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -4 }}
-                          transition={{ duration: 0.2 }}
-                          style={{
-                            marginTop: 10,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            color: C[400],
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faCircleCheck} style={{ fontSize: 13 }} />
-                          Cảm ơn bạn đã đánh giá!
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    background: ELEVATED,
-                    border: `1px solid ${BORDER}`,
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                  }}>
-                    <span style={{ fontSize: 13, color: TEXT.secondary }}>
-                      Đăng nhập để đánh giá bài hát
-                    </span>
-                    <button
-                      type="button"
-                      onClick={onRequireAuth}
-                      style={{
-                        flexShrink: 0,
-                        background: ACCENT,
-                        border: "none",
-                        borderRadius: 9999,
-                        padding: "6px 14px",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "#fff",
-                        cursor: "pointer",
-                        transition: "opacity 0.15s",
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-                    >
-                      Đăng nhập
-                    </button>
-                  </div>
-                )}
-              </div>
+              {/* interactive or login */}
+              {authUser ? (
+                <>
+                  <InteractiveStars userRating={userRating} onRate={handleRate} />
+                  <AnimatePresence>
+                    {thanked && (
+                      <motion.div
+                        key="thanks"
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          marginTop: 10, display: "flex", alignItems: "center",
+                          gap: 6, color: C[400], fontSize: 13, fontWeight: 700,
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faCircleCheck} style={{ fontSize: 14 }} />
+                        Cảm ơn bạn đã đánh giá!
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                <div style={{
+                  marginTop: 14,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  gap: 12, background: CARD_BG, border: `1px solid ${CARD_BD}`,
+                  borderRadius: 12, padding: "12px 16px",
+                }}>
+                  <span style={{ fontSize: 13, color: TEXT.secondary }}>
+                    Đăng nhập để đánh giá bài hát
+                  </span>
+                  <button
+                    type="button" onClick={onRequireAuth}
+                    style={{
+                      flexShrink: 0, background: ACCENT, border: "none",
+                      borderRadius: 9999, padding: "7px 16px",
+                      fontSize: 12, fontWeight: 700, color: "#fff",
+                      cursor: "pointer", transition: "opacity 0.15s",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.82"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+                  >
+                    Đăng nhập
+                  </button>
+                </div>
+              )}
 
               {/* divider */}
               <hr style={{
-                border: "none",
-                borderTop: `1px solid ${BORDER}`,
-                margin: "20px 0 18px",
+                border: "none", borderTop: `1px solid ${CARD_BD}`,
+                margin: "22px 0 20px",
               }} />
 
-              {/* ── Comments section ── */}
-              <SectionHead icon={faComments}>
-                Bình luận
-              </SectionHead>
+              {/* COMMENTS */}
+              <SectionLabel icon={faComments}>Bình luận</SectionLabel>
 
               <CommentsSection
                 songId={song?.id}

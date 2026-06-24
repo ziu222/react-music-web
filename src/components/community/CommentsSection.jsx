@@ -268,8 +268,9 @@ function CommentRow({ comment, authUser, onDelete }) {
 
 /* ─── main component ───────────────────────────────────────────────────────── */
 
-const ELEVATED = "#1e1e1e";
-const ACCENT   = C[500]; // #f97316
+const ELEVATED = "#282828";           /* high-contrast on #181818 drawer */
+const ACCENT   = C[500];             /* #f97316 */
+const CARD_BD  = "rgba(255,255,255,0.14)";
 
 export default function CommentsSection({
   songId,
@@ -381,13 +382,13 @@ export default function CommentsSection({
             alignItems: "flex-end",
             gap: 8,
             background: ELEVATED,
-            border: `1px solid ${BORDER}`,
+            border: `1px solid ${CARD_BD}`,
             borderRadius: 12,
             padding: "10px 10px 10px 14px",
             transition: "border-color 0.15s",
           }}
-          onFocusCapture={(e) => { e.currentTarget.style.borderColor = "rgba(249,115,22,0.4)"; }}
-          onBlurCapture={(e)  => { e.currentTarget.style.borderColor = BORDER; }}
+          onFocusCapture={(e) => { e.currentTarget.style.borderColor = "rgba(249,115,22,0.55)"; }}
+          onBlurCapture={(e)  => { e.currentTarget.style.borderColor = CARD_BD; }}
           >
             <div style={{ flex: 1 }}>
               <textarea
@@ -469,7 +470,7 @@ export default function CommentsSection({
           gap: 12,
           padding: "10px 14px",
           background: ELEVATED,
-          border: `1px solid ${BORDER}`,
+          border: `1px solid ${CARD_BD}`,
           borderRadius: 10,
           marginBottom: 14,
         }}>
