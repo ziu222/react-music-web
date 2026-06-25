@@ -35,6 +35,7 @@ export default function PageArtist({
   const artist = useMemo(() => getArtist(list, artistName), [list, artistName]);
   const [showAllSongs, setShowAllSongs] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [artistProfile, setArtistProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [viewPost, setViewPost] = useState(null);
 
@@ -44,8 +45,11 @@ export default function PageArtist({
     let alive = true;
     let blobUrl = null;
     setProfileImage(null);
+    setArtistProfile(null);
     loadArtistProfileByName(artistName).then(async (profile) => {
-      if (!alive || !profile?.avatarBlobId) return;
+      if (!alive) return;
+      setArtistProfile(profile);
+      if (!profile?.avatarBlobId) return;
       const u = await getMediaBlobUrl(profile.avatarBlobId);
       if (alive && u) { blobUrl = u; setProfileImage(u); }
     });
@@ -58,25 +62,36 @@ export default function PageArtist({
   useEffect(() => {
     setPosts([]);
     setViewPost(null);
-    if (!artist) return;
-    // Get artist email from songs (community songs have artistEmail)
-    const email = artist.songs.find(s => s.artistEmail)?.artistEmail ?? null;
-    if (!email) return;
-    getPublishedPosts(email).then(setPosts).catch(() => {});
-  }, [artist]);
+    if (!artistProfile?.email) return;
+    getPublishedPosts(artistProfile.email).then(setPosts).catch(() => {});
+  }, [artistProfile]);
+
+  // Filter out community songs uploaded by OTHER users — prevents album cross-contamination
+  // when multiple accounts share the same artist display name.
+  const artistSongs = useMemo(() => {
+    if (!artist) return [];
+    const email = artistProfile?.email;
+    if (!email) return artist.songs;
+    return artist.songs.filter(
+      s => !s.community || !s.artistEmail || s.artistEmail === email
+    );
+  }, [artist, artistProfile]);
+
+  const totalPlays = useMemo(
+    () => artistSongs.reduce((acc, s) => acc + (s.plays || 0), 0),
+    [artistSongs]
+  );
 
   const displayImage = profileImage ?? artist?.image;
   const imageAccent = useImageAccent(displayImage, "#f97316");
 
   // Context-aware play/pause for the big button (toggle if a track by this
   // artist is current, else start from their top track).
-  const { ctxSong, ctxPlaying } = useContextPlay(artist?.songs, cur, playing);
+  const { ctxSong, ctxPlaying } = useContextPlay(artistSongs, cur, playing);
 
   const artistAlbums = useMemo(() => {
-    if (!artist) return [];
-    return deriveAlbums(artist.songs)
-      .sort((a, b) => b.totalPlays - a.totalPlays);
-  }, [artist]);
+    return deriveAlbums(artistSongs).sort((a, b) => b.totalPlays - a.totalPlays);
+  }, [artistSongs]);
 
   if (!artist) {
     if (catalogLoading) {
@@ -99,8 +114,8 @@ export default function PageArtist({
     );
   }
 
-  const popular = artist.songs.slice(0, 5);
-  const allSongs = showAllSongs ? artist.songs : artist.songs.slice(0, 10);
+  const popular = artistSongs.slice(0, 5);
+  const allSongs = showAllSongs ? artistSongs : artistSongs.slice(0, 10);
   const accent = imageAccent;
 
   return (
@@ -114,9 +129,9 @@ export default function PageArtist({
         accent={accent}
         meta={
           <>
-            <span>{formatPlays(artist.totalPlays)} lượt phát</span>
+            <span>{formatPlays(totalPlays)} lượt phát</span>
             <span aria-hidden="true">·</span>
-            <span>{artist.songs.length} bài hát</span>
+            <span>{artistSongs.length} bài hát</span>
           </>
         }
       />
@@ -206,7 +221,7 @@ export default function PageArtist({
       )}
 
       {/* All songs */}
-      {artist.songs.length > 5 && (
+      {artistSongs.length > 5 && (
         <section style={{ padding: "36px 24px 0" }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.3, marginBottom: 10, padding: "0 8px" }}>
             Tất cả bài hát
@@ -222,7 +237,7 @@ export default function PageArtist({
             onOpenAlbum={onOpenAlbum}
             showAlbum
           />
-          {artist.songs.length > 10 && (
+          {artistSongs.length > 10 && (
             <button
               type="button"
               onClick={() => setShowAllSongs(s => !s)}
@@ -243,7 +258,7 @@ export default function PageArtist({
               onMouseEnter={e => { e.currentTarget.style.color = "#fff"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-secondary)"; }}
             >
-              {showAllSongs ? "Thu gọn" : `Xem thêm (${artist.songs.length - 10})`}
+              {showAllSongs ? "Thu gọn" : `Xem thêm (${artistSongs.length - 10})`}
             </button>
           )}
         </section>
