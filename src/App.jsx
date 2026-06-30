@@ -10,6 +10,7 @@ import Splash from "./components/ui/Splash";
 import Player from "./components/player/Player";
 import Sidebar from "./components/nav/Sidebar";
 import TopNavbar from "./components/nav/TopNavbar";
+import NavbarUserActions from "./components/nav/NavbarUserActions";
 import AuthModal from "./components/modals/AuthModal";
 import AuthGateModal from "./components/modals/AuthGateModal";
 import SupportWidget from "./components/SupportWidget";
@@ -1159,16 +1160,24 @@ export default function App() {
         onOpenSupport={() => { setSupportOpen(true); setPremiumOpen(false); setSettingsOpen(false); }}
         onOpenSettings={() => setSettingsOpen(true)}
         authUser={authUser}
-        audioQuality={audioQuality}
-        notifications={visibleNotifications}
-        unreadCount={unreadCount}
-        onMarkRead={markNotificationRead}
-        onMarkAllRead={markAllNotificationsRead}
-        onToggleAudioQuality={toggleAudioQuality}
-        onOpenProfile={() => navigate("/profile")}
-        onLogout={handleLogout}
         onRegister={() => openAuth("register")}
         onLogin={() => openAuth("login")}
+        userActions={
+          <NavbarUserActions
+            user={authUser}
+            isPremium={isPremium}
+            audioQuality={audioQuality}
+            notifications={visibleNotifications}
+            unreadCount={unreadCount}
+            onMarkRead={markNotificationRead}
+            onMarkAllRead={markAllNotificationsRead}
+            onOpenPremium={() => setPremiumOpen(true)}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onToggleAudioQuality={toggleAudioQuality}
+            onOpenProfile={() => navigate("/profile")}
+            onLogout={handleLogout}
+          />
+        }
       />
 
       {/* ── Body ── */}

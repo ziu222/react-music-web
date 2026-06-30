@@ -1,6 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faMagnifyingGlass, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
-import NavbarUserActions from "./NavbarUserActions";
 import logo from "../../assets/logo.png";
 import { C, BG, TEXT, BORDER } from "../../constants/theme";
 
@@ -21,14 +20,7 @@ export default function TopNavbar({
   onOpenSupport,
   onOpenSettings,
   authUser,
-  audioQuality,
-  notifications,
-  unreadCount,
-  onMarkRead,
-  onMarkAllRead,
-  onToggleAudioQuality,
-  onOpenProfile,
-  onLogout,
+  userActions,
   onRegister,
   onLogin,
 }) {
@@ -193,20 +185,7 @@ export default function TopNavbar({
         >
           Cài đặt
         </span>
-        <NavbarUserActions
-          user={authUser}
-          isPremium={isPremium}
-          audioQuality={audioQuality}
-          notifications={notifications}
-          unreadCount={unreadCount}
-          onMarkRead={onMarkRead}
-          onMarkAllRead={onMarkAllRead}
-          onOpenPremium={onOpenPremium}
-          onOpenSettings={onOpenSettings}
-          onToggleAudioQuality={onToggleAudioQuality}
-          onOpenProfile={onOpenProfile}
-          onLogout={onLogout}
-        />
+        {userActions}
         <button
           type="button"
           onClick={onRegister}
