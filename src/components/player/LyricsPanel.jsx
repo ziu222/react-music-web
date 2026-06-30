@@ -333,7 +333,7 @@ function LyricsPaywall({ onOpenPremium }) {
       left: 0,
       right: 0,
       height: 120,
-      background: 'linear-gradient(to bottom, transparent, var(--bg-card, #1a1a1a) 80%)',
+      background: 'linear-gradient(to bottom, transparent, var(--island-bg, #181818) 80%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
