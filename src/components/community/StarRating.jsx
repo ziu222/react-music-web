@@ -47,15 +47,7 @@ export default function StarRating({
     if (display >= i) return C[400]; // full
     const frac = display - Math.floor(display);
     if (Math.floor(display) === i - 1 && frac >= 0.25) return C[400]; // half
-    return "transparent"; // empty handled via opacity
-  }
-
-  function isEmptyStar(i) {
-    const display = hovered > 0 ? hovered : value;
-    if (display >= i) return false;
-    const frac = display - Math.floor(display);
-    if (Math.floor(display) === i - 1 && frac >= 0.25) return false;
-    return true;
+    return "var(--text-tertiary)"; // empty — visible dim star, không tàng hình
   }
 
   function handleClick(i) {
@@ -91,7 +83,6 @@ export default function StarRating({
         onMouseLeave={() => interactive && setHovered(0)}
       >
         {[1, 2, 3, 4, 5].map((i) => {
-          const empty = isEmptyStar(i);
           const isScaling = clicked === i;
 
           return (
@@ -111,11 +102,12 @@ export default function StarRating({
                 height: `${px + 6}px`,
                 cursor: interactive ? "pointer" : "default",
                 color: getStarColor(i),
-                opacity: empty ? 0.2 : 1,
+                opacity: 1,
+                background: interactive && hovered === i ? "var(--overlay-2)" : "transparent",
+                borderRadius: 4,
                 transform: isScaling ? "scale(1.3)" : "scale(1)",
-                transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s, color 0.15s",
+                transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s, background 0.1s",
                 outline: "none",
-                borderRadius: "2px",
               }}
               // Keyboard focus ring via pseudo-element workaround: we handle via onFocus style
               onFocus={(e) => {
