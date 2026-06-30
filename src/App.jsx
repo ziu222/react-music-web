@@ -143,7 +143,6 @@ export default function App() {
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(false);
-  const [adIndex, setAdIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [artistUpgradeOpen, setArtistUpgradeOpen] = useState(false);
@@ -512,7 +511,6 @@ export default function App() {
     setPlaying(true);
     setProg(0);
     incrementPlay(s.id);
-    if (!isPremiumUser(authUser)) setAdIndex(i => (i + 1) % 4);
     setRecentIds(prev => [s.id, ...prev.filter(id => id !== s.id)].slice(0, 12));
     if (authEmailRef.current) {
       recordUserPlay(authEmailRef.current, s.id);
@@ -1387,7 +1385,6 @@ export default function App() {
       {cur && !isPremium && (
         <AdBanner
           onOpenPremium={() => setPremiumOpen(true)}
-          adIndex={adIndex}
         />
       )}
       {/* ── Player ── */}

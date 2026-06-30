@@ -1,16 +1,8 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRectangleAd, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faRectangleAd } from "@fortawesome/free-solid-svg-icons";
 import { C, TEXT, BG, BORDER } from "../../constants/theme";
 
-const AD_MESSAGES = [
-  "Bộ sưu tập loa Harman Kardon — Chất âm vượt thời gian",
-  "Tai nghe Sony WH-1000XM5 — Chống ồn đỉnh cao",
-  "Spotify Premium — Nghe nhạc không giới hạn",
-  "Shopee — Mua sắm online giá tốt mỗi ngày",
-];
-
-export default function AdBanner({ onOpenPremium, adIndex = 0 }) {
-  const msg = AD_MESSAGES[adIndex % AD_MESSAGES.length];
+export default function AdBanner({ onOpenPremium }) {
   return (
     <div
       style={{
