@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import useDelayedVisible from "./hooks/useDelayedVisible";
 import { useApplyTheme } from "./lib/theme/useTheme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -51,7 +52,7 @@ import PageAlbum from "./pages/PageAlbum";
 import PageAdmin from "./pages/admin/PageAdmin";
 import PageArtistStudio from "./pages/artist/PageArtistStudio";
 import PageProfile from "./pages/PageProfile";
-import { C, G, BG, TEXT, BORDER, GRADIENTS } from "./constants/theme";
+import { C, G, BG, TEXT, GRADIENTS } from "./constants/theme";
 
 function fisherYates(arr) {
   const a = [...arr];
@@ -67,7 +68,18 @@ export default function App() {
   const feedbackTimerRef = useRef(null);
   const skipWindowRef = useRef({ count: 0, windowStart: 0 });
   const [screen, setScreen] = useState("splash");
-  const [page, setPage] = useState("home");
+  const location = useLocation();
+  const navigate = useNavigate();
+  // URL là nguồn sự thật cho điều hướng — page/artist/album suy ra từ pathname
+  const pathname = location.pathname;
+  let page = "home";
+  let selectedArtist = null;
+  let selectedAlbum = null;
+  if (pathname.startsWith("/search")) page = "search";
+  else if (pathname.startsWith("/library")) page = "library";
+  else if (pathname.startsWith("/artist/")) { page = "artist"; selectedArtist = decodeURIComponent(pathname.slice(8)); }
+  else if (pathname.startsWith("/album/")) { page = "album"; selectedAlbum = decodeURIComponent(pathname.slice(7)); }
+  else if (pathname.startsWith("/profile")) page = "profile";
   const [appConfig, setAppConfig] = useState({});
   const [cur, setCur] = useState(null);
   const [playing, setPlaying] = useState(false);
@@ -119,10 +131,10 @@ export default function App() {
 
   // Bài bị admin gỡ biến mất — tính lại khi rời màn admin
   const list = useMemo(() => {
-    void screen;
+    void pathname; // tính lại khi điều hướng (vd rời màn admin) để áp takedown mới nhất
     return applySongOverrides(catalogSongs);
-  }, [screen, catalogSongs]);
-  const [search, setSearch] = useState("");
+  }, [pathname, catalogSongs]);
+  const [search, setSearch] = useState(""); // ô tìm kiếm giữ state cục bộ để gõ mượt
   const [authMode, setAuthMode] = useState(null);
   const [authUser, setAuthUser] = useState(() => loadSession());
   const [impersonatorAdmin, setImpersonatorAdmin] = useState(null);
@@ -155,8 +167,6 @@ export default function App() {
     } catch { return playlistsSeed; }
   });
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(1);
-  const [selectedArtist, setSelectedArtist] = useState(null);
-  const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [followedArtists, setFollowedArtists] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem("melodies_followed_artists") || "[]")); }
     catch { return new Set(); }
@@ -417,7 +427,7 @@ export default function App() {
       return;
     }
     setSearch("");
-    setPage("home");
+    navigate("/");
   };
 
   const handleImpersonate = (target) => {
@@ -425,15 +435,14 @@ export default function App() {
     setImpersonatorAdmin(authUser);
     setAuthUser(normalizeUser(applyEntitlement(applyUserOverride(target))));
     setScreen("app");
-    setPage("home");
+    navigate("/");
   };
 
   const stopImpersonate = () => {
     if (!impersonatorAdmin) return;
     setAuthUser(impersonatorAdmin);
     setImpersonatorAdmin(null);
-    setScreen("admin");
-    setPage("home");
+    navigate("/admin");
   };
 
   const handleLogout = () => {
@@ -475,100 +484,27 @@ export default function App() {
     updateSettings({ audioQuality: audioQuality === "high" ? "normal" : "high" });
   };
 
-  /* ── In-app navigation history (back / forward) ── */
-  const [hist, setHist] = useState({ stack: [{ page: "home" }], index: 0 });
-  const canBack = hist.index > 0;
-  const canForward = hist.index < hist.stack.length - 1;
+  /* ── Điều hướng: dùng history trình duyệt (Alt+← / Alt+→ là mặc định trình duyệt) ── */
+  // canForward không suy ra được từ History API → luôn cho bấm (no-op nếu đã ở cuối stack)
+  const canBack = (window.history.state?.idx ?? 0) > 0;
+  const canForward = true;
+  const goBack = useCallback(() => navigate(-1), [navigate]);
+  const goForward = useCallback(() => navigate(1), [navigate]);
 
-  const pushEntry = useCallback((entry) => {
-    setHist(h => {
-      const last = h.stack[h.index];
-      if (
-        last &&
-        last.page === entry.page &&
-        last.artist === entry.artist &&
-        last.album === entry.album &&
-        last.playlistId === entry.playlistId &&
-        last.libraryFilter === entry.libraryFilter &&
-        last.query === entry.query
-      ) return h;
-      const stack = [...h.stack.slice(0, h.index + 1), entry];
-      return { stack, index: stack.length - 1 };
-    });
-  }, []);
-
-  const replaceEntry = useCallback((patch) => {
-    setHist(h => {
-      const stack = [...h.stack];
-      const current = stack[h.index] ?? { page };
-      stack[h.index] = { ...current, ...patch };
-      return { ...h, stack };
-    });
-  }, [page]);
-
-  const applyEntry = useCallback((entry) => {
-    if (entry.artist) setSelectedArtist(entry.artist);
-    if (entry.album) setSelectedAlbum(entry.album);
-    if (entry.page === "search") setSearch(entry.query ?? "");
-    if (entry.page !== "search" && entry.query === undefined) setSearch("");
+  // Thư mục library: bộ lọc/playlist giữ ở state cục bộ, URL chỉ là /library
+  const openLibrary = (entry = {}) => {
     if (entry.libraryFilter) setLibraryFilter(entry.libraryFilter);
     if (entry.playlistId !== undefined) {
       setSelectedPlaylistId(entry.playlistId);
       if (!entry.libraryFilter) setLibraryFilter("Danh sách phát");
     }
-    setPage(entry.page);
-  }, []);
-
-  // entry: extra route state (artist/album/playlistId) recorded in history
-  const nav = (p, entry) => {
-    if (p === page && !entry) return;
-    pushEntry({ page: p, ...entry });
-    if (p === page) return;
-    setPage(p);
-  };
-
-  const openLibrary = (entry = {}) => {
-    const nextFilter = entry.libraryFilter ?? libraryFilter;
-    const nextPlaylistId = entry.playlistId ?? selectedPlaylistId;
-    setLibraryFilter(nextFilter);
-    if (entry.playlistId !== undefined) setSelectedPlaylistId(nextPlaylistId);
-    nav("library", { playlistId: nextPlaylistId, libraryFilter: nextFilter });
+    navigate("/library");
   };
 
   const handleSearchChange = (value) => {
     setSearch(value);
-    if (page !== "search") {
-      pushEntry({ page: "search", query: value });
-      setPage("search");
-      return;
-    }
-    replaceEntry({ page: "search", query: value });
+    if (page !== "search") navigate("/search");
   };
-
-  // Back/forward restore instantly
-  const goBack = useCallback(() => {
-    if (hist.index <= 0) return;
-    const idx = hist.index - 1;
-    applyEntry(hist.stack[idx]);
-    setHist(h => ({ ...h, index: idx }));
-  }, [hist, applyEntry]);
-
-  const goForward = useCallback(() => {
-    if (hist.index >= hist.stack.length - 1) return;
-    const idx = hist.index + 1;
-    applyEntry(hist.stack[idx]);
-    setHist(h => ({ ...h, index: idx }));
-  }, [hist, applyEntry]);
-
-  useEffect(() => {
-    const onKey = (e) => {
-      if (!e.altKey) return;
-      if (e.key === "ArrowLeft") { e.preventDefault(); goBack(); }
-      if (e.key === "ArrowRight") { e.preventDefault(); goForward(); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [goBack, goForward]);
 
   const play = useCallback((s) => {
     setCur(s);
@@ -816,14 +752,12 @@ export default function App() {
 
   const openAlbum = (albumName) => {
     if (!albumName) return;
-    setSelectedAlbum(albumName);
-    nav("album", { album: albumName });
+    navigate("/album/" + encodeURIComponent(albumName));
   };
 
   const openArtist = (artistName) => {
     if (!artistName) return;
-    setSelectedArtist(artistName);
-    nav("artist", { artist: artistName });
+    navigate("/artist/" + encodeURIComponent(artistName));
   };
 
   const openPlaylist = (pl) => {
@@ -1113,23 +1047,25 @@ export default function App() {
 
   if (screen === "splash") return <Splash onDone={done} />;
 
-  if (screen === "admin" && authUser?.role === "admin") {
+  if (pathname.startsWith("/admin")) {
+    if (authUser?.role !== "admin") return <Navigate to="/" replace />;
     return (
       <div>
         <PageAdmin
           authUser={authUser}
           songs={catalogSongs}
-          onExit={() => setScreen("app")}
+          onExit={() => navigate("/")}
           onImpersonate={handleImpersonate}
         />
       </div>
     );
   }
 
-  if (screen === "artist" && authUser?.role === "artist") {
+  if (pathname.startsWith("/artist-studio")) {
+    if (authUser?.role !== "artist") return <Navigate to="/" replace />;
     return (
       <div>
-        <PageArtistStudio authUser={authUser} onExit={() => setScreen("app")} />
+        <PageArtistStudio authUser={authUser} onExit={() => navigate("/")} />
       </div>
     );
   }
@@ -1214,7 +1150,7 @@ export default function App() {
         canForward={canForward}
         onBack={goBack}
         onForward={goForward}
-        onHome={() => { nav("home"); setSearch(""); }}
+        onHome={() => { navigate("/"); setSearch(""); }}
         search={search}
         onSearchChange={handleSearchChange}
         isPremium={isPremium}
@@ -1229,7 +1165,7 @@ export default function App() {
         onMarkRead={markNotificationRead}
         onMarkAllRead={markAllNotificationsRead}
         onToggleAudioQuality={toggleAudioQuality}
-        onOpenProfile={() => nav("profile")}
+        onOpenProfile={() => navigate("/profile")}
         onLogout={handleLogout}
         onRegister={() => openAuth("register")}
         onLogin={() => openAuth("login")}
@@ -1267,9 +1203,9 @@ export default function App() {
           canDownload={isPremium}
           onRequestDownload={requestDownload}
           isAdmin={authUser?.role === "admin"}
-          onNavAdmin={() => setScreen("admin")}
+          onNavAdmin={() => navigate("/admin")}
           isArtist={authUser?.role === "artist"}
-          onNavArtist={() => setScreen("artist")}
+          onNavArtist={() => navigate("/artist-studio")}
         />
 
         {/* Main content */}
