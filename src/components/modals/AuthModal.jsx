@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGoogle, faFacebookF, faApple } from "@fortawesome/free-brands-svg-icons";
 import logo from "../../assets/logo.png";
 import { C, G, BG, TEXT } from "../../constants/theme";
 import { supabase } from "../../lib/supabase/supabase";
@@ -26,9 +28,9 @@ function buildUserFromMeta(authUser, meta) {
 }
 
 const SOCIAL_PROVIDERS = [
-  { id: "google", label: "Tiếp tục với Google", mark: "G", color: "#fff" },
-  { id: "facebook", label: "Tiếp tục với Facebook", mark: "f", color: "#1877f2" },
-  { id: "apple", label: "Tiếp tục với Apple", mark: "", color: "#fff" },
+  { id: "google", label: "Tiếp tục với Google", icon: faGoogle, iconColor: "#ea4335", bg: "#fff" },
+  { id: "facebook", label: "Tiếp tục với Facebook", icon: faFacebookF, iconColor: "#fff", bg: "#1877f2" },
+  { id: "apple", label: "Tiếp tục với Apple", icon: faApple, iconColor: "#000", bg: "#fff" },
 ];
 
 function Field({ label, type = "text", value, onChange, error, placeholder, autoComplete }) {
@@ -123,17 +125,14 @@ function SocialButton({ provider, onClick }) {
         width: 20,
         height: 20,
         borderRadius: "50%",
-        background: provider.color,
-        color: provider.id === "facebook" ? "#fff" : "#111",
+        background: provider.bg,
+        color: provider.iconColor,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: provider.id === "facebook" ? 17 : 12,
-        fontWeight: 800,
-        lineHeight: 1,
-        fontFamily: provider.id === "apple" ? "serif" : "inherit",
+        fontSize: 11,
       }}>
-        {provider.mark}
+        <FontAwesomeIcon icon={provider.icon} />
       </span>
       {provider.label}
     </button>
