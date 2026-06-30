@@ -12,6 +12,7 @@ import { takedownSong, restoreTakedownSong, canRestoreTakedown } from "../../lib
 import { SearchInput, ActionChip } from "../../components/console/ConsoleUi";
 import SongDetailDrawer from "../../components/modals/SongDetailDrawer";
 import { getSongImage } from "../../data/media";
+import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 
 function bulkBtn(accent) {
   return {
@@ -286,7 +287,9 @@ export default function AdminContent({ songs, authUser, can = () => true, onRefr
         </div>
       )}
 
-      {viewMode === "albums" && (
+      {songs.length === 0 && <TableSkeleton rows={6} cards={viewMode === "albums"} />}
+
+      {viewMode === "albums" && songs.length > 0 && (
         <motion.div
           key={"albums-" + q}
           variants={staggerContainer}
@@ -363,7 +366,7 @@ export default function AdminContent({ songs, authUser, can = () => true, onRefr
         </div>
       )}
 
-      {viewMode === "songs" && filtered.length > 0 && (
+      {viewMode === "songs" && songs.length > 0 && filtered.length > 0 && (
         <div
           style={{
             display: "flex",
@@ -391,7 +394,7 @@ export default function AdminContent({ songs, authUser, can = () => true, onRefr
         </div>
       )}
 
-      {viewMode === "songs" && (
+      {viewMode === "songs" && songs.length > 0 && (
        <motion.div key={"songs-" + safePage} variants={staggerContainer} initial="initial" animate="animate">
        {paged.map((song) => {
         const hidden = hiddenIds.includes(song.id);

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { TEXT, BORDER, BG } from "../../constants/theme";
 import { loadAppConfig, setAppConfig } from "../../lib/admin/appConfig";
 import { logAdminAction } from "../../lib/user/auditLog";
+import PanelSkeleton from "../../components/ui/skeleton/PanelSkeleton";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 // Nhãn hiển thị cho từng nhóm cờ (category trong app_config)
 const CATEGORY_LABELS = {
@@ -96,13 +98,9 @@ export default function AdminConfig({ authUser, can = () => true }) {
   }, {});
   const groupKeys = Object.keys(groups);
 
-  if (status === "loading") {
-    return (
-      <div style={{ padding: 32, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
-        Đang tải cấu hình…
-      </div>
-    );
-  }
+  const showSkeleton = useDelayedVisible(status === "loading");
+  if (showSkeleton) return <PanelSkeleton lines={6} />;
+  if (status === "loading") return null;
 
   if (status === "error" || list.length === 0) {
     return (

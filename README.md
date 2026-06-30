@@ -44,6 +44,7 @@ Key directories:
 - `src/constants/theme.js`: shared color/theme constants.
 
 Design notes live in [DESIGN.md](./DESIGN.md) and [DESIGN_STITCH.md](./DESIGN_STITCH.md).
+Architecture, domain logic, and end-to-end workflows are documented in [docs/ARCHITECTURE_WORKFLOWS.md](./docs/ARCHITECTURE_WORKFLOWS.md).
 
 ## Data And Persistence
 

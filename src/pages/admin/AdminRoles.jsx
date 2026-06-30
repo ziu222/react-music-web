@@ -7,6 +7,8 @@ import { loadAdminRoles, updateRolePermissions } from "../../lib/user/adminRoles
 import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction, loadAdminLastActive } from "../../lib/user/auditLog";
 import { formatNotificationTime } from "../../lib/social/notifications";
+import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 /* ── Màn Phân quyền ──
  * (A) Vai trò & quyền: mỗi role 1 card, toggle quyền theo PERMISSION_GROUPS.
@@ -119,17 +121,14 @@ export default function AdminRoles({ authUser, users = [], can = () => true, onR
   };
 
   const sectionTitle = { fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 14 };
+  const showSkeleton = useDelayedVisible(loading);
 
   return (
     <div>
       {/* ── (A) Vai trò & quyền ── */}
       <div style={sectionTitle}>Vai trò & quyền</div>
 
-      {loading && (
-        <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
-          Đang tải vai trò...
-        </div>
-      )}
+      {showSkeleton && <TableSkeleton rows={5} />}
 
       {!loading && roles.length === 0 && (
         <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
