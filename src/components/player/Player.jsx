@@ -4,6 +4,7 @@ import {
   CirclePlus,
   ListMusic,
   Maximize2,
+  MessageCircle,
   Mic2,
   MonitorSpeaker,
   Music,
@@ -22,8 +23,6 @@ import QueuePanel from "./QueuePanel";
 import SaveToPlaylistPopover from "../modals/SaveToPlaylistPopover";
 import LyricsPanel from "./LyricsPanel";
 import ExpandedPlayer from "./ExpandedPlayer";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faComments } from "@fortawesome/free-solid-svg-icons";
 import { C } from "../../constants/theme";
 import { getSongImage } from "../../data/media";
 import { prefetchLyricsForSong } from "../../lib/music/lyrics";
@@ -431,7 +430,7 @@ export default function Player({
             onClick={() => pressAnim("community", onOpenCommunity)}
             style={iconButton(false)}
             onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-            <FontAwesomeIcon icon={faComments} style={{ fontSize: 15 }} />
+            <MessageCircle size={16} />
           </button>
 
           <button type="button" aria-label="Lyrics"
