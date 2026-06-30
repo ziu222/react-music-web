@@ -1,6 +1,7 @@
 import { supabase } from "../supabase/supabase";
 
 export const DEFAULT_PROFILE = {
+  email: "",
   bio: "",
   genres: [],
   links: { website: "", facebook: "", instagram: "", youtube: "" },
@@ -9,9 +10,10 @@ export const DEFAULT_PROFILE = {
   themeColor: "",
 };
 
-function fromRow(r) {
+function fromRow(r, email = "") {
   return {
     ...DEFAULT_PROFILE,
+    email,
     bio:         r.bio ?? "",
     genres:      Array.isArray(r.genres) ? r.genres : [],
     links:       { ...DEFAULT_PROFILE.links, ...(r.links ?? {}) },
@@ -34,7 +36,7 @@ export async function loadArtistProfile(email) {
     .eq("email", key)
     .maybeSingle();
 
-  const profile = data ? fromRow(data) : { ...DEFAULT_PROFILE };
+  const profile = data ? fromRow(data, key) : { ...DEFAULT_PROFILE, email: key };
   _cache.set(key, profile);
   return profile;
 }

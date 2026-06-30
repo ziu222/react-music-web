@@ -1,11 +1,4 @@
 import { supabase } from "./supabase";
-
-/**
- * Curated/seed playlists now live in the `curated_playlists` table so they can
- * be tweaked without a redeploy. Maps snake_case → the shape App.jsx expects
- * (matching src/data/playlists.js). Returns null on any failure so callers can
- * fall back to the bundled static seed.
- */
 export async function fetchCuratedPlaylists() {
   if (!supabase) return null;
   const { data, error } = await supabase

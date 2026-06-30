@@ -9,6 +9,7 @@ import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 import { grantPremium, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
 import { setUserOverride } from "../../lib/user/userOverrides";
 import { logAdminAction } from "../../lib/user/auditLog";
+import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 
 const ROLE_PILLS = [
   { key: "all", label: "Tất cả" },
@@ -146,13 +147,15 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh, can
         <div style={{ width: 20, flexShrink: 0 }} />
       </div>
 
+      {(users ?? []).length === 0 && <TableSkeleton rows={6} />}
+
       <motion.div
         key={"users-" + roleFilter + planFilter + search}
         variants={staggerContainer}
         initial="initial"
         animate="animate"
       >
-      {filtered.map((user) => {
+      {(users ?? []).length > 0 && filtered.map((user) => {
         const dimmed = user.status === "banned" || user.deleted;
         const roleChip = ROLE_CHIPS[user.role] ?? ROLE_CHIPS.listener;
         const hasRequest = pendingRequestEmails.has(user.email);
@@ -288,7 +291,7 @@ export default function AdminUsers({ users, onOpenUser, authUser, onRefresh, can
       })}
       </motion.div>
 
-      {filtered.length === 0 && (
+      {(users ?? []).length > 0 && filtered.length === 0 && (
         <div style={{ padding: 24, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
           Không tìm thấy tài khoản nào
         </div>

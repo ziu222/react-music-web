@@ -4,6 +4,8 @@ import { loadAuditLog, fromRowRealtime, ACTION_LABELS } from "../../lib/user/aud
 import { subscribeToAuditLog } from "../../lib/supabase/realtime";
 import { formatNotificationTime } from "../../lib/social/notifications";
 import { FilterPills, SearchInput, ActionChip } from "../../components/console/ConsoleUi";
+import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 const USER_ACTIONS = [
   "ban_user",
@@ -59,9 +61,10 @@ export default function AdminAudit() {
   const [actionType, setActionType] = useState("all"); // lọc theo action
   const [query, setQuery] = useState("");          // free-text target/detail/adminName
   const [log, setLog] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Load ban đầu
-  useEffect(() => { loadAuditLog().then(setLog); }, []);
+  useEffect(() => { loadAuditLog().then((data) => { setLog(data); setLoading(false); }); }, []);
 
   // Realtime: prepend hành động mới, dedupe theo id
   useEffect(() => {
@@ -95,6 +98,8 @@ export default function AdminAudit() {
     }
     return out;
   }, [log]);
+
+  const showSkeleton = useDelayedVisible(loading);
 
   const q = query.trim().toLowerCase();
   const filtered = log.filter((e) => {
@@ -148,13 +153,15 @@ export default function AdminAudit() {
         </div>
       </div>
 
-      {filtered.length === 0 && (
+      {showSkeleton && <TableSkeleton rows={6} />}
+
+      {!loading && filtered.length === 0 && (
         <div style={{ padding: 32, textAlign: "center", color: TEXT.tertiary, fontSize: 13 }}>
           Chưa có hành động nào được ghi lại
         </div>
       )}
 
-      {filtered.map((e) => (
+      {!loading && filtered.map((e) => (
         <div
           key={e.id}
           onMouseEnter={(ev) => {

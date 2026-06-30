@@ -5,15 +5,18 @@ import { TEXT, BORDER, BG } from "../../constants/theme";
 import { createPromoCode, loadPromoCodes, deactivatePromoCode, GRANT_DURATIONS } from "../../lib/user/premiumGrants";
 import { logAdminAction } from "../../lib/user/auditLog";
 import { FilterPills } from "../../components/console/ConsoleUi";
+import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 export default function AdminPromo({ authUser, can = () => true }) {
   const [codes, setCodes] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [duration, setDuration] = useState("1m");
   const [maxUses, setMaxUses] = useState(1);
   const [customCode, setCustomCode] = useState("");
   const [copied, setCopied] = useState(null);
 
-  useEffect(() => { loadPromoCodes().then(setCodes); }, []);
+  useEffect(() => { loadPromoCodes().then((c) => { setCodes(c); setLoading(false); }); }, []);
 
   const create = async () => {
     const promo = await createPromoCode(authUser?.email, { durationKey: duration, maxUses, code: customCode.trim() || undefined });
@@ -27,6 +30,8 @@ export default function AdminPromo({ authUser, can = () => true }) {
     logAdminAction(authUser, "deactivate_promo", code, "");
     loadPromoCodes().then(setCodes);
   };
+
+  const showSkeleton = useDelayedVisible(loading);
 
   const copy = (code) => {
     navigator.clipboard.writeText(code).catch(() => {});
@@ -71,12 +76,13 @@ export default function AdminPromo({ authUser, can = () => true }) {
       <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
         Danh sách mã ({codes.length})
       </div>
-      {codes.length === 0 && (
+      {showSkeleton && <TableSkeleton rows={5} />}
+      {!loading && codes.length === 0 && (
         <div style={{ fontSize: 13, color: TEXT.tertiary, padding: 20, textAlign: "center" }}>
           Chưa có mã nào
         </div>
       )}
-      {codes.map((p) => (
+      {!loading && codes.map((p) => (
         <div key={p.code} style={{
           display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
           background: BG.card, border: "1px solid " + BORDER, borderRadius: 8, marginBottom: 8,

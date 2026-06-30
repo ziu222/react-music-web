@@ -19,6 +19,9 @@ import { formatNotificationTime } from "../../lib/social/notifications";
 import { actionColor } from "./AdminAudit";
 import { getPendingRequests } from "../../lib/artist/upgradeRequests";
 import { getDashboardStats, formatVnd } from "../../data/dashboardStats";
+import Skeleton from "../../components/ui/skeleton/Skeleton";
+import PanelSkeleton from "../../components/ui/skeleton/PanelSkeleton";
+import useDelayedVisible from "../../hooks/useDelayedVisible";
 
 function compactNum(n) {
   if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
@@ -34,7 +37,10 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
   const upgradeRequestCount = getPendingRequests().length;
 
   const [dailyTotals, setDailyTotals] = useState([]);
-  useEffect(() => { getDailyTotals().then(setDailyTotals).catch(() => {}); }, []);
+  const [loadingTotals, setLoadingTotals] = useState(true);
+  useEffect(() => {
+    getDailyTotals().then(setDailyTotals).catch(() => {}).finally(() => setLoadingTotals(false));
+  }, []);
 
   // Phân bố thể loại (theo số bài)
   const genreBars = (() => {
@@ -78,7 +84,13 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
     .slice(0, 3);
 
   const [recentAudit, setRecentAudit] = useState([]);
-  useEffect(() => { loadAuditLog().then(data => setRecentAudit(data.slice(0, 5))); }, []);
+  const [loadingAudit, setLoadingAudit] = useState(true);
+  useEffect(() => {
+    loadAuditLog().then(data => { setRecentAudit(data.slice(0, 5)); setLoadingAudit(false); });
+  }, []);
+
+  const showTotalsSkeleton = useDelayedVisible(loadingTotals);
+  const showAuditSkeleton = useDelayedVisible(loadingAudit);
 
   return (
     <motion.div variants={staggerContainer} initial="initial" animate="animate">
@@ -282,10 +294,11 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
           Hoạt động quản trị gần đây
         </div>
-        {recentAudit.length === 0 && (
+        {showAuditSkeleton && <PanelSkeleton lines={5} compact />}
+        {!loadingAudit && recentAudit.length === 0 && (
           <div style={{ fontSize: 12, color: TEXT.tertiary }}>Chưa có hoạt động</div>
         )}
-        {recentAudit.map((e) => (
+        {!loadingAudit && recentAudit.map((e) => (
           <div
             key={e.id}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}
@@ -316,7 +329,11 @@ export default function AdminDashboard({ songs, pendingCount = 0, allUsers, onNa
         <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.mid, marginBottom: 12 }}>
           Xu hướng lượt nghe (toàn hệ thống)
         </div>
-        <Sparkline data={dailyTotals.map((d) => d.plays)} color={C[500]} />
+        {showTotalsSkeleton ? (
+          <Skeleton height={70} radius={6} />
+        ) : (
+          <Sparkline data={dailyTotals.map((d) => d.plays)} color={C[500]} />
+        )}
       </motion.div>
 
       <motion.div variants={cardVariants} style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>

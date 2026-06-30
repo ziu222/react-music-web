@@ -30,6 +30,7 @@ import AdminReports from "./AdminReports";
 import AdminAudit from "./AdminAudit";
 import AdminRoles from "./AdminRoles";
 import AdminConfig from "./AdminConfig";
+import AdminDashboardSkeleton from "../../components/ui/skeleton/AdminDashboardSkeleton";
 import TableSkeleton from "../../components/ui/skeleton/TableSkeleton";
 import useDelayedVisible from "../../hooks/useDelayedVisible";
 import usePermissions from "../../hooks/usePermissions";
@@ -135,8 +136,11 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
     >
       <ConsoleHeader title={HEADERS[adminTab].title} subtitle={HEADERS[adminTab].subtitle} />
 
-      {(adminTab === "dashboard" || adminTab === "users") && holdUsersSkeleton && (
-        <TableSkeleton cards={adminTab === "dashboard"} visible={showUsersSkeleton} />
+      {adminTab === "dashboard" && holdUsersSkeleton && (
+        <AdminDashboardSkeleton visible={showUsersSkeleton} />
+      )}
+      {adminTab === "users" && holdUsersSkeleton && (
+        <TableSkeleton visible={showUsersSkeleton} />
       )}
       {(adminTab === "dashboard" || adminTab === "users") && usersStatus === "error" && allUsers.length === 0 && (
         <div style={{ padding: 32, textAlign: "center", color: "var(--text-secondary)", fontSize: 13 }}>
