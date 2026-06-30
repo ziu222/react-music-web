@@ -1371,9 +1371,11 @@ export default function App() {
               premiumExpiresAt={authUser?.premiumExpiresAt ?? null}
               onRedeemCode={(result) => {
                 setAuthUser(prev => prev ? { ...prev, plan: 'premium', premiumExpiresAt: result.expiresAt ?? null } : prev);
-                // redeemPromoCode đã tạo grant; ghi thêm users.plan để màn admin thấy đúng (RLS: hàng của chính mình).
                 if (authUser?.email) setUserOverride(authUser.email, { plan: 'premium' }).catch(() => {});
                 pushNotification('premium', 'Mã khuyến mãi đã áp dụng', `Bạn đã nhận ${result.durationLabel} Premium.`);
+              }}
+              onProfileUpdate={(patch) => {
+                setAuthUser(prev => prev ? { ...prev, ...patch } : prev);
               }}
             />
           )}
