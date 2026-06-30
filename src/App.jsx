@@ -1249,7 +1249,7 @@ export default function App() {
           )}
           <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={page + "|" + (page === "artist" ? selectedArtist : "") + (page === "album" ? selectedAlbum : "")}
+            key={pathname}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
