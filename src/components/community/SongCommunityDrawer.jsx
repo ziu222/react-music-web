@@ -54,8 +54,13 @@ function SectionLabel({ icon, children }) {
   );
 }
 
+const STAR_LABELS = ["", "Tệ", "Tạm được", "Ổn", "Hay", "Tuyệt vời"];
+
 /* ─── star row (visible interactive container) ──────────────────────── */
 function InteractiveStars({ userRating, onRate }) {
+  const [hintStar, setHintStar] = useState(0);
+  const label = STAR_LABELS[hintStar] ?? "";
+
   return (
     <div style={{
       marginTop: 14,
@@ -70,14 +75,50 @@ function InteractiveStars({ userRating, onRate }) {
       }}>
         {userRating != null ? "Cập nhật đánh giá của bạn:" : "Đánh giá của bạn:"}
       </div>
-      <StarRating
-        value={userRating ?? 0}
-        onChange={onRate}
-        size="lg"
-        showValue={false}
-      />
-      <div style={{ marginTop: 8, fontSize: 10.5, color: TEXT.tertiary }}>
-        Nhấn sao để đánh giá
+
+      {/* Stars + hint label cùng hàng */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          onMouseLeave={() => setHintStar(0)}
+          style={{ display: "inline-flex" }}
+        >
+          {[1, 2, 3, 4, 5].map(i => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`${STAR_LABELS[i]} — ${i} sao`}
+              onClick={() => onRate(i)}
+              onMouseEnter={() => setHintStar(i)}
+              style={{
+                all: "unset",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 34, height: 34,
+                cursor: "pointer",
+                borderRadius: 6,
+                background: hintStar >= i ? `${ACCENT}1a` : "transparent",
+                color: hintStar > 0
+                  ? (hintStar >= i ? ACCENT : "var(--text-tertiary)")
+                  : (userRating != null && userRating >= i ? ACCENT : "var(--text-tertiary)"),
+                fontSize: 22,
+                transition: "background 0.1s, color 0.1s, transform 0.15s",
+                transform: hintStar === i ? "scale(1.25)" : "scale(1)",
+              }}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+
+        {/* Label động theo hover */}
+        <span style={{
+          fontSize: 12, fontWeight: 600, minWidth: 70,
+          color: hintStar > 0 ? ACCENT : TEXT.tertiary,
+          transition: "color 0.15s",
+        }}>
+          {hintStar > 0 ? label : (userRating != null ? STAR_LABELS[userRating] : "Chưa đánh giá")}
+        </span>
       </div>
     </div>
   );
