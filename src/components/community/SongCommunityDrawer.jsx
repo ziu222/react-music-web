@@ -8,7 +8,7 @@ import {
   faCircleCheck,
   faMusic,
 } from "@fortawesome/free-solid-svg-icons";
-import { C, BG, TEXT, BORDER, OVERLAY } from "../../constants/theme";
+import { C, BG, TEXT, OVERLAY } from "../../constants/theme";
 import StarRating from "./StarRating";
 import CommentsSection from "./CommentsSection";
 import {

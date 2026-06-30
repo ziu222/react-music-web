@@ -8,7 +8,6 @@ import {
   faBan,
   faLockOpen,
   faTrash,
-  faMicrophoneLines,
   faCheck,
   faCircleInfo,
   faFileAudio,

@@ -24,7 +24,7 @@ const SERVICE_STATUS = {
  * lưu trữ + trạng thái dịch vụ). Số liệu ảo deterministic theo ngày, lai số
  * thật (người dùng hoạt động, số bài hát) từ getSystemHealth.
  */
-export default function AdminSystem({ authUser, can = () => true, users = [], songs = [] }) {
+export default function AdminSystem({ users = [], songs = [] }) {
   // Lai số thật: người dùng còn hoạt động + số bài hát → scale realtime/lưu trữ.
   const health = useMemo(
     () =>
