@@ -17,6 +17,7 @@ import { C, BORDER, BG, TEXT } from "../constants/theme";
 import EmptyState from "../components/ui/EmptyState";
 import PlanBadge from "../components/primitives/PlanBadge";
 import { getListenerStats } from "../data/listenerStats";
+import { getSongImage } from "../data/media";
 import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/artist/upgradeRequests";
 import { createNotification, loadNotifications, saveNotifications } from "../lib/social/notifications";
 import { setUserOverride } from "../lib/user/userOverrides";
@@ -743,7 +744,10 @@ export default function PageProfile({
               return (
                 <div
                   key={song.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onPlay(song)}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPlay(song); } }}
                   aria-label={isPlaying ? `Tạm dừng ${song.title}` : `Phát ${song.title}`}
                   style={{
                     display: "flex",
@@ -753,6 +757,7 @@ export default function PageProfile({
                     borderRadius: 8,
                     cursor: "pointer",
                     transition: "background 0.15s",
+                    outline: "none",
                   }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-1)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
@@ -768,29 +773,27 @@ export default function PageProfile({
                   >
                     {isPlaying ? <FontAwesomeIcon icon={faPause} style={{ fontSize: 11 }} /> : i + 1}
                   </span>
-                  {song.cover ? (
-                    <img
-                      src={song.cover}
-                      alt={song.title}
-                      style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover", flexShrink: 0 }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 4,
-                        background: song.bg || "var(--overlay-2)",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faMusic} style={{ fontSize: 13 }} />
-                    </div>
-                  )}
+                  {(() => {
+                    const img = getSongImage(song);
+                    return img ? (
+                      <img
+                        src={img}
+                        alt={song.title}
+                        style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover", flexShrink: 0 }}
+                        onError={e => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
+                      />
+                    ) : null;
+                  })()}
+                  <div
+                    style={{
+                      width: 40, height: 40, borderRadius: 4, flexShrink: 0,
+                      background: song.bg || "var(--overlay-2)",
+                      color: "#fff", display: getSongImage(song) ? "none" : "flex",
+                      alignItems: "center", justifyContent: "center",
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faMusic} style={{ fontSize: 13 }} />
+                  </div>
                   <div style={{ minWidth: 0 }}>
                     <div
                       style={{
