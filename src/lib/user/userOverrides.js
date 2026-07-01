@@ -22,6 +22,9 @@ export async function setUserOverride(email, patch) {
     if (patch.verified  !== undefined) dbPatch.verified   = patch.verified;
     if (patch.suspended !== undefined) dbPatch.suspended  = patch.suspended;
     if (patch.adminRole !== undefined) dbPatch.admin_role = patch.adminRole;
+    if (patch.name      !== undefined) dbPatch.name       = patch.name;
+    if (patch.initial   !== undefined) dbPatch.initial    = patch.initial;
+    if (patch.color     !== undefined) dbPatch.color      = patch.color;
 
     if (Object.keys(dbPatch).length) {
       const { error } = await supabase.from("users").update(dbPatch).eq("email", key);

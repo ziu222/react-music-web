@@ -19,6 +19,7 @@ import PlanBadge from "../components/primitives/PlanBadge";
 import { getListenerStats } from "../data/listenerStats";
 import { getRequest, withdrawUpgradeRequest, replyToInfoRequest } from "../lib/artist/upgradeRequests";
 import { createNotification, loadNotifications, saveNotifications } from "../lib/social/notifications";
+import { setUserOverride } from "../lib/user/userOverrides";
 
 const ADMIN_KEY = "linh@melodies.local";
 
@@ -64,6 +65,11 @@ function SectionTitle({ children }) {
   );
 }
 
+const PRESET_COLORS = [
+  "#f97316","#3b82f6","#8b5cf6","#ec4899",
+  "#10b981","#f59e0b","#ef4444","#14b8a6",
+];
+
 export default function PageProfile({
   user,
   isPremium,
@@ -79,7 +85,38 @@ export default function PageProfile({
   onOpenArtistUpgrade,
   premiumExpiresAt = null,
   onRedeemCode,
+  onProfileUpdate,
 }) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const openEdit = () => {
+    setEditName(user?.name ?? "");
+    setEditColor(user?.color ?? PRESET_COLORS[0]);
+    setEditOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim() || !user?.email) return;
+    setSaving(true);
+    const patch = {
+      name: editName.trim(),
+      color: editColor,
+      initial: editName.trim()[0].toUpperCase(),
+    };
+    try {
+      await setUserOverride(user.email, patch);
+      onProfileUpdate?.(patch);
+      setEditOpen(false);
+    } catch (e) {
+      void e;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const [upgradeReq, setUpgradeReq] = useState(() => user ? getRequest(user.email) : null);
   const [infoReply, setInfoReply] = useState("");
   const [replySent, setReplySent] = useState(false);
@@ -209,30 +246,132 @@ export default function PageProfile({
             <span style={{ fontSize: 12, color: TEXT.tertiary }}>Thành viên từ {joined}</span>
           </div>
 
-          {!isPremium && (
+          <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+            {!isPremium && (
+              <button
+                type="button"
+                onClick={onOpenPremium}
+                style={{
+                  borderRadius: 9999, padding: "7px 18px",
+                  background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
+                  color: "#fff", fontSize: 12, fontWeight: 700,
+                  border: "none", cursor: "pointer", transition: "transform 0.15s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+              >
+                Nâng cấp Premium
+              </button>
+            )}
             <button
               type="button"
-              onClick={onOpenPremium}
+              onClick={openEdit}
               style={{
-                marginTop: 12,
-                borderRadius: 9999,
-                padding: "7px 18px",
-                background: `linear-gradient(90deg, ${C[600]}, ${C[500]})`,
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 700,
-                border: "none",
-                cursor: "pointer",
-                transition: "transform 0.15s",
+                borderRadius: 9999, padding: "7px 18px",
+                background: "var(--overlay-1)", border: "1px solid var(--border)",
+                color: TEXT.secondary, fontSize: 12, fontWeight: 600,
+                cursor: "pointer", transition: "background 0.15s, color 0.15s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; e.currentTarget.style.color = TEXT.primary; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--overlay-1)"; e.currentTarget.style.color = TEXT.secondary; }}
             >
-              Nâng cấp Premium
+              Chỉnh sửa hồ sơ
             </button>
-          )}
+          </div>
         </div>
       </div>
+
+      {/* ── Edit profile form ── */}
+      {editOpen && (
+        <div style={{ padding: "0 24px", marginBottom: 4 }}>
+          <div style={{
+            background: BG.card, border: `1px solid ${BORDER}`,
+            borderRadius: 12, padding: "20px 22px",
+            display: "flex", flexDirection: "column", gap: 16,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT.strong }}>Chỉnh sửa hồ sơ</div>
+
+            {/* Preview avatar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: "50%",
+                background: editColor, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22, fontWeight: 800, color: "#fff",
+                boxShadow: `0 4px 16px ${editColor}55`,
+                transition: "background 0.2s, box-shadow 0.2s",
+              }}>
+                {(editName[0] ?? user?.initial ?? "?").toUpperCase()}
+              </div>
+              <div style={{ flex: 1 }}>
+                <input
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder="Tên hiển thị"
+                  maxLength={40}
+                  style={{
+                    width: "100%", boxSizing: "border-box",
+                    height: 38, borderRadius: 8,
+                    border: `1px solid ${BORDER}`, background: "var(--overlay-1)",
+                    color: TEXT.primary, fontSize: 14, padding: "0 12px",
+                    outline: "none", fontFamily: "inherit",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = C[500]; e.target.style.boxShadow = `0 0 0 2px ${C[500]}28`; }}
+                  onBlur={e => { e.target.style.borderColor = BORDER; e.target.style.boxShadow = "none"; }}
+                />
+              </div>
+            </div>
+
+            {/* Color picker */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: TEXT.secondary, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Màu hồ sơ</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {PRESET_COLORS.map(c => (
+                  <button
+                    key={c} type="button"
+                    onClick={() => setEditColor(c)}
+                    style={{
+                      width: 32, height: 32, borderRadius: "50%",
+                      background: c, border: editColor === c ? `3px solid ${TEXT.primary}` : "3px solid transparent",
+                      cursor: "pointer", outline: "none",
+                      boxShadow: editColor === c ? `0 0 0 2px ${c}66` : "none",
+                      transition: "border 0.12s, box-shadow 0.12s",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={!editName.trim() || saving}
+                style={{
+                  height: 36, padding: "0 20px", borderRadius: 9999,
+                  background: C[500], border: "none", color: "#fff",
+                  fontSize: 13, fontWeight: 700, cursor: editName.trim() && !saving ? "pointer" : "not-allowed",
+                  opacity: editName.trim() && !saving ? 1 : 0.5, transition: "opacity 0.15s",
+                }}
+              >
+                {saving ? "Đang lưu..." : "Lưu"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                style={{
+                  height: 36, padding: "0 16px", borderRadius: 9999,
+                  background: "var(--overlay-1)", border: `1px solid ${BORDER}`,
+                  color: TEXT.secondary, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Gói của bạn ── */}
       <div style={{ padding: '0 24px', marginBottom: 24 }}>
