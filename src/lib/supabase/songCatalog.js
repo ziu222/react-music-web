@@ -10,6 +10,7 @@ function mapRow(r) {
     duration: r.duration,
     durationSecs: r.duration_secs,
     plays: r.plays,
+    likes: r.likes ?? 0,
     bg: r.bg,
     audioUrl: r.audio_url ?? null,
     coverUrl: r.cover_url ?? null,

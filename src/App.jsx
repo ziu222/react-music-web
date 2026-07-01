@@ -183,7 +183,8 @@ export default function App() {
   // Every library write pushes the FULL snapshot — the debounced upsert in
   // librarySync is last-write-wins, so a partial payload would clobber the
   // fields it omitted (e.g. a like toggle wiping followed artists).
-  const librarySnapshot = () => ({ likedIds, playlists: userPlaylists, followedArtists, savedAlbums });
+  // followedArtists không cần vào snapshot — follows table là canonical source
+  const librarySnapshot = () => ({ likedIds, playlists: userPlaylists, savedAlbums });
 
   useEffect(() => {
     try { localStorage.setItem("melodies_playlists", JSON.stringify(userPlaylists)); }

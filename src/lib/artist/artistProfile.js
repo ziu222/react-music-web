@@ -5,7 +5,6 @@ export const DEFAULT_PROFILE = {
   bio: "",
   genres: [],
   links: { website: "", facebook: "", instagram: "", youtube: "" },
-  avatarBlobId: null,
   displayName: "",
   themeColor: "",
 };
@@ -14,12 +13,11 @@ function fromRow(r, email = "") {
   return {
     ...DEFAULT_PROFILE,
     email,
-    bio:         r.bio ?? "",
-    genres:      Array.isArray(r.genres) ? r.genres : [],
-    links:       { ...DEFAULT_PROFILE.links, ...(r.links ?? {}) },
-    displayName: r.display_name ?? "",
-    themeColor:  r.theme_color ?? "",
-    avatarBlobId: r.avatar_blob_id ?? null,
+    bio:         r.artist_bio ?? "",
+    genres:      Array.isArray(r.artist_genres) ? r.artist_genres : [],
+    links:       { ...DEFAULT_PROFILE.links, ...(r.artist_links ?? {}) },
+    displayName: r.artist_display_name ?? "",
+    themeColor:  r.artist_theme_color ?? "",
   };
 }
 
@@ -31,9 +29,10 @@ export async function loadArtistProfile(email) {
   if (!supabase || !key) return { ...DEFAULT_PROFILE };
 
   const { data } = await supabase
-    .from("artist_profiles")
-    .select("*")
+    .from("users")
+    .select("artist_bio, artist_genres, artist_links, artist_display_name, artist_theme_color")
     .eq("email", key)
+    .eq("role", "artist")
     .maybeSingle();
 
   const profile = data ? fromRow(data, key) : { ...DEFAULT_PROFILE, email: key };
@@ -41,33 +40,37 @@ export async function loadArtistProfile(email) {
   return profile;
 }
 
-/* Tìm artist profile theo tên hiển thị (dùng cho listener view).
- * Thử khớp users.name trước, sau đó artist_profiles.display_name.
- * Trả về profile object hoặc null nếu không tìm thấy. */
 export async function loadArtistProfileByName(name) {
   if (!supabase || !name) return null;
   const trimmed = name.trim();
-  const [{ data: u }, { data: p }] = await Promise.all([
-    supabase.from("users").select("email").eq("role", "artist").ilike("name", trimmed).maybeSingle(),
-    supabase.from("artist_profiles").select("email").ilike("display_name", trimmed).maybeSingle(),
-  ]);
-  const email = u?.email ?? p?.email ?? null;
-  if (!email) return null;
-  return loadArtistProfile(email);
+
+  // Tìm theo users.name hoặc users.artist_display_name
+  const { data } = await supabase
+    .from("users")
+    .select("email, artist_bio, artist_genres, artist_links, artist_display_name, artist_theme_color")
+    .eq("role", "artist")
+    .or(`name.ilike.${trimmed},artist_display_name.ilike.${trimmed}`)
+    .maybeSingle();
+
+  if (!data?.email) return null;
+  const profile = fromRow(data, data.email);
+  _cache.set(data.email.toLowerCase(), profile);
+  return profile;
 }
 
 export async function saveArtistProfile(email, profile) {
   const key = String(email).toLowerCase();
   _cache.set(key, profile);
   if (!supabase) return;
-  await supabase.from("artist_profiles").upsert({
-    email:        key,
-    bio:          profile.bio ?? "",
-    genres:       profile.genres ?? [],
-    links:        profile.links ?? DEFAULT_PROFILE.links,
-    display_name: profile.displayName ?? "",
-    theme_color:  profile.themeColor ?? "",
-    avatar_blob_id: profile.avatarBlobId ?? null,
-    updated_at:   new Date().toISOString(),
-  }).catch(err => console.error("[saveArtistProfile]", err.message));
+  await supabase
+    .from("users")
+    .update({
+      artist_bio:          profile.bio ?? "",
+      artist_genres:       profile.genres ?? [],
+      artist_links:        profile.links ?? DEFAULT_PROFILE.links,
+      artist_display_name: profile.displayName ?? "",
+      artist_theme_color:  profile.themeColor ?? "",
+    })
+    .eq("email", key)
+    .catch(err => console.error("[saveArtistProfile]", err.message));
 }
