@@ -80,6 +80,11 @@ function SectionLabel({ children }) {
   );
 }
 
+const PRESET_COLORS = [
+  "#f97316","#3b82f6","#8b5cf6","#ec4899",
+  "#10b981","#f59e0b","#ef4444","#14b8a6",
+];
+
 export default function UserDetailModal({
   user,
   currentAdmin,
@@ -89,6 +94,36 @@ export default function UserDetailModal({
   onImpersonate,
   can = () => true,
 }) {
+  // ── Edit profile ───────────────────────────────────────
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
+  const openEdit = () => {
+    setEditName(user?.name ?? "");
+    setEditColor(user?.color ?? PRESET_COLORS[0]);
+    setEditOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim() || !user?.email) return;
+    setEditSaving(true);
+    const patch = {
+      name: editName.trim(),
+      color: editColor,
+      initial: editName.trim()[0].toUpperCase(),
+    };
+    try {
+      await setUserOverride(user.email, patch);
+      logAdminAction(currentAdmin, "edit_profile", user.name, `name → ${patch.name}, color → ${patch.color}`);
+      onChanged?.({ email: user.email, patch });
+      setEditOpen(false);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const [banForm, setBanForm] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -367,8 +402,111 @@ export default function UserDetailModal({
                   Thành viên từ {formatJoinDate(user.joinedAt)}
                 </span>
               </div>
+
+              {/* Edit profile button */}
+              {!user.deleted && (
+                <button
+                  type="button"
+                  onClick={openEdit}
+                  style={{
+                    marginTop: 10, padding: "4px 12px", borderRadius: 9999,
+                    background: "var(--island-hover)", border: "1px solid var(--island-border)",
+                    color: "var(--island-muted)", fontSize: 11, fontWeight: 600,
+                    cursor: "pointer", transition: "background 0.15s, color 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--overlay-2)"; e.currentTarget.style.color = "var(--island-text)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "var(--island-hover)"; e.currentTarget.style.color = "var(--island-muted)"; }}
+                >
+                  Chỉnh sửa hồ sơ
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Inline edit form */}
+          {editOpen && (
+            <div style={{
+              marginTop: 16, padding: "16px", borderRadius: 10,
+              background: "var(--island-bg-soft)", border: "1px solid var(--island-border)",
+              display: "flex", flexDirection: "column", gap: 14,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--island-faint)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Chỉnh sửa thông tin
+              </div>
+
+              {/* Preview + name input */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
+                  background: editColor, display: "flex", alignItems: "center",
+                  justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#fff",
+                  boxShadow: `0 3px 10px ${editColor}55`, transition: "background 0.2s",
+                }}>
+                  {(editName[0] ?? user?.initial ?? "?").toUpperCase()}
+                </div>
+                <input
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder="Tên hiển thị"
+                  maxLength={40}
+                  style={{
+                    flex: 1, height: 34, borderRadius: 7,
+                    border: "1px solid var(--island-border)",
+                    background: "var(--island-bg)", color: "var(--island-text)",
+                    fontSize: 13, padding: "0 10px", outline: "none", fontFamily: "inherit",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = "#f97316"; }}
+                  onBlur={e => { e.target.style.borderColor = "var(--island-border)"; }}
+                />
+              </div>
+
+              {/* Color swatches */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {PRESET_COLORS.map(c => (
+                  <button
+                    key={c} type="button"
+                    onClick={() => setEditColor(c)}
+                    style={{
+                      width: 28, height: 28, borderRadius: "50%", background: c,
+                      border: editColor === c ? "3px solid #fff" : "3px solid transparent",
+                      cursor: "pointer", outline: "none",
+                      boxShadow: editColor === c ? `0 0 0 2px ${c}` : "none",
+                      transition: "border 0.12s, box-shadow 0.12s",
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  disabled={!editName.trim() || editSaving}
+                  style={{
+                    height: 32, padding: "0 16px", borderRadius: 9999,
+                    background: "#f97316", border: "none", color: "#fff",
+                    fontSize: 12, fontWeight: 700,
+                    cursor: editName.trim() && !editSaving ? "pointer" : "not-allowed",
+                    opacity: editName.trim() && !editSaving ? 1 : 0.5,
+                  }}
+                >
+                  {editSaving ? "Đang lưu..." : "Lưu"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(false)}
+                  style={{
+                    height: 32, padding: "0 14px", borderRadius: 9999,
+                    background: "var(--island-hover)", border: "1px solid var(--island-border)",
+                    color: "var(--island-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  Huỷ
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {user.role === "listener" && stats && (
