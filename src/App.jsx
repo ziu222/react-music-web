@@ -1071,7 +1071,7 @@ export default function App() {
     if (authUser?.role !== "artist") return <Navigate to="/" replace />;
     return (
       <Suspense fallback={<ModalSkeleton />}>
-        <PageArtistStudio authUser={authUser} onExit={() => navigate("/")} />
+        <PageArtistStudio authUser={authUser} onExit={() => navigate("/")} songs={catalogSongs} />
       </Suspense>
     );
   }

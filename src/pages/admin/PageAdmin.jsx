@@ -12,6 +12,7 @@ import {
   faFlag,
   faUserShield,
   faSliders,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
@@ -24,6 +25,7 @@ import AdminSystem from "./AdminSystem";
 import AdminUsers from "./AdminUsers";
 import AdminReview from "./AdminReview";
 import AdminContent from "./AdminContent";
+import ReviewManager from "../../components/console/ReviewManager";
 import AdminBroadcast from "./AdminBroadcast";
 import AdminPromo from "./AdminPromo";
 import AdminReports from "./AdminReports";
@@ -41,6 +43,7 @@ const HEADERS = {
   users: { title: "Người dùng", subtitle: "Quản lý toàn bộ tài khoản" },
   review: { title: "Duyệt bài hát", subtitle: "Phê duyệt bài hát do nghệ sĩ gửi lên" },
   content: { title: "Nội dung", subtitle: "Quản lý catalog bài hát" },
+  reviews: { title: "Đánh giá & Bình luận", subtitle: "Kiểm duyệt rating và review của người nghe" },
   broadcast: { title: "Thông báo hệ thống", subtitle: "Gửi thông báo đến toàn bộ người dùng" },
   promo: { title: "Mã khuyến mãi", subtitle: "Tạo và quản lý mã premium" },
   reports: { title: "Báo cáo vi phạm", subtitle: "Xử lý nội dung bị người dùng báo cáo" },
@@ -104,6 +107,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
     { key: "users", label: "Người dùng", icon: faUsers, perm: "users.view" },
     { key: "review", label: "Duyệt bài hát", icon: faListCheck, badge: pendingCount, perm: "review.approve" },
     { key: "content", label: "Nội dung", icon: faCompactDisc, perm: "content.edit" },
+    { key: "reviews", label: "Đánh giá", icon: faStar, perm: "content.delete" },
     { key: "broadcast", label: "Thông báo", icon: faBullhorn, perm: "broadcast.send" },
     { key: "promo", label: "Mã KM", icon: faTicket, perm: "promo.manage" },
     { key: "reports", label: "Báo cáo", icon: faFlag, perm: "reports.resolve" },
@@ -169,6 +173,7 @@ export default function PageAdmin({ authUser, songs, onExit, onImpersonate }) {
         <AdminReview subs={subs} setSubs={setSubs} authUser={authUser} can={can} />
       )}
       {adminTab === "content" && <AdminContent songs={songs} authUser={authUser} can={can} />}
+      {adminTab === "reviews" && <ReviewManager songs={songs} />}
       {adminTab === "broadcast" && <AdminBroadcast authUser={authUser} allUsers={allUsers} can={can} />}
       {adminTab === "promo" && <AdminPromo authUser={authUser} can={can} />}
       {adminTab === "reports" && <AdminReports authUser={authUser} can={can} />}

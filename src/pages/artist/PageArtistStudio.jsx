@@ -8,9 +8,11 @@ import {
   faCloudArrowUp,
   faUserPen,
   faNewspaper,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
+import ReviewManager from "../../components/console/ReviewManager";
 import { fetchSubmissions, resubmit, deleteSubmission } from "../../lib/artist/submissions";
 import { deleteMediaBlob, getMediaBlobUrl, revokeMediaBlobUrl } from "../../lib/music/mediaStore";
 import { loadArtistProfile } from "../../lib/artist/artistProfile";
@@ -21,7 +23,7 @@ import StudioSubmit from "./StudioSubmit";
 import StudioProfile from "./StudioProfile";
 import StudioBlog from "./StudioBlog";
 
-export default function PageArtistStudio({ authUser, onExit }) {
+export default function PageArtistStudio({ authUser, onExit, songs = [] }) {
   const [studioTab, setStudioTab] = useState("overview");
   const [subs, setSubs] = useState([]);
   useEffect(() => {
@@ -71,6 +73,12 @@ export default function PageArtistStudio({ authUser, onExit }) {
     (s) => s.artistEmail === authUser?.email?.toLowerCase()
   );
 
+  // Bài đã phát hành của nghệ sĩ này (từ catalog) — cho tab kiểm duyệt review
+  const mySongs = useMemo(
+    () => songs.filter((s) => s.artistEmail?.toLowerCase() === authUser?.email?.toLowerCase()),
+    [songs, authUser?.email]
+  );
+
   const showToast = (msg) => pushToast({ message: msg, type: "success" });
 
   const headers = {
@@ -86,12 +94,14 @@ export default function PageArtistStudio({ authUser, onExit }) {
       subtitle: "Cách bạn xuất hiện trước người hâm mộ",
     },
     blog: { title: "Stories", subtitle: "Chia sẻ câu chuyện với người hâm mộ" },
+    reviews: { title: "Đánh giá & Bình luận", subtitle: "Kiểm duyệt review trên bài hát của bạn" },
   };
 
   const navItems = [
     { key: "overview", label: "Tổng quan", icon: faChartPie },
     { key: "analytics", label: "Thống kê", icon: faChartSimple },
     { key: "songs", label: "Bài hát của tôi", icon: faMusic },
+    { key: "reviews", label: "Đánh giá", icon: faStar },
     { key: "submit", label: "Đăng bài mới", icon: faCloudArrowUp },
     { key: "profile", label: "Hồ sơ nghệ sĩ", icon: faUserPen },
     { key: "blog", label: "Stories", icon: faNewspaper },
@@ -178,6 +188,10 @@ export default function PageArtistStudio({ authUser, onExit }) {
 
       {studioTab === "blog" && (
         <StudioBlog authUser={authUser} />
+      )}
+
+      {studioTab === "reviews" && (
+        <ReviewManager songs={mySongs} />
       )}
     </ConsoleShell>
   );
