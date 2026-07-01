@@ -9,6 +9,7 @@ import {
   faUserPen,
   faNewspaper,
   faStar,
+  faCompactDisc,
 } from "@fortawesome/free-solid-svg-icons";
 import ConsoleShell from "../../components/console/ConsoleShell";
 import { ConsoleHeader } from "../../components/console/ConsoleUi";
@@ -22,6 +23,7 @@ import StudioSongs from "./StudioSongs";
 import StudioSubmit from "./StudioSubmit";
 import StudioProfile from "./StudioProfile";
 import StudioBlog from "./StudioBlog";
+import StudioReleases from "./StudioReleases";
 
 export default function PageArtistStudio({ authUser, onExit, songs = [] }) {
   const [studioTab, setStudioTab] = useState("overview");
@@ -85,6 +87,7 @@ export default function PageArtistStudio({ authUser, onExit, songs = [] }) {
     overview: { title: "Tổng quan", subtitle: "Không gian nghệ sĩ của bạn" },
     analytics: { title: "Thống kê", subtitle: "Hiệu suất âm nhạc của bạn theo thời gian" },
     songs: { title: "Bài hát của tôi", subtitle: mySubs.length + " bài hát" },
+    releases: { title: "Phát hành", subtitle: mySongs.length + " bài đã phát hành · quản lý metadata & album" },
     submit: {
       title: "Đăng bài mới",
       subtitle: "Bài hát sẽ được quản trị viên phê duyệt trước khi phát hành",
@@ -101,6 +104,7 @@ export default function PageArtistStudio({ authUser, onExit, songs = [] }) {
     { key: "overview", label: "Tổng quan", icon: faChartPie },
     { key: "analytics", label: "Thống kê", icon: faChartSimple },
     { key: "songs", label: "Bài hát của tôi", icon: faMusic },
+    { key: "releases", label: "Phát hành", icon: faCompactDisc },
     { key: "reviews", label: "Đánh giá", icon: faStar },
     { key: "submit", label: "Đăng bài mới", icon: faCloudArrowUp },
     { key: "profile", label: "Hồ sơ nghệ sĩ", icon: faUserPen },
@@ -188,6 +192,14 @@ export default function PageArtistStudio({ authUser, onExit, songs = [] }) {
 
       {studioTab === "blog" && (
         <StudioBlog authUser={authUser} />
+      )}
+
+      {studioTab === "releases" && (
+        <StudioReleases
+          songs={mySongs}
+          artistEmail={authUser?.email}
+          onGoSubmit={() => setStudioTab("submit")}
+        />
       )}
 
       {studioTab === "reviews" && (
