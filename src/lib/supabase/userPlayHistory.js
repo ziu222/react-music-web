@@ -7,7 +7,7 @@ import { supabase } from "./supabase";
 export function recordUserPlay(userEmail, songId) {
   if (!supabase || !userEmail || songId == null) return;
   supabase
-    .rpc("increment_user_play", { p_email: userEmail.toLowerCase(), p_song: String(songId) })
+    .rpc("increment_user_play", { p_email: userEmail.toLowerCase(), p_song: Number(songId) })
     .then()
     .catch(() => {});
 }
