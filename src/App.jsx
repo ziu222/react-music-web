@@ -50,8 +50,8 @@ import PageSearch from "./pages/PageSearch";
 import PageLibrary from "./pages/PageLibrary";
 import PageArtist from "./pages/PageArtist";
 import PageAlbum from "./pages/PageAlbum";
-import PageAdmin from "./pages/admin/PageAdmin";
-import PageArtistStudio from "./pages/artist/PageArtistStudio";
+const PageAdmin = lazy(() => import("./pages/admin/PageAdmin"));
+const PageArtistStudio = lazy(() => import("./pages/artist/PageArtistStudio"));
 import PageProfile from "./pages/PageProfile";
 import { C, G, BG, TEXT, GRADIENTS } from "./constants/theme";
 
@@ -73,6 +73,12 @@ export default function App() {
   const navigate = useNavigate();
   // URL là nguồn sự thật cho điều hướng — page/artist/album suy ra từ pathname
   const pathname = location.pathname;
+
+  // Scroll về đầu trang mỗi khi chuyển route
+  useEffect(() => {
+    document.querySelector("[aria-busy]")?.scrollTo(0, 0);
+  }, [pathname]);
+
   let page = "home";
   let selectedArtist = null;
   let selectedAlbum = null;
@@ -1050,23 +1056,23 @@ export default function App() {
   if (pathname.startsWith("/admin")) {
     if (authUser?.role !== "admin") return <Navigate to="/" replace />;
     return (
-      <div>
+      <Suspense fallback={<ModalSkeleton />}>
         <PageAdmin
           authUser={authUser}
           songs={catalogSongs}
           onExit={() => navigate("/")}
           onImpersonate={handleImpersonate}
         />
-      </div>
+      </Suspense>
     );
   }
 
   if (pathname.startsWith("/artist-studio")) {
     if (authUser?.role !== "artist") return <Navigate to="/" replace />;
     return (
-      <div>
+      <Suspense fallback={<ModalSkeleton />}>
         <PageArtistStudio authUser={authUser} onExit={() => navigate("/")} />
-      </div>
+      </Suspense>
     );
   }
 
@@ -1379,6 +1385,29 @@ export default function App() {
                 setAuthUser(prev => prev ? { ...prev, ...patch } : prev);
               }}
             />
+          )}
+          {/* 404 — route không khớp bất kỳ page nào */}
+          {!["home","search","library","artist","album","profile"].includes(page) && (
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center",
+              justifyContent: "center", height: "60vh", gap: 12,
+              color: "var(--text-tertiary)",
+            }}>
+              <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.04em" }}>404</div>
+              <div style={{ fontSize: 14 }}>Trang không tồn tại</div>
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                style={{
+                  marginTop: 8, padding: "8px 20px", borderRadius: 9999,
+                  background: "var(--overlay-1)", border: "1px solid var(--border)",
+                  color: "var(--text-secondary)", fontSize: 13, fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Về trang chủ
+              </button>
+            </div>
           )}
           </motion.div>
           </AnimatePresence>
