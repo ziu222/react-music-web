@@ -768,9 +768,9 @@ export default function PageProfile({
                   >
                     {isPlaying ? <FontAwesomeIcon icon={faPause} style={{ fontSize: 11 }} /> : i + 1}
                   </span>
-                  {song.cover ? (
+                  {song.coverUrl ? (
                     <img
-                      src={song.cover}
+                      src={song.coverUrl}
                       alt={song.title}
                       style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover", flexShrink: 0 }}
                     />
