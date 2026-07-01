@@ -24,7 +24,7 @@ export function recordDailySnapshot(songs) {
     song_id: s.id,
     day,
     plays: counts[s.id]?.plays ?? s.plays ?? 0,
-    likes: counts[s.id]?.likes ?? 0,
+    likes: s.likes ?? counts[s.id]?.likes ?? 0,
   }));
   // upsert theo (song_id, day) — chạy lại trong ngày chỉ cập nhật, không nhân bản
   supabase
